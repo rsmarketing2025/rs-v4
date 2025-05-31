@@ -4,12 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Search, Users, DollarSign, TrendingUp, Percent, Download } from "lucide-react";
+import { Search, Users, DollarSign, TrendingUp, Percent } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AffiliateChart } from "./AffiliateChart";
-import { useExportCSV } from "@/hooks/useExportCSV";
 
 interface AffiliateData {
   affiliate_id: string;
@@ -31,7 +29,6 @@ export const AffiliatesTab: React.FC<AffiliatesTabProps> = ({ dateRange }) => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
-  const { exportToCSV } = useExportCSV();
 
   useEffect(() => {
     fetchAffiliates();
@@ -122,27 +119,6 @@ export const AffiliatesTab: React.FC<AffiliatesTabProps> = ({ dateRange }) => {
     sales: acc.sales + affiliate.total_sales,
   }), { affiliates: 0, revenue: 0, commission: 0, sales: 0 });
 
-  const handleExportCSV = () => {
-    const exportData = filteredAffiliates.map((affiliate, index) => ({
-      'Ranking': index + 1,
-      'Afiliado': affiliate.affiliate_name,
-      'ID': affiliate.affiliate_id,
-      'Total Vendas': affiliate.total_sales,
-      'Vendas Concluídas': affiliate.completed_sales,
-      'Taxa Conversão (%)': affiliate.conversion_rate.toFixed(1),
-      'Receita Total (R$)': affiliate.total_revenue.toFixed(2),
-      'Comissão Total (R$)': affiliate.total_commission.toFixed(2),
-      'Ticket Médio (R$)': affiliate.avg_order_value.toFixed(2),
-    }));
-
-    exportToCSV(exportData, 'afiliados');
-    
-    toast({
-      title: "Exportação realizada",
-      description: "Os dados dos afiliados foram exportados com sucesso.",
-    });
-  };
-
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
@@ -228,22 +204,10 @@ export const AffiliatesTab: React.FC<AffiliatesTabProps> = ({ dateRange }) => {
       {/* Affiliates Table */}
       <Card className="bg-slate-800/30 border-slate-700">
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle className="text-white">Performance dos Afiliados</CardTitle>
-              <CardDescription className="text-slate-400">
-                Ranking de {filteredAffiliates.length} afiliados por performance
-              </CardDescription>
-            </div>
-            <Button 
-              onClick={handleExportCSV}
-              variant="outline" 
-              className="border-slate-600 text-slate-300 hover:bg-slate-700"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Exportar CSV
-            </Button>
-          </div>
+          <CardTitle className="text-white">Performance dos Afiliados</CardTitle>
+          <CardDescription className="text-slate-400">
+            Ranking de {filteredAffiliates.length} afiliados por performance
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
