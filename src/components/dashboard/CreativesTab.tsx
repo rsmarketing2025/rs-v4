@@ -6,26 +6,33 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Eye, MousePointer, TrendingUp, DollarSign, Download } from "lucide-react";
+import { Search, Eye, MousePointer, TrendingUp, DollarSign, Download, Target, BarChart3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CreativePerformanceChart } from "./CreativePerformanceChart";
 
-interface Creative {
+interface CreativeMetrics {
   id: string;
   creative_name: string;
   campaign_name: string;
+  start_date: string;
+  end_date: string;
   amount_spent: number;
-  impressions: number;
-  clicks: number;
-  ctr: number;
   views_3s: number;
   views_75_percent: number;
+  views_total: number;
+  pr_hook_rate: number;
   hook_rate: number;
   body_rate: number;
   cta_rate: number;
+  ctr: number;
+  conv_body_rate: number;
+  sales_count: number;
+  gross_sales: number;
+  profit: number;
+  cpa: number;
+  roi: number;
   status: string;
-  date_reported: string;
 }
 
 interface CreativesTabProps {
@@ -33,7 +40,7 @@ interface CreativesTabProps {
 }
 
 export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
-  const [creatives, setCreatives] = useState<Creative[]>([]);
+  const [creatives, setCreatives] = useState<CreativeMetrics[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -47,24 +54,139 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
     try {
       setLoading(true);
       
-      let query = supabase
+      // Buscar dados das campanhas
+      let campaignQuery = supabase
         .from('creative_insights')
         .select('*');
 
-      // Apply date filter
       if (dateRange.from && dateRange.to) {
-        query = query
+        campaignQuery = campaignQuery
           .gte('date_reported', dateRange.from.toISOString())
           .lte('date_reported', dateRange.to.toISOString());
       }
 
-      const { data, error } = await query.order('date_reported', { ascending: false });
+      const { data: campaignData, error: campaignError } = await campaignQuery;
 
-      if (error) {
-        throw error;
+      if (campaignError) {
+        throw campaignError;
       }
 
-      setCreatives(data || []);
+      // Buscar dados das vendas
+      let salesQuery = supabase
+        .from('creative_sales')
+        .select('*');
+
+      if (dateRange.from && dateRange.to) {
+        salesQuery = salesQuery
+          .gte('sale_date', dateRange.from.toISOString())
+          .lte('sale_date', dateRange.to.toISOString());
+      }
+
+      const { data: salesData, error: salesError } = await salesQuery;
+
+      if (salesError) {
+        throw salesError;
+      }
+
+      // Processar e combinar dados
+      const creativesMap = new Map();
+
+      // Processar dados de campanhas
+      campaignData?.forEach(campaign => {
+        const key = campaign.creative_name;
+        if (!creativesMap.has(key)) {
+          creativesMap.set(key, {
+            creative_name: campaign.creative_name || '',
+            campaign_name: campaign.campaign_name || '',
+            start_date: '',
+            end_date: '',
+            amount_spent: 0,
+            views_3s: 0,
+            views_75_percent: 0,
+            views_total: 0,
+            pr_hook_rates: [],
+            hook_rates: [],
+            body_rates: [],
+            cta_rates: [],
+            ctrs: [],
+            status: campaign.status || 'active',
+            sales: []
+          });
+        }
+
+        const creative = creativesMap.get(key);
+        creative.amount_spent += campaign.amount_spent || 0;
+        creative.views_3s += campaign.views_3s || 0;
+        creative.views_75_percent += campaign.views_75_percent || 0;
+        creative.views_total += campaign.views_total || 0;
+        
+        if (campaign.ph_hook_rate) creative.pr_hook_rates.push(campaign.ph_hook_rate);
+        if (campaign.hook_rate) creative.hook_rates.push(campaign.hook_rate);
+        if (campaign.body_rate) creative.body_rates.push(campaign.body_rate);
+        if (campaign.cta_rate) creative.cta_rates.push(campaign.cta_rate);
+        if (campaign.ctr) creative.ctrs.push(campaign.ctr);
+      });
+
+      // Processar dados de vendas
+      salesData?.forEach(sale => {
+        const key = sale.creative_name;
+        if (creativesMap.has(key)) {
+          creativesMap.get(key).sales.push(sale);
+        }
+      });
+
+      // Calcular métricas finais
+      const processedCreatives: CreativeMetrics[] = Array.from(creativesMap.values()).map((creative, index) => {
+        const salesCount = creative.sales.length;
+        const grossSales = creative.sales.reduce((sum: number, sale: any) => sum + (sale.gross_value || 0), 0);
+        const profit = grossSales - creative.amount_spent;
+        const cpa = salesCount > 0 ? creative.amount_spent / salesCount : 0;
+        const roi = creative.amount_spent > 0 ? (grossSales / creative.amount_spent) * 100 : 0;
+        const convBodyRate = creative.views_75_percent > 0 ? (salesCount / creative.views_75_percent) * 100 : 0;
+
+        // Calcular médias
+        const avgPrHookRate = creative.pr_hook_rates.length > 0 
+          ? creative.pr_hook_rates.reduce((a: number, b: number) => a + b, 0) / creative.pr_hook_rates.length 
+          : 0;
+        const avgHookRate = creative.hook_rates.length > 0 
+          ? creative.hook_rates.reduce((a: number, b: number) => a + b, 0) / creative.hook_rates.length 
+          : 0;
+        const avgBodyRate = creative.body_rates.length > 0 
+          ? creative.body_rates.reduce((a: number, b: number) => a + b, 0) / creative.body_rates.length 
+          : 0;
+        const avgCtaRate = creative.cta_rates.length > 0 
+          ? creative.cta_rates.reduce((a: number, b: number) => a + b, 0) / creative.cta_rates.length 
+          : 0;
+        const avgCtr = creative.ctrs.length > 0 
+          ? creative.ctrs.reduce((a: number, b: number) => a + b, 0) / creative.ctrs.length 
+          : 0;
+
+        return {
+          id: `creative-${index}`,
+          creative_name: creative.creative_name,
+          campaign_name: creative.campaign_name,
+          start_date: dateRange.from.toLocaleDateString('pt-BR'),
+          end_date: dateRange.to.toLocaleDateString('pt-BR'),
+          amount_spent: creative.amount_spent,
+          views_3s: creative.views_3s,
+          views_75_percent: creative.views_75_percent,
+          views_total: creative.views_total,
+          pr_hook_rate: avgPrHookRate,
+          hook_rate: avgHookRate,
+          body_rate: avgBodyRate,
+          cta_rate: avgCtaRate,
+          ctr: avgCtr,
+          conv_body_rate: convBodyRate,
+          sales_count: salesCount,
+          gross_sales: grossSales,
+          profit: profit,
+          cpa: cpa,
+          roi: roi,
+          status: creative.status
+        };
+      });
+
+      setCreatives(processedCreatives);
     } catch (error) {
       console.error('Error fetching creatives:', error);
       toast({
@@ -87,28 +209,43 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
   const displayedCreatives = filteredCreatives.slice(0, 20);
 
   const totalMetrics = filteredCreatives.reduce((acc, creative) => ({
-    spent: acc.spent + (creative.amount_spent || 0),
-    impressions: acc.impressions + (creative.impressions || 0),
-    clicks: acc.clicks + (creative.clicks || 0),
-    views: acc.views + (creative.views_3s || 0),
-  }), { spent: 0, impressions: 0, clicks: 0, views: 0 });
+    spent: acc.spent + creative.amount_spent,
+    views: acc.views + creative.views_3s,
+    sales: acc.sales + creative.sales_count,
+    revenue: acc.revenue + creative.gross_sales,
+  }), { spent: 0, views: 0, sales: 0, revenue: 0 });
 
-  const avgCTR = totalMetrics.impressions > 0 ? (totalMetrics.clicks / totalMetrics.impressions) * 100 : 0;
+  const avgROI = totalMetrics.spent > 0 ? (totalMetrics.revenue / totalMetrics.spent) * 100 : 0;
 
   const exportToCSV = () => {
-    const headers = ['Criativo', 'Campanha', 'Status', 'Investimento', 'Impressions', 'Clicks', 'CTR', 'Hook Rate', 'Body Rate'];
+    const headers = [
+      'Criativo', 'Campanha', 'Período', 'Valor Gasto', 'Views 3s', 'Views 75%', 'Views Total',
+      'PR Hook %', 'Hook Rate %', 'Body Rate %', 'CTA %', 'CTR %', 'Conv. Body %',
+      'Qtd Vendas', 'Vendas Bruto', 'Lucro', 'CPA', 'ROI %', 'Status'
+    ];
+    
     const csvData = [
       headers.join(','),
       ...displayedCreatives.map(creative => [
         `"${creative.creative_name}"`,
         `"${creative.campaign_name}"`,
-        creative.status,
-        (creative.amount_spent || 0).toFixed(2),
-        creative.impressions || 0,
-        creative.clicks || 0,
-        (creative.ctr || 0).toFixed(2),
-        (creative.hook_rate || 0).toFixed(1),
-        (creative.body_rate || 0).toFixed(1)
+        `"${creative.start_date} - ${creative.end_date}"`,
+        creative.amount_spent.toFixed(2),
+        creative.views_3s,
+        creative.views_75_percent,
+        creative.views_total,
+        creative.pr_hook_rate.toFixed(1),
+        creative.hook_rate.toFixed(1),
+        creative.body_rate.toFixed(1),
+        creative.cta_rate.toFixed(1),
+        creative.ctr.toFixed(2),
+        creative.conv_body_rate.toFixed(2),
+        creative.sales_count,
+        creative.gross_sales.toFixed(2),
+        creative.profit.toFixed(2),
+        creative.cpa.toFixed(2),
+        creative.roi.toFixed(1),
+        creative.status
       ].join(','))
     ].join('\n');
 
@@ -116,7 +253,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', 'criativos.csv');
+    link.setAttribute('download', 'criativos-completo.csv');
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -146,9 +283,9 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
             <div className="flex items-center space-x-2">
               <Eye className="w-5 h-5 text-green-400" />
               <div>
-                <p className="text-sm text-slate-400">Impressions</p>
+                <p className="text-sm text-slate-400">Total Views 3s</p>
                 <p className="text-xl font-bold text-white">
-                  {totalMetrics.impressions.toLocaleString()}
+                  {totalMetrics.views.toLocaleString()}
                 </p>
               </div>
             </div>
@@ -158,11 +295,11 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
         <Card className="bg-slate-800/30 border-slate-700">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <MousePointer className="w-5 h-5 text-purple-400" />
+              <Target className="w-5 h-5 text-purple-400" />
               <div>
-                <p className="text-sm text-slate-400">Clicks</p>
+                <p className="text-sm text-slate-400">Total Vendas</p>
                 <p className="text-xl font-bold text-white">
-                  {totalMetrics.clicks.toLocaleString()}
+                  {totalMetrics.sales.toLocaleString()}
                 </p>
               </div>
             </div>
@@ -172,11 +309,11 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
         <Card className="bg-slate-800/30 border-slate-700">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <TrendingUp className="w-5 h-5 text-orange-400" />
+              <BarChart3 className="w-5 h-5 text-orange-400" />
               <div>
-                <p className="text-sm text-slate-400">CTR Médio</p>
+                <p className="text-sm text-slate-400">ROI Médio</p>
                 <p className="text-xl font-bold text-white">
-                  {avgCTR.toFixed(2)}%
+                  {avgROI.toFixed(1)}%
                 </p>
               </div>
             </div>
@@ -222,7 +359,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
       <Card className="bg-slate-800/30 border-slate-700">
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-white">Performance dos Criativos</CardTitle>
+            <CardTitle className="text-white">Performance Completa dos Criativos</CardTitle>
             <CardDescription className="text-slate-400">
               Mostrando {Math.min(displayedCreatives.length, 20)} de {filteredCreatives.length} criativos
             </CardDescription>
@@ -231,7 +368,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
             onClick={exportToCSV}
             variant="outline" 
             size="sm"
-            className="border-slate-700 text-slate-300 hover:bg-slate-800"
+            className="bg-blue-600 hover:bg-blue-700 border-blue-600 text-white hover:text-white"
           >
             <Download className="w-4 h-4 mr-2" />
             Exportar CSV
@@ -242,27 +379,37 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
             <Table>
               <TableHeader>
                 <TableRow className="border-slate-700">
-                  <TableHead className="text-slate-300">Criativo</TableHead>
-                  <TableHead className="text-slate-300">Campanha</TableHead>
+                  <TableHead className="text-slate-300 min-w-[150px]">Criativo</TableHead>
+                  <TableHead className="text-slate-300 min-w-[120px]">Campanha</TableHead>
+                  <TableHead className="text-slate-300 min-w-[140px]">Período</TableHead>
+                  <TableHead className="text-slate-300 min-w-[100px]">Valor Gasto</TableHead>
+                  <TableHead className="text-slate-300">Views 3s</TableHead>
+                  <TableHead className="text-slate-300">Views 75%</TableHead>
+                  <TableHead className="text-slate-300">Views Total</TableHead>
+                  <TableHead className="text-slate-300">PR Hook %</TableHead>
+                  <TableHead className="text-slate-300">Hook Rate %</TableHead>
+                  <TableHead className="text-slate-300">Body Rate %</TableHead>
+                  <TableHead className="text-slate-300">CTA %</TableHead>
+                  <TableHead className="text-slate-300">CTR %</TableHead>
+                  <TableHead className="text-slate-300">Conv. Body %</TableHead>
+                  <TableHead className="text-slate-300">Qtd Vendas</TableHead>
+                  <TableHead className="text-slate-300">Vendas Bruto</TableHead>
+                  <TableHead className="text-slate-300">Lucro</TableHead>
+                  <TableHead className="text-slate-300">CPA</TableHead>
+                  <TableHead className="text-slate-300">ROI %</TableHead>
                   <TableHead className="text-slate-300">Status</TableHead>
-                  <TableHead className="text-slate-300">Investimento</TableHead>
-                  <TableHead className="text-slate-300">Impressions</TableHead>
-                  <TableHead className="text-slate-300">Clicks</TableHead>
-                  <TableHead className="text-slate-300">CTR</TableHead>
-                  <TableHead className="text-slate-300">Hook Rate</TableHead>
-                  <TableHead className="text-slate-300">Body Rate</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-slate-400 py-8">
+                    <TableCell colSpan={19} className="text-center text-slate-400 py-8">
                       Carregando...
                     </TableCell>
                   </TableRow>
                 ) : displayedCreatives.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-slate-400 py-8">
+                    <TableCell colSpan={19} className="text-center text-slate-400 py-8">
                       Nenhum criativo encontrado
                     </TableCell>
                   </TableRow>
@@ -274,6 +421,54 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
                       </TableCell>
                       <TableCell className="text-slate-300">
                         {creative.campaign_name}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.start_date} - {creative.end_date}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        R$ {creative.amount_spent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.views_3s.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.views_75_percent.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.views_total.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.pr_hook_rate.toFixed(1)}%
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.hook_rate.toFixed(1)}%
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.body_rate.toFixed(1)}%
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.cta_rate.toFixed(1)}%
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.ctr.toFixed(2)}%
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.conv_body_rate.toFixed(2)}%
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.sales_count}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        R$ {creative.gross_sales.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className={`${creative.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        R$ {creative.profit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        R$ {creative.cpa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className={`${creative.roi >= 100 ? 'text-green-400' : 'text-orange-400'}`}>
+                        {creative.roi.toFixed(1)}%
                       </TableCell>
                       <TableCell>
                         <Badge 
@@ -288,24 +483,6 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
                         >
                           {creative.status}
                         </Badge>
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        R$ {(creative.amount_spent || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        {(creative.impressions || 0).toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        {(creative.clicks || 0).toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        {(creative.ctr || 0).toFixed(2)}%
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        {(creative.hook_rate || 0).toFixed(1)}%
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        {(creative.body_rate || 0).toFixed(1)}%
                       </TableCell>
                     </TableRow>
                   ))
