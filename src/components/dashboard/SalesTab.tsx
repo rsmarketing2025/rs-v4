@@ -5,10 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, DollarSign, ShoppingCart, TrendingUp, CreditCard } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, DollarSign, ShoppingCart, TrendingUp, CreditCard, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SalesChart } from "./SalesChart";
+import { useExportCSV } from "@/hooks/useExportCSV";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -39,6 +41,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
   const { toast } = useToast();
+  const { exportToCSV } = useExportCSV();
 
   useEffect(() => {
     fetchSales();
@@ -112,6 +115,30 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
       case 'boleto': return 'Boleto';
       default: return method;
     }
+  };
+
+  const handleExportCSV = () => {
+    const exportData = filteredSales.map(sale => ({
+      'Pedido': sale.order_id,
+      'Data': sale.sale_date ? format(new Date(sale.sale_date), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : '-',
+      'Cliente': sale.customer_name,
+      'Email': sale.customer_email,
+      'Criativo': sale.creative_name,
+      'Status': sale.status,
+      'Pagamento': getPaymentMethodLabel(sale.payment_method),
+      'Valor Bruto (R$)': (sale.gross_value || 0).toFixed(2),
+      'Valor Líquido (R$)': (sale.net_value || 0).toFixed(2),
+      'É Afiliado': sale.is_affiliate ? 'Sim' : 'Não',
+      'Nome Afiliado': sale.affiliate_name || '-',
+      'Comissão Afiliado (R$)': (sale.affiliate_commission || 0).toFixed(2),
+    }));
+
+    exportToCSV(exportData, 'vendas');
+    
+    toast({
+      title: "Exportação realizada",
+      description: "Os dados de vendas foram exportados com sucesso.",
+    });
   };
 
   return (
@@ -223,10 +250,22 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
       {/* Sales Table */}
       <Card className="bg-slate-800/30 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white">Histórico de Vendas</CardTitle>
-          <CardDescription className="text-slate-400">
-            {filteredSales.length} vendas encontradas
-          </CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="text-white">Histórico de Vendas</CardTitle>
+              <CardDescription className="text-slate-400">
+                {filteredSales.length} vendas encontradas
+              </CardDescription>
+            </div>
+            <Button 
+              onClick={handleExportCSV}
+              variant="outline" 
+              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Exportar CSV
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">

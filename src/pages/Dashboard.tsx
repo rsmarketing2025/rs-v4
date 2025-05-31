@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
 import { 
   TrendingUp, 
   DollarSign, 
@@ -10,7 +9,6 @@ import {
   Eye, 
   MousePointer, 
   Target,
-  Download,
   BarChart3
 } from "lucide-react";
 import { CreativesTab } from "@/components/dashboard/CreativesTab";
@@ -53,10 +51,6 @@ const Dashboard = () => {
               dateRange={dateRange} 
               onDateRangeChange={setDateRange} 
             />
-            <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-800">
-              <Download className="w-4 h-4 mr-2" />
-              Exportar
-            </Button>
           </div>
         </div>
 
@@ -107,7 +101,7 @@ const Dashboard = () => {
         </div>
 
         {/* Main Content Tabs */}
-        <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm">
+        <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <CardHeader className="pb-4">
               <TabsList className="grid w-full grid-cols-3 bg-slate-800/50">

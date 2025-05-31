@@ -22,21 +22,21 @@ const menuItems = [
 
 export function AppSidebar() {
   return (
-    <Sidebar className="bg-slate-900 border-slate-800">
-      <SidebarHeader className="p-4 border-b border-slate-800">
+    <Sidebar>
+      <SidebarHeader className="p-4 border-b">
         <div className="flex items-center space-x-2">
-          <TrendingUp className="w-6 h-6 text-blue-400" />
-          <span className="text-lg font-bold text-white">DW Marketing</span>
+          <TrendingUp className="w-6 h-6" />
+          <span className="text-lg font-bold">DW Marketing</span>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-slate-400">Menu</SidebarGroupLabel>
+          <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild className="text-slate-300 hover:bg-slate-800 hover:text-white">
+                  <SidebarMenuButton asChild>
                     <a href={item.url}>
                       <item.icon className="w-4 h-4" />
                       <span>{item.title}</span>
