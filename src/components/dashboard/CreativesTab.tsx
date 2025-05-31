@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,10 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Eye, MousePointer, TrendingUp, DollarSign, Download, Target, BarChart3 } from "lucide-react";
+import { Search, Eye, MousePointer, TrendingUp, DollarSign, Download, Target, BarChart3, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { CreativePerformanceChart } from "./CreativePerformanceChart";
+import { TopTenChart } from "./creatives/TopTenChart";
+import { MetricsOverviewCharts } from "./creatives/MetricsOverviewCharts";
 
 interface CreativeMetrics {
   id: string;
@@ -44,6 +46,8 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [showZeroValues, setShowZeroValues] = useState(false);
+  const [selectedTopMetric, setSelectedTopMetric] = useState("amount_spent");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -71,7 +75,6 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
         throw campaignError;
       }
 
-      // Buscar dados das vendas
       let salesQuery = supabase
         .from('creative_sales')
         .select('*');
@@ -88,10 +91,8 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
         throw salesError;
       }
 
-      // Processar e combinar dados
       const creativesMap = new Map();
 
-      // Processar dados de campanhas
       campaignData?.forEach(campaign => {
         const key = campaign.creative_name;
         if (!creativesMap.has(key)) {
@@ -129,7 +130,6 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
         if (campaign.ctr) creative.ctrs.push(campaign.ctr);
       });
 
-      // Processar dados de vendas
       salesData?.forEach(sale => {
         const key = sale.creative_name;
         if (creativesMap.has(key)) {
@@ -137,7 +137,6 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
         }
       });
 
-      // Calcular métricas finais
       const processedCreatives: CreativeMetrics[] = Array.from(creativesMap.values()).map((creative, index) => {
         const salesCount = creative.sales.length;
         const grossSales = creative.sales.reduce((sum: number, sale: any) => sum + (sale.gross_value || 0), 0);
@@ -146,7 +145,6 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
         const roi = creative.amount_spent > 0 ? (grossSales / creative.amount_spent) * 100 : 0;
         const convBodyRate = creative.views_75_percent > 0 ? (salesCount / creative.views_75_percent) * 100 : 0;
 
-        // Calcular médias
         const avgPrHookRate = creative.pr_hook_rates.length > 0 
           ? creative.pr_hook_rates.reduce((a: number, b: number) => a + b, 0) / creative.pr_hook_rates.length 
           : 0;
@@ -206,10 +204,19 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
     const matchesSearch = creative.creative_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          creative.campaign_name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || creative.status === statusFilter;
+    
+    if (!showZeroValues) {
+      const hasNonZeroValues = creative.amount_spent > 0 || 
+                               creative.sales_count > 0 || 
+                               creative.gross_sales > 0 ||
+                               creative.views_3s > 0;
+      return matchesSearch && matchesStatus && hasNonZeroValues;
+    }
+    
     return matchesSearch && matchesStatus;
   });
 
-  const displayedCreatives = filteredCreatives.slice(0, 20);
+  const displayedCreatives = filteredCreatives.slice(0, 50);
 
   const totalMetrics = filteredCreatives.reduce((acc, creative) => ({
     spent: acc.spent + creative.amount_spent,
@@ -229,7 +236,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
     
     const csvData = [
       headers.join(','),
-      ...displayedCreatives.map(creative => [
+      ...filteredCreatives.map(creative => [
         `"${creative.creative_name}"`,
         `"${creative.campaign_name}"`,
         `"${creative.start_date} - ${creative.end_date}"`,
@@ -257,7 +264,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', 'criativos-completo.csv');
+    link.setAttribute('download', `criativos-completo-${new Date().toISOString().split('T')[0]}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -265,7 +272,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-slate-800/30 border-slate-700">
@@ -325,16 +332,26 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
         </Card>
       </div>
 
-      {/* Chart */}
-      <CreativePerformanceChart creatives={filteredCreatives} />
+      {/* TOP 10 Chart */}
+      <TopTenChart 
+        creatives={filteredCreatives}
+        selectedMetric={selectedTopMetric}
+        onMetricChange={setSelectedTopMetric}
+      />
+
+      {/* Overview Charts */}
+      <MetricsOverviewCharts creatives={filteredCreatives} />
 
       {/* Filters */}
       <Card className="bg-slate-800/30 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white">Filtros e Busca</CardTitle>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Filter className="w-5 h-5" />
+            Filtros e Busca
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
               <Input
@@ -345,7 +362,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[200px] bg-slate-900/50 border-slate-600 text-white">
+              <SelectTrigger className="w-full lg:w-[200px] bg-slate-900/50 border-slate-600 text-white">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent className="bg-slate-900 border-slate-700">
@@ -355,17 +372,24 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
                 <SelectItem value="archived">Arquivado</SelectItem>
               </SelectContent>
             </Select>
+            <Button
+              variant={showZeroValues ? "default" : "outline"}
+              onClick={() => setShowZeroValues(!showZeroValues)}
+              className="whitespace-nowrap"
+            >
+              {showZeroValues ? "Ocultar Zerados" : "Mostrar Zerados"}
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Creatives Table */}
+      {/* Detailed Table */}
       <Card className="bg-slate-800/30 border-slate-700">
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-white">Performance Completa dos Criativos</CardTitle>
+            <CardTitle className="text-white">Performance Detalhada dos Criativos</CardTitle>
             <CardDescription className="text-slate-400">
-              Mostrando {Math.min(displayedCreatives.length, 20)} de {filteredCreatives.length} criativos
+              Mostrando {Math.min(displayedCreatives.length, 50)} de {filteredCreatives.length} criativos
             </CardDescription>
           </div>
           <Button 
