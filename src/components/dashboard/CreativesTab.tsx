@@ -6,10 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Eye, MousePointer, TrendingUp, DollarSign } from "lucide-react";
+import { Search, Eye, MousePointer, TrendingUp, DollarSign, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CreativePerformanceChart } from "./CreativePerformanceChart";
+import { useExportCSV } from "@/hooks/useExportCSV";
 
 interface Creative {
   id: string;
@@ -38,6 +39,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const { toast } = useToast();
+  const { exportToCSV } = useExportCSV();
 
   useEffect(() => {
     fetchCreatives();
@@ -84,6 +86,9 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
     return matchesSearch && matchesStatus;
   });
 
+  // Limit to 20 rows for display
+  const displayedCreatives = filteredCreatives.slice(0, 20);
+
   const totalMetrics = filteredCreatives.reduce((acc, creative) => ({
     spent: acc.spent + (creative.amount_spent || 0),
     impressions: acc.impressions + (creative.impressions || 0),
@@ -92,6 +97,28 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
   }), { spent: 0, impressions: 0, clicks: 0, views: 0 });
 
   const avgCTR = totalMetrics.impressions > 0 ? (totalMetrics.clicks / totalMetrics.impressions) * 100 : 0;
+
+  const handleExportCSV = () => {
+    const exportData = displayedCreatives.map(creative => ({
+      'Criativo': creative.creative_name,
+      'Campanha': creative.campaign_name,
+      'Status': creative.status,
+      'Gasto (R$)': creative.amount_spent?.toFixed(2) || '0.00',
+      'Impressões': creative.impressions || 0,
+      'Cliques': creative.clicks || 0,
+      'CTR (%)': creative.ctr?.toFixed(2) || '0.00',
+      'Hook Rate (%)': creative.hook_rate?.toFixed(1) || '0.0',
+      'Body Rate (%)': creative.body_rate?.toFixed(1) || '0.0',
+      'CTA Rate (%)': creative.cta_rate?.toFixed(1) || '0.0',
+    }));
+
+    exportToCSV(exportData, 'criativos');
+    
+    toast({
+      title: "Exportação realizada",
+      description: "Os dados dos criativos foram exportados com sucesso.",
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -157,10 +184,20 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
       {/* Chart */}
       <CreativePerformanceChart creatives={filteredCreatives} />
 
-      {/* Filters */}
+      {/* Filters and Export */}
       <Card className="bg-slate-800/30 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white">Filtros e Busca</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-white">Filtros e Busca</CardTitle>
+            <Button 
+              onClick={handleExportCSV}
+              variant="outline" 
+              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Exportar CSV
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4">
@@ -193,11 +230,12 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
         <CardHeader>
           <CardTitle className="text-white">Performance dos Criativos</CardTitle>
           <CardDescription className="text-slate-400">
-            Análise detalhada de {filteredCreatives.length} criativos
+            Exibindo {Math.min(displayedCreatives.length, 20)} de {filteredCreatives.length} criativos
+            {filteredCreatives.length > 20 && " (limitado a 20 linhas)"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
             <Table>
               <TableHeader>
                 <TableRow className="border-slate-700">
@@ -219,14 +257,14 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
                       Carregando...
                     </TableCell>
                   </TableRow>
-                ) : filteredCreatives.length === 0 ? (
+                ) : displayedCreatives.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center text-slate-400 py-8">
                       Nenhum criativo encontrado
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredCreatives.map((creative) => (
+                  displayedCreatives.map((creative) => (
                     <TableRow key={creative.id} className="border-slate-700 hover:bg-slate-800/50">
                       <TableCell className="text-white font-medium">
                         {creative.creative_name}

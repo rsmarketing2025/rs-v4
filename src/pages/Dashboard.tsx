@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { 
   TrendingUp, 
   DollarSign, 
@@ -12,8 +11,6 @@ import {
   MousePointer, 
   Target,
   Download,
-  Filter,
-  Calendar,
   BarChart3
 } from "lucide-react";
 import { CreativesTab } from "@/components/dashboard/CreativesTab";
@@ -21,6 +18,7 @@ import { SalesTab } from "@/components/dashboard/SalesTab";
 import { AffiliatesTab } from "@/components/dashboard/AffiliatesTab";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("creatives");
@@ -40,16 +38,13 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <DashboardLayout>
       <div className="container mx-auto p-6">
         {/* Header */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-white mb-2">
-              Premium Analytics Dashboard
-            </h1>
             <p className="text-slate-400 text-lg">
-              Comprehensive insights for your creative campaigns
+              Insights abrangentes para suas campanhas criativas
             </p>
           </div>
           
@@ -58,13 +53,9 @@ const Dashboard = () => {
               dateRange={dateRange} 
               onDateRangeChange={setDateRange} 
             />
-            <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800">
-              <Filter className="w-4 h-4 mr-2" />
-              Filters
-            </Button>
-            <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800">
+            <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-800">
               <Download className="w-4 h-4 mr-2" />
-              Export
+              Exportar
             </Button>
           </div>
         </div>
@@ -72,21 +63,21 @@ const Dashboard = () => {
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
           <KPICard
-            title="Total Spent"
+            title="Total Gasto"
             value={`R$ ${kpis.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
             change="+12.5%"
             icon={DollarSign}
             trend="up"
           />
           <KPICard
-            title="Total Revenue"
+            title="Receita Total"
             value={`R$ ${kpis.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
             change="+18.2%"
             icon={TrendingUp}
             trend="up"
           />
           <KPICard
-            title="Total Orders"
+            title="Total de Pedidos"
             value={kpis.totalOrders.toLocaleString()}
             change="+15.8%"
             icon={Target}
@@ -100,14 +91,14 @@ const Dashboard = () => {
             trend="up"
           />
           <KPICard
-            title="Conversion Rate"
+            title="Taxa de Conversão"
             value={`${kpis.conversionRate}%`}
             change="+0.8%"
             icon={MousePointer}
             trend="up"
           />
           <KPICard
-            title="AOV"
+            title="Ticket Médio"
             value={`R$ ${kpis.avgOrderValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
             change="+5.2%"
             icon={DollarSign}
@@ -122,15 +113,15 @@ const Dashboard = () => {
               <TabsList className="grid w-full grid-cols-3 bg-slate-800/50">
                 <TabsTrigger value="creatives" className="data-[state=active]:bg-slate-700">
                   <Eye className="w-4 h-4 mr-2" />
-                  Creatives
+                  Criativos
                 </TabsTrigger>
                 <TabsTrigger value="sales" className="data-[state=active]:bg-slate-700">
                   <DollarSign className="w-4 h-4 mr-2" />
-                  Sales
+                  Vendas
                 </TabsTrigger>
                 <TabsTrigger value="affiliates" className="data-[state=active]:bg-slate-700">
                   <Users className="w-4 h-4 mr-2" />
-                  Affiliates
+                  Afiliados
                 </TabsTrigger>
               </TabsList>
             </CardHeader>
@@ -151,7 +142,7 @@ const Dashboard = () => {
           </Tabs>
         </Card>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 
