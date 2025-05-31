@@ -83,6 +83,7 @@ export const UserList: React.FC<UserListProps> = ({ refreshTrigger }) => {
         const userRole = rolesData?.find(role => role.user_id === profile.id);
         const userPagePermissions = pagePermissionsData?.filter(perm => perm.user_id === profile.id) || [];
         
+        // Build page permissions object with proper type safety
         const pagePermissions = {
           creatives: userPagePermissions.find(p => p.page === 'creatives')?.can_access ?? true,
           sales: userPagePermissions.find(p => p.page === 'sales')?.can_access ?? true,
@@ -92,7 +93,7 @@ export const UserList: React.FC<UserListProps> = ({ refreshTrigger }) => {
 
         return {
           ...profile,
-          role: userRole?.role || 'user',
+          role: (userRole?.role as 'admin' | 'user') || 'user',
           pagePermissions
         };
       });

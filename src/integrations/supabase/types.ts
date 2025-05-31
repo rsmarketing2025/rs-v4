@@ -400,6 +400,7 @@ export type Database = {
           can_access: boolean | null
           created_at: string | null
           id: string
+          page: Database["public"]["Enums"]["user_page"]
           updated_at: string | null
           user_id: string
         }
@@ -407,6 +408,7 @@ export type Database = {
           can_access?: boolean | null
           created_at?: string | null
           id?: string
+          page?: Database["public"]["Enums"]["user_page"]
           updated_at?: string | null
           user_id: string
         }
@@ -414,6 +416,7 @@ export type Database = {
           can_access?: boolean | null
           created_at?: string | null
           id?: string
+          page?: Database["public"]["Enums"]["user_page"]
           updated_at?: string | null
           user_id?: string
         }
