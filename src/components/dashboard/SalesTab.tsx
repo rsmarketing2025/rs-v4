@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, DollarSign, ShoppingCart, TrendingUp, CreditCard } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, DollarSign, ShoppingCart, TrendingUp, CreditCard, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SalesChart } from "./SalesChart";
@@ -87,6 +88,8 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
     return matchesSearch && matchesStatus && matchesPayment;
   });
 
+  const displayedSales = filteredSales.slice(0, 20);
+
   const totalMetrics = filteredSales.reduce((acc, sale) => ({
     revenue: acc.revenue + (sale.status === 'completed' ? (sale.gross_value || 0) : 0),
     orders: acc.orders + 1,
@@ -105,6 +108,15 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'completed': return 'Concluído';
+      case 'refunded': return 'Reembolsado';
+      case 'chargeback': return 'Chargeback';
+      default: return status;
+    }
+  };
+
   const getPaymentMethodLabel = (method: string) => {
     switch (method) {
       case 'pix': return 'PIX';
@@ -112,6 +124,33 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
       case 'boleto': return 'Boleto';
       default: return method;
     }
+  };
+
+  const exportToCSV = () => {
+    const headers = ['Pedido', 'Data', 'Cliente', 'Criativo', 'Status', 'Pagamento', 'Valor Bruto', 'Afiliado'];
+    const csvData = [
+      headers.join(','),
+      ...displayedSales.map(sale => [
+        `"${sale.order_id}"`,
+        sale.sale_date ? format(new Date(sale.sale_date), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : '-',
+        `"${sale.customer_name}"`,
+        `"${sale.creative_name}"`,
+        getStatusLabel(sale.status),
+        getPaymentMethodLabel(sale.payment_method),
+        (sale.gross_value || 0).toFixed(2),
+        sale.is_affiliate ? `"${sale.affiliate_name || 'Afiliado'}"` : '-'
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'vendas.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -222,14 +261,25 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
 
       {/* Sales Table */}
       <Card className="bg-slate-800/30 border-slate-700">
-        <CardHeader>
-          <CardTitle className="text-white">Histórico de Vendas</CardTitle>
-          <CardDescription className="text-slate-400">
-            {filteredSales.length} vendas encontradas
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-white">Histórico de Vendas</CardTitle>
+            <CardDescription className="text-slate-400">
+              Mostrando {Math.min(displayedSales.length, 20)} de {filteredSales.length} vendas
+            </CardDescription>
+          </div>
+          <Button 
+            onClick={exportToCSV}
+            variant="outline" 
+            size="sm"
+            className="border-slate-700 text-slate-300 hover:bg-slate-800"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Exportar CSV
+          </Button>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
             <Table>
               <TableHeader>
                 <TableRow className="border-slate-700">
@@ -250,14 +300,14 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
                       Carregando...
                     </TableCell>
                   </TableRow>
-                ) : filteredSales.length === 0 ? (
+                ) : displayedSales.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center text-slate-400 py-8">
                       Nenhuma venda encontrada
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredSales.map((sale) => (
+                  displayedSales.map((sale) => (
                     <TableRow key={sale.id} className="border-slate-700 hover:bg-slate-800/50">
                       <TableCell className="text-white font-medium">
                         {sale.order_id}
@@ -273,7 +323,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className={getStatusColor(sale.status)}>
-                          {sale.status}
+                          {getStatusLabel(sale.status)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-slate-300">

@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Eye, MousePointer, TrendingUp, DollarSign } from "lucide-react";
+import { Search, Eye, MousePointer, TrendingUp, DollarSign, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CreativePerformanceChart } from "./CreativePerformanceChart";
@@ -84,6 +84,8 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
     return matchesSearch && matchesStatus;
   });
 
+  const displayedCreatives = filteredCreatives.slice(0, 20);
+
   const totalMetrics = filteredCreatives.reduce((acc, creative) => ({
     spent: acc.spent + (creative.amount_spent || 0),
     impressions: acc.impressions + (creative.impressions || 0),
@@ -92,6 +94,34 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
   }), { spent: 0, impressions: 0, clicks: 0, views: 0 });
 
   const avgCTR = totalMetrics.impressions > 0 ? (totalMetrics.clicks / totalMetrics.impressions) * 100 : 0;
+
+  const exportToCSV = () => {
+    const headers = ['Criativo', 'Campanha', 'Status', 'Investimento', 'Impressions', 'Clicks', 'CTR', 'Hook Rate', 'Body Rate'];
+    const csvData = [
+      headers.join(','),
+      ...displayedCreatives.map(creative => [
+        `"${creative.creative_name}"`,
+        `"${creative.campaign_name}"`,
+        creative.status,
+        (creative.amount_spent || 0).toFixed(2),
+        creative.impressions || 0,
+        creative.clicks || 0,
+        (creative.ctr || 0).toFixed(2),
+        (creative.hook_rate || 0).toFixed(1),
+        (creative.body_rate || 0).toFixed(1)
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'criativos.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="space-y-6">
@@ -102,7 +132,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
             <div className="flex items-center space-x-2">
               <DollarSign className="w-5 h-5 text-blue-400" />
               <div>
-                <p className="text-sm text-slate-400">Total Gasto</p>
+                <p className="text-sm text-slate-400">Total Investido</p>
                 <p className="text-xl font-bold text-white">
                   R$ {totalMetrics.spent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
@@ -116,7 +146,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
             <div className="flex items-center space-x-2">
               <Eye className="w-5 h-5 text-green-400" />
               <div>
-                <p className="text-sm text-slate-400">Impressões</p>
+                <p className="text-sm text-slate-400">Impressions</p>
                 <p className="text-xl font-bold text-white">
                   {totalMetrics.impressions.toLocaleString()}
                 </p>
@@ -130,7 +160,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
             <div className="flex items-center space-x-2">
               <MousePointer className="w-5 h-5 text-purple-400" />
               <div>
-                <p className="text-sm text-slate-400">Cliques</p>
+                <p className="text-sm text-slate-400">Clicks</p>
                 <p className="text-xl font-bold text-white">
                   {totalMetrics.clicks.toLocaleString()}
                 </p>
@@ -190,23 +220,34 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
 
       {/* Creatives Table */}
       <Card className="bg-slate-800/30 border-slate-700">
-        <CardHeader>
-          <CardTitle className="text-white">Performance dos Criativos</CardTitle>
-          <CardDescription className="text-slate-400">
-            Análise detalhada de {filteredCreatives.length} criativos
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-white">Performance dos Criativos</CardTitle>
+            <CardDescription className="text-slate-400">
+              Mostrando {Math.min(displayedCreatives.length, 20)} de {filteredCreatives.length} criativos
+            </CardDescription>
+          </div>
+          <Button 
+            onClick={exportToCSV}
+            variant="outline" 
+            size="sm"
+            className="border-slate-700 text-slate-300 hover:bg-slate-800"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Exportar CSV
+          </Button>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
             <Table>
               <TableHeader>
                 <TableRow className="border-slate-700">
                   <TableHead className="text-slate-300">Criativo</TableHead>
                   <TableHead className="text-slate-300">Campanha</TableHead>
                   <TableHead className="text-slate-300">Status</TableHead>
-                  <TableHead className="text-slate-300">Gasto</TableHead>
-                  <TableHead className="text-slate-300">Impressões</TableHead>
-                  <TableHead className="text-slate-300">Cliques</TableHead>
+                  <TableHead className="text-slate-300">Investimento</TableHead>
+                  <TableHead className="text-slate-300">Impressions</TableHead>
+                  <TableHead className="text-slate-300">Clicks</TableHead>
                   <TableHead className="text-slate-300">CTR</TableHead>
                   <TableHead className="text-slate-300">Hook Rate</TableHead>
                   <TableHead className="text-slate-300">Body Rate</TableHead>
@@ -219,14 +260,14 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
                       Carregando...
                     </TableCell>
                   </TableRow>
-                ) : filteredCreatives.length === 0 ? (
+                ) : displayedCreatives.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center text-slate-400 py-8">
                       Nenhum criativo encontrado
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredCreatives.map((creative) => (
+                  displayedCreatives.map((creative) => (
                     <TableRow key={creative.id} className="border-slate-700 hover:bg-slate-800/50">
                       <TableCell className="text-white font-medium">
                         {creative.creative_name}

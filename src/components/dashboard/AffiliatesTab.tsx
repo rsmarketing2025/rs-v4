@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Users, DollarSign, TrendingUp, Percent } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, Users, DollarSign, TrendingUp, Percent, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AffiliateChart } from "./AffiliateChart";
@@ -112,12 +113,41 @@ export const AffiliatesTab: React.FC<AffiliatesTabProps> = ({ dateRange }) => {
     affiliate.affiliate_id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const displayedAffiliates = filteredAffiliates.slice(0, 20);
+
   const totalMetrics = filteredAffiliates.reduce((acc, affiliate) => ({
     affiliates: acc.affiliates + 1,
     revenue: acc.revenue + affiliate.total_revenue,
     commission: acc.commission + affiliate.total_commission,
     sales: acc.sales + affiliate.total_sales,
   }), { affiliates: 0, revenue: 0, commission: 0, sales: 0 });
+
+  const exportToCSV = () => {
+    const headers = ['Afiliado', 'ID', 'Total Vendas', 'Vendas Concluídas', 'Taxa Conversão', 'Receita Total', 'Comissão Total', 'Ticket Médio'];
+    const csvData = [
+      headers.join(','),
+      ...displayedAffiliates.map((affiliate, index) => [
+        `"${affiliate.affiliate_name}"`,
+        `"${affiliate.affiliate_id}"`,
+        affiliate.total_sales,
+        affiliate.completed_sales,
+        affiliate.conversion_rate.toFixed(1) + '%',
+        affiliate.total_revenue.toFixed(2),
+        affiliate.total_commission.toFixed(2),
+        affiliate.avg_order_value.toFixed(2)
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'afiliados.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="space-y-6">
@@ -203,14 +233,25 @@ export const AffiliatesTab: React.FC<AffiliatesTabProps> = ({ dateRange }) => {
 
       {/* Affiliates Table */}
       <Card className="bg-slate-800/30 border-slate-700">
-        <CardHeader>
-          <CardTitle className="text-white">Performance dos Afiliados</CardTitle>
-          <CardDescription className="text-slate-400">
-            Ranking de {filteredAffiliates.length} afiliados por performance
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-white">Performance dos Afiliados</CardTitle>
+            <CardDescription className="text-slate-400">
+              Mostrando {Math.min(displayedAffiliates.length, 20)} de {filteredAffiliates.length} afiliados
+            </CardDescription>
+          </div>
+          <Button 
+            onClick={exportToCSV}
+            variant="outline" 
+            size="sm"
+            className="border-slate-700 text-slate-300 hover:bg-slate-800"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Exportar CSV
+          </Button>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
             <Table>
               <TableHeader>
                 <TableRow className="border-slate-700">
@@ -231,14 +272,14 @@ export const AffiliatesTab: React.FC<AffiliatesTabProps> = ({ dateRange }) => {
                       Carregando...
                     </TableCell>
                   </TableRow>
-                ) : filteredAffiliates.length === 0 ? (
+                ) : displayedAffiliates.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center text-slate-400 py-8">
                       Nenhum afiliado encontrado
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredAffiliates.map((affiliate, index) => (
+                  displayedAffiliates.map((affiliate, index) => (
                     <TableRow key={affiliate.affiliate_id} className="border-slate-700 hover:bg-slate-800/50">
                       <TableCell className="text-white font-medium">
                         <div className="flex items-center space-x-2">
