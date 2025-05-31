@@ -47,8 +47,8 @@ const Dashboard = () => {
             <div className="flex items-center gap-4">
               <SidebarTrigger className="text-white dark:text-white light:text-slate-900" />
               <div>
-                <h1 className="text-4xl font-bold text-white dark:text-white light:text-slate-900 mb-2">
-                  DW Marketing - Manager
+                <h1 className="text-5xl font-bold text-white dark:text-white light:text-slate-900 mb-2">
+                  DW Marketing
                 </h1>
                 <p className="text-slate-400 dark:text-slate-400 light:text-slate-600 text-lg">
                   Insights abrangentes para suas campanhas criativas
@@ -116,15 +116,15 @@ const Dashboard = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <CardHeader className="pb-4">
                 <TabsList className="grid w-full grid-cols-3 bg-slate-800/50 dark:bg-slate-800/50 light:bg-slate-100">
-                  <TabsTrigger value="creatives" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  <TabsTrigger value="creatives" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
                     <Eye className="w-4 h-4 mr-2" />
                     Criativos
                   </TabsTrigger>
-                  <TabsTrigger value="sales" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  <TabsTrigger value="sales" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
                     <DollarSign className="w-4 h-4 mr-2" />
                     Vendas
                   </TabsTrigger>
-                  <TabsTrigger value="affiliates" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                  <TabsTrigger value="affiliates" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
                     <Users className="w-4 h-4 mr-2" />
                     Afiliados
                   </TabsTrigger>
