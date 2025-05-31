@@ -89,23 +89,19 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
 
   return (
     <div className="space-y-8">
-      {/* Cards de Resumo */}
       <CreativesSummaryCards 
         totalMetrics={totalMetrics}
         avgROI={avgROI}
       />
 
-      {/* Gráfico TOP 10 com Nova Orientação */}
       <TopTenChart 
         creatives={filteredCreatives}
         selectedMetric={selectedTopMetric}
         onMetricChange={setSelectedTopMetric}
       />
 
-      {/* Gráficos de Visão Geral Expandidos */}
       <MetricsOverviewCharts creatives={filteredCreatives} />
 
-      {/* Filtros */}
       <CreativesFilters 
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
@@ -115,7 +111,6 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
         onShowZeroValuesChange={setShowZeroValues}
       />
 
-      {/* Tabela Completa */}
       <CreativesTable 
         creatives={creatives}
         filteredCreatives={filteredCreatives}
