@@ -9,9 +9,12 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
-import { BarChart3 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { BarChart3, Users, LogOut } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 const menuItems = [
   {
@@ -19,10 +22,21 @@ const menuItems = [
     url: "/dashboard",
     icon: BarChart3,
   },
+  {
+    title: "Usuários",
+    url: "/users",
+    icon: Users,
+    requireAdmin: true,
+  },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
+  const { user, isAdmin, signOut } = useAuth();
+
+  const filteredMenuItems = menuItems.filter(item => 
+    !item.requireAdmin || isAdmin
+  );
 
   return (
     <Sidebar className="bg-blue-950 border-blue-800">
@@ -35,7 +49,7 @@ export function AppSidebar() {
           <SidebarGroupLabel className="text-blue-200">Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {filteredMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild
@@ -53,6 +67,20 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="p-4 bg-blue-900">
+        <div className="text-sm text-blue-200 mb-2">
+          {user?.email}
+        </div>
+        <Button
+          onClick={signOut}
+          variant="outline"
+          size="sm"
+          className="w-full border-blue-600 text-blue-200 hover:bg-blue-800"
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Sair
+        </Button>
+      </SidebarFooter>
     </Sidebar>
   );
 }

@@ -18,11 +18,21 @@ import {
 import { CreativesTab } from "@/components/dashboard/CreativesTab";
 import { SalesTab } from "@/components/dashboard/SalesTab";
 import { AffiliatesTab } from "@/components/dashboard/AffiliatesTab";
+import { UsersTab } from "@/components/dashboard/UsersTab";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
+import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "react-router-dom";
 
 const Dashboard = () => {
-  const [activeTab, setActiveTab] = useState("creatives");
+  const { isAdmin } = useAuth();
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(() => {
+    // Set active tab based on current route
+    if (location.pathname === '/users') return "users";
+    return "creatives";
+  });
+  
   const [dateRange, setDateRange] = useState({
     from: new Date(new Date().setDate(new Date().getDate() - 30)),
     to: new Date()
@@ -37,6 +47,15 @@ const Dashboard = () => {
     conversionRate: 4.8,
     avgOrderValue: 281.69
   };
+
+  // Update URL when tab changes
+  React.useEffect(() => {
+    if (activeTab === "users") {
+      window.history.pushState({}, '', '/users');
+    } else {
+      window.history.pushState({}, '', '/dashboard');
+    }
+  }, [activeTab]);
 
   return (
     <SidebarInset>
@@ -57,65 +76,69 @@ const Dashboard = () => {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3">
-              <DateRangePicker 
-                dateRange={dateRange} 
-                onDateRangeChange={setDateRange} 
-              />
+              {activeTab !== "users" && (
+                <DateRangePicker 
+                  dateRange={dateRange} 
+                  onDateRangeChange={setDateRange} 
+                />
+              )}
               <ThemeToggle />
             </div>
           </div>
 
-          {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
-            <KPICard
-              title="Total Investido"
-              value={`R$ ${kpis.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              change="+12.5%"
-              icon={DollarSign}
-              trend="up"
-            />
-            <KPICard
-              title="Receita Total"
-              value={`R$ ${kpis.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              change="+18.2%"
-              icon={TrendingUp}
-              trend="up"
-            />
-            <KPICard
-              title="Total de Pedidos"
-              value={kpis.totalOrders.toLocaleString()}
-              change="+15.8%"
-              icon={Target}
-              trend="up"
-            />
-            <KPICard
-              title="ROAS"
-              value={`${kpis.roas.toFixed(2)}x`}
-              change="+0.3x"
-              icon={BarChart3}
-              trend="up"
-            />
-            <KPICard
-              title="Taxa de Conversão"
-              value={`${kpis.conversionRate}%`}
-              change="+0.8%"
-              icon={MousePointer}
-              trend="up"
-            />
-            <KPICard
-              title="Ticket Médio"
-              value={`R$ ${kpis.avgOrderValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              change="+5.2%"
-              icon={DollarSign}
-              trend="up"
-            />
-          </div>
+          {/* KPI Cards - only show for non-users tab */}
+          {activeTab !== "users" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+              <KPICard
+                title="Total Investido"
+                value={`R$ ${kpis.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                change="+12.5%"
+                icon={DollarSign}
+                trend="up"
+              />
+              <KPICard
+                title="Receita Total"
+                value={`R$ ${kpis.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                change="+18.2%"
+                icon={TrendingUp}
+                trend="up"
+              />
+              <KPICard
+                title="Total de Pedidos"
+                value={kpis.totalOrders.toLocaleString()}
+                change="+15.8%"
+                icon={Target}
+                trend="up"
+              />
+              <KPICard
+                title="ROAS"
+                value={`${kpis.roas.toFixed(2)}x`}
+                change="+0.3x"
+                icon={BarChart3}
+                trend="up"
+              />
+              <KPICard
+                title="Taxa de Conversão"
+                value={`${kpis.conversionRate}%`}
+                change="+0.8%"
+                icon={MousePointer}
+                trend="up"
+              />
+              <KPICard
+                title="Ticket Médio"
+                value={`R$ ${kpis.avgOrderValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                change="+5.2%"
+                icon={DollarSign}
+                trend="up"
+              />
+            </div>
+          )}
 
           {/* Main Content Tabs */}
           <Card className="bg-slate-900/50 dark:bg-slate-900/50 light:bg-white border-slate-800 dark:border-slate-800 light:border-slate-200 backdrop-blur-sm">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <CardHeader className="pb-4">
-                <TabsList className="grid w-full grid-cols-3 bg-slate-800/50 dark:bg-slate-800/50 light:bg-slate-100">
+                <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-4' : 'grid-cols-3'} bg-slate-800/50 dark:bg-slate-800/50 light:bg-slate-100`}>
                   <TabsTrigger value="creatives" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
                     <Eye className="w-4 h-4 mr-2" />
                     Criativos
@@ -128,6 +151,12 @@ const Dashboard = () => {
                     <Users className="w-4 h-4 mr-2" />
                     Afiliados
                   </TabsTrigger>
+                  {isAdmin && (
+                    <TabsTrigger value="users" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
+                      <Users className="w-4 h-4 mr-2" />
+                      Usuários
+                    </TabsTrigger>
+                  )}
                 </TabsList>
               </CardHeader>
 
@@ -143,6 +172,12 @@ const Dashboard = () => {
                 <TabsContent value="affiliates" className="mt-0">
                   <AffiliatesTab dateRange={dateRange} />
                 </TabsContent>
+                
+                {isAdmin && (
+                  <TabsContent value="users" className="mt-0">
+                    <UsersTab />
+                  </TabsContent>
+                )}
               </CardContent>
             </Tabs>
           </Card>

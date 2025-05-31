@@ -3,9 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+import { CreativesSelector } from "./CreativesSelector";
 
 interface CreativeData {
   creative_name: string;
@@ -43,14 +41,14 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ creatives, dat
   const [selectedMetric, setSelectedMetric] = React.useState('amount_spent');
   const [selectedCreatives, setSelectedCreatives] = React.useState<string[]>([]);
   
-  // Filtrar e ordenar criativos com base na métrica selecionada
+  // Filter and sort creatives based on selected metric
   const relevantCreatives = React.useMemo(() => {
     return creatives
       .filter(creative => (creative as any)[selectedMetric] > 0)
       .sort((a, b) => (b as any)[selectedMetric] - (a as any)[selectedMetric]);
   }, [creatives, selectedMetric]);
 
-  // Inicializar com os top 10 quando a métrica mudar
+  // Initialize with top 10 when metric changes
   React.useEffect(() => {
     const top10 = relevantCreatives.slice(0, 10).map(c => c.creative_name);
     setSelectedCreatives(top10);
@@ -58,7 +56,7 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ creatives, dat
 
   const currentMetric = metricOptions.find(m => m.value === selectedMetric) || metricOptions[0];
 
-  // Gerar dados para série temporal
+  // Generate time series data
   const generateTimeSeriesData = () => {
     const startDate = new Date(dateRange.from);
     const endDate = new Date(dateRange.to);
@@ -81,11 +79,11 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ creatives, dat
           ? creative.creative_name.substring(0, 20) + '...' 
           : creative.creative_name;
         
-        // Distribuir valor ao longo do período (simulação)
+        // Distribute value over period (simulation)
         const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
         const dailyValue = (creative as any)[selectedMetric] / totalDays;
         
-        // Adicionar variação aleatória para simular flutuação diária
+        // Add random variation to simulate daily fluctuation
         const variation = 0.8 + (Math.random() * 0.4);
         dataPoint[creativeName] = dailyValue * variation;
       });
@@ -128,7 +126,7 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ creatives, dat
     });
   };
 
-  // Calcular altura dinâmica baseada no número de criativos selecionados
+  // Calculate dynamic height based on number of selected creatives
   const chartHeight = Math.max(300, Math.min(600, 300 + (selectedCreatives.length * 8)));
 
   return (
@@ -155,44 +153,15 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ creatives, dat
           </Select>
         </div>
         
-        {/* Seletor de Criativos */}
-        <div className="mt-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <h4 className="text-white text-sm font-medium">
-              Criativos Selecionados ({selectedCreatives.length})
-            </h4>
-            <Badge variant="secondary" className="bg-slate-700 text-slate-300">
-              {currentMetric.label}
-            </Badge>
-          </div>
-          
-          <ScrollArea className="h-32 w-full rounded-md border border-slate-700 bg-slate-900/30 p-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {relevantCreatives.map((creative, index) => (
-                <div key={creative.creative_name} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={creative.creative_name}
-                    checked={selectedCreatives.includes(creative.creative_name)}
-                    onCheckedChange={() => handleCreativeToggle(creative.creative_name)}
-                    className="border-slate-500"
-                  />
-                  <label
-                    htmlFor={creative.creative_name}
-                    className="text-sm text-slate-300 cursor-pointer truncate flex-1"
-                    title={creative.creative_name}
-                  >
-                    {creative.creative_name.length > 25 
-                      ? creative.creative_name.substring(0, 25) + '...' 
-                      : creative.creative_name}
-                  </label>
-                  <div 
-                    className="w-3 h-3 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                  />
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
+        {/* Creatives Selector */}
+        <div className="mt-4">
+          <CreativesSelector
+            relevantCreatives={relevantCreatives}
+            selectedCreatives={selectedCreatives}
+            onCreativeToggle={handleCreativeToggle}
+            currentMetric={currentMetric}
+            colors={COLORS}
+          />
         </div>
       </CardHeader>
       

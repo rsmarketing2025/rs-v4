@@ -6,8 +6,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/hooks/useTheme";
+import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import Dashboard from "./pages/Dashboard";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -16,21 +19,33 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <ThemeProvider defaultTheme="dark" storageKey="dw-marketing-theme">
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <SidebarProvider>
-            <div className="min-h-screen flex w-full">
-              <AppSidebar />
-              <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </div>
-          </SidebarProvider>
-        </TooltipProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route 
+                path="/*" 
+                element={
+                  <ProtectedRoute>
+                    <SidebarProvider>
+                      <div className="min-h-screen flex w-full">
+                        <AppSidebar />
+                        <Routes>
+                          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                          <Route path="/dashboard" element={<Dashboard />} />
+                          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </div>
+                    </SidebarProvider>
+                  </ProtectedRoute>
+                } 
+              />
+            </Routes>
+          </TooltipProvider>
+        </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>
   </QueryClientProvider>
