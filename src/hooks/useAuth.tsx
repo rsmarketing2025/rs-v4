@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -40,6 +41,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Set up auth state listener
@@ -64,6 +66,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               setIsAdmin(false);
             }
           }, 0);
+
+          // Show welcome message on successful login
+          if (event === 'SIGNED_IN') {
+            setTimeout(() => {
+              toast({
+                title: "Bem-vindo!",
+                description: "Login realizado com sucesso.",
+              });
+            }, 500);
+          }
         } else {
           setIsAdmin(false);
         }
@@ -80,7 +92,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [toast]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({

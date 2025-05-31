@@ -255,21 +255,30 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          phone: string | null
+          status: string | null
           updated_at: string
+          username: string | null
         }
         Insert: {
           created_at?: string
           email: string
           full_name: string
           id: string
+          phone?: string | null
+          status?: string | null
           updated_at?: string
+          username?: string | null
         }
         Update: {
           created_at?: string
           email?: string
           full_name?: string
           id?: string
+          phone?: string | null
+          status?: string | null
           updated_at?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -353,6 +362,79 @@ export type Database = {
           value?: number
         }
         Relationships: []
+      }
+      user_chart_permissions: {
+        Row: {
+          can_view: boolean | null
+          chart_permission: Database["public"]["Enums"]["chart_permission"]
+          created_at: string | null
+          id: string
+          page: Database["public"]["Enums"]["user_page"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          can_view?: boolean | null
+          chart_permission: Database["public"]["Enums"]["chart_permission"]
+          created_at?: string | null
+          id?: string
+          page: Database["public"]["Enums"]["user_page"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          can_view?: boolean | null
+          chart_permission?: Database["public"]["Enums"]["chart_permission"]
+          created_at?: string | null
+          id?: string
+          page?: Database["public"]["Enums"]["user_page"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_chart_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_page_permissions: {
+        Row: {
+          can_access: boolean | null
+          created_at: string | null
+          id: string
+          page: Database["public"]["Enums"]["user_page"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          can_access?: boolean | null
+          created_at?: string | null
+          id?: string
+          page: Database["public"]["Enums"]["user_page"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          can_access?: boolean | null
+          created_at?: string | null
+          id?: string
+          page?: Database["public"]["Enums"]["user_page"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_page_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -474,8 +556,35 @@ export type Database = {
         Args: { input_timestamp: string }
         Returns: string
       }
+      user_has_chart_permission: {
+        Args: {
+          _user_id: string
+          _page: Database["public"]["Enums"]["user_page"]
+          _chart: Database["public"]["Enums"]["chart_permission"]
+        }
+        Returns: boolean
+      }
+      user_has_page_access: {
+        Args: {
+          _user_id: string
+          _page: Database["public"]["Enums"]["user_page"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      chart_permission:
+        | "creative_performance_chart"
+        | "creative_time_series_chart"
+        | "creative_summary_cards"
+        | "creative_table"
+        | "sales_chart"
+        | "sales_summary_cards"
+        | "sales_table"
+        | "affiliate_chart"
+        | "affiliate_summary_cards"
+        | "affiliate_table"
+      user_page: "creatives" | "sales" | "affiliates" | "users"
       user_role: "admin" | "user"
     }
     CompositeTypes: {
@@ -592,6 +701,19 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      chart_permission: [
+        "creative_performance_chart",
+        "creative_time_series_chart",
+        "creative_summary_cards",
+        "creative_table",
+        "sales_chart",
+        "sales_summary_cards",
+        "sales_table",
+        "affiliate_chart",
+        "affiliate_summary_cards",
+        "affiliate_table",
+      ],
+      user_page: ["creatives", "sales", "affiliates", "users"],
       user_role: ["admin", "user"],
     },
   },
