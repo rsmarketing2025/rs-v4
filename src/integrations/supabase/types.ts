@@ -102,6 +102,153 @@ export type Database = {
         }
         Relationships: []
       }
+      creative_insights: {
+        Row: {
+          ad_id: string | null
+          adset_name: string | null
+          amount_spent: number | null
+          body_rate: number | null
+          campaign_id: string | null
+          campaign_name: string | null
+          clicks: number | null
+          cost_per_click: number | null
+          cost_per_mille: number | null
+          created_at: string | null
+          creative_name: string
+          cta_rate: number | null
+          ctr: number | null
+          date_reported: string | null
+          hook_rate: number | null
+          id: string
+          impressions: number | null
+          ph_hook_rate: number | null
+          status: string | null
+          updated_at: string | null
+          views_3s: number | null
+          views_75_percent: number | null
+          views_total: number | null
+        }
+        Insert: {
+          ad_id?: string | null
+          adset_name?: string | null
+          amount_spent?: number | null
+          body_rate?: number | null
+          campaign_id?: string | null
+          campaign_name?: string | null
+          clicks?: number | null
+          cost_per_click?: number | null
+          cost_per_mille?: number | null
+          created_at?: string | null
+          creative_name: string
+          cta_rate?: number | null
+          ctr?: number | null
+          date_reported?: string | null
+          hook_rate?: number | null
+          id?: string
+          impressions?: number | null
+          ph_hook_rate?: number | null
+          status?: string | null
+          updated_at?: string | null
+          views_3s?: number | null
+          views_75_percent?: number | null
+          views_total?: number | null
+        }
+        Update: {
+          ad_id?: string | null
+          adset_name?: string | null
+          amount_spent?: number | null
+          body_rate?: number | null
+          campaign_id?: string | null
+          campaign_name?: string | null
+          clicks?: number | null
+          cost_per_click?: number | null
+          cost_per_mille?: number | null
+          created_at?: string | null
+          creative_name?: string
+          cta_rate?: number | null
+          ctr?: number | null
+          date_reported?: string | null
+          hook_rate?: number | null
+          id?: string
+          impressions?: number | null
+          ph_hook_rate?: number | null
+          status?: string | null
+          updated_at?: string | null
+          views_3s?: number | null
+          views_75_percent?: number | null
+          views_total?: number | null
+        }
+        Relationships: []
+      }
+      creative_sales: {
+        Row: {
+          affiliate_commission: number | null
+          affiliate_id: string | null
+          affiliate_name: string | null
+          commission_value: number | null
+          created_at: string | null
+          creative_name: string
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          discount_value: number | null
+          gross_value: number | null
+          id: string
+          is_affiliate: boolean | null
+          net_value: number | null
+          order_id: string
+          payment_method: string
+          sale_date: string | null
+          status: string
+          tax_value: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          affiliate_commission?: number | null
+          affiliate_id?: string | null
+          affiliate_name?: string | null
+          commission_value?: number | null
+          created_at?: string | null
+          creative_name: string
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          discount_value?: number | null
+          gross_value?: number | null
+          id?: string
+          is_affiliate?: boolean | null
+          net_value?: number | null
+          order_id: string
+          payment_method: string
+          sale_date?: string | null
+          status?: string
+          tax_value?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          affiliate_commission?: number | null
+          affiliate_id?: string | null
+          affiliate_name?: string | null
+          commission_value?: number | null
+          created_at?: string | null
+          creative_name?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          discount_value?: number | null
+          gross_value?: number | null
+          id?: string
+          is_affiliate?: boolean | null
+          net_value?: number | null
+          order_id?: string
+          payment_method?: string
+          sale_date?: string | null
+          status?: string
+          tax_value?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       sales: {
         Row: {
           ad_id: string
