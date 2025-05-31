@@ -366,28 +366,22 @@ export type Database = {
       user_chart_permissions: {
         Row: {
           can_view: boolean | null
-          chart_permission: Database["public"]["Enums"]["chart_permission"]
           created_at: string | null
           id: string
-          page: Database["public"]["Enums"]["user_page"]
           updated_at: string | null
           user_id: string
         }
         Insert: {
           can_view?: boolean | null
-          chart_permission: Database["public"]["Enums"]["chart_permission"]
           created_at?: string | null
           id?: string
-          page: Database["public"]["Enums"]["user_page"]
           updated_at?: string | null
           user_id: string
         }
         Update: {
           can_view?: boolean | null
-          chart_permission?: Database["public"]["Enums"]["chart_permission"]
           created_at?: string | null
           id?: string
-          page?: Database["public"]["Enums"]["user_page"]
           updated_at?: string | null
           user_id?: string
         }
@@ -406,7 +400,6 @@ export type Database = {
           can_access: boolean | null
           created_at: string | null
           id: string
-          page: Database["public"]["Enums"]["user_page"]
           updated_at: string | null
           user_id: string
         }
@@ -414,7 +407,6 @@ export type Database = {
           can_access?: boolean | null
           created_at?: string | null
           id?: string
-          page: Database["public"]["Enums"]["user_page"]
           updated_at?: string | null
           user_id: string
         }
@@ -422,7 +414,6 @@ export type Database = {
           can_access?: boolean | null
           created_at?: string | null
           id?: string
-          page?: Database["public"]["Enums"]["user_page"]
           updated_at?: string | null
           user_id?: string
         }
@@ -556,35 +547,42 @@ export type Database = {
         Args: { input_timestamp: string }
         Returns: string
       }
-      user_has_chart_permission: {
-        Args: {
-          _user_id: string
-          _page: Database["public"]["Enums"]["user_page"]
-          _chart: Database["public"]["Enums"]["chart_permission"]
-        }
-        Returns: boolean
-      }
-      user_has_page_access: {
-        Args: {
-          _user_id: string
-          _page: Database["public"]["Enums"]["user_page"]
-        }
-        Returns: boolean
-      }
     }
     Enums: {
       chart_permission:
+        | "creative_timeline"
         | "creative_performance_chart"
-        | "creative_time_series_chart"
         | "creative_summary_cards"
         | "creative_table"
-        | "sales_chart"
+        | "creative_top_5_revenue"
+        | "creative_top_5_roi"
+        | "creative_pie_chart"
+        | "creative_bar_chart"
+        | "sales_timeline"
+        | "sales_investment_vs_revenue"
         | "sales_summary_cards"
         | "sales_table"
-        | "affiliate_chart"
+        | "sales_top_5_revenue"
+        | "sales_top_5_roi"
+        | "sales_pie_chart"
+        | "sales_bar_chart"
+        | "affiliate_timeline"
+        | "affiliate_performance_chart"
         | "affiliate_summary_cards"
         | "affiliate_table"
-      user_page: "creatives" | "sales" | "affiliates" | "users"
+        | "affiliate_top_5_revenue"
+        | "affiliate_top_5_roi"
+        | "affiliate_pie_chart"
+        | "affiliate_bar_chart"
+        | "revenue_timeline"
+        | "revenue_investment_vs_revenue"
+        | "revenue_summary_cards"
+        | "revenue_table"
+        | "revenue_top_5_revenue"
+        | "revenue_top_5_roi"
+        | "revenue_pie_chart"
+        | "revenue_bar_chart"
+      user_page: "creatives" | "sales" | "affiliates" | "revenue" | "users"
       user_role: "admin" | "user"
     }
     CompositeTypes: {
@@ -702,18 +700,40 @@ export const Constants = {
   public: {
     Enums: {
       chart_permission: [
+        "creative_timeline",
         "creative_performance_chart",
-        "creative_time_series_chart",
         "creative_summary_cards",
         "creative_table",
-        "sales_chart",
+        "creative_top_5_revenue",
+        "creative_top_5_roi",
+        "creative_pie_chart",
+        "creative_bar_chart",
+        "sales_timeline",
+        "sales_investment_vs_revenue",
         "sales_summary_cards",
         "sales_table",
-        "affiliate_chart",
+        "sales_top_5_revenue",
+        "sales_top_5_roi",
+        "sales_pie_chart",
+        "sales_bar_chart",
+        "affiliate_timeline",
+        "affiliate_performance_chart",
         "affiliate_summary_cards",
         "affiliate_table",
+        "affiliate_top_5_revenue",
+        "affiliate_top_5_roi",
+        "affiliate_pie_chart",
+        "affiliate_bar_chart",
+        "revenue_timeline",
+        "revenue_investment_vs_revenue",
+        "revenue_summary_cards",
+        "revenue_table",
+        "revenue_top_5_revenue",
+        "revenue_top_5_roi",
+        "revenue_pie_chart",
+        "revenue_bar_chart",
       ],
-      user_page: ["creatives", "sales", "affiliates", "users"],
+      user_page: ["creatives", "sales", "affiliates", "revenue", "users"],
       user_role: ["admin", "user"],
     },
   },

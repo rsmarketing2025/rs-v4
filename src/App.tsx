@@ -35,6 +35,14 @@ const App = () => (
                         <Routes>
                           <Route path="/" element={<Navigate to="/dashboard" replace />} />
                           <Route path="/dashboard" element={<Dashboard />} />
+                          <Route 
+                            path="/users" 
+                            element={
+                              <ProtectedRoute requireAdmin={true}>
+                                <Dashboard />
+                              </ProtectedRoute>
+                            } 
+                          />
                           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                           <Route path="*" element={<NotFound />} />
                         </Routes>

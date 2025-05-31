@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,14 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { User, Shield, ShieldCheck, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
-interface UserFormData {
-  fullName: string;
-  username: string;
+interface UserProfile {
+  id: string;
+  full_name: string;
   email: string;
-  phone: string;
-  password: string;
+  username: string | null;
+  phone: string | null;
   role: 'admin' | 'user';
   pagePermissions: {
     creatives: boolean;
@@ -25,99 +25,91 @@ interface UserFormData {
   };
 }
 
-interface UserFormProps {
+interface EditUserFormProps {
+  user: UserProfile;
   onClose: () => void;
-  onUserCreated: () => void;
+  onUserUpdated: () => void;
 }
 
-export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) => {
-  const [formData, setFormData] = useState<UserFormData>({
-    fullName: '',
-    username: '',
-    email: '',
-    phone: '',
-    password: '',
-    role: 'user',
-    pagePermissions: {
-      creatives: true,
-      sales: true,
-      affiliates: true,
-      revenue: true,
-    }
+export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, onUserUpdated }) => {
+  const [formData, setFormData] = useState({
+    fullName: user.full_name,
+    username: user.username || '',
+    email: user.email,
+    phone: user.phone || '',
+    role: user.role,
+    pagePermissions: user.pagePermissions
   });
-  const [creating, setCreating] = useState(false);
+  const [updating, setUpdating] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setCreating(true);
+    setUpdating(true);
 
     try {
-      // Create user via Supabase Auth Admin
-      const { data, error } = await supabase.auth.admin.createUser({
-        email: formData.email,
-        password: formData.password,
-        user_metadata: {
-          full_name: formData.fullName
-        },
-        email_confirm: true
-      });
-
-      if (error) throw error;
-      if (!data.user) throw new Error('Usuário não foi criado');
-
-      // Update profile with additional information
-      await supabase
+      // Update profile information
+      const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          username: formData.username,
-          phone: formData.phone
+          full_name: formData.fullName,
+          username: formData.username || null,
+          phone: formData.phone || null
         })
-        .eq('id', data.user.id);
+        .eq('id', user.id);
 
-      // Set user role if admin
-      if (formData.role === 'admin') {
-        await supabase
-          .from('user_roles')
-          .update({ role: 'admin' })
-          .eq('user_id', data.user.id);
-      }
+      if (profileError) throw profileError;
 
-      // Set page permissions
+      // Update user role
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .update({ role: formData.role })
+        .eq('user_id', user.id);
+
+      if (roleError) throw roleError;
+
+      // Update page permissions
       const pagePermissions = Object.entries(formData.pagePermissions)
-        .filter(([_, canAccess]) => canAccess)
         .map(([page, canAccess]) => ({
-          user_id: data.user.id,
+          user_id: user.id,
           page: page as 'creatives' | 'sales' | 'affiliates' | 'revenue',
           can_access: canAccess
         }));
 
+      // Delete existing permissions and insert new ones
+      await supabase
+        .from('user_page_permissions')
+        .delete()
+        .eq('user_id', user.id);
+
       if (pagePermissions.length > 0) {
-        await supabase
+        const { error: permissionsError } = await supabase
           .from('user_page_permissions')
-          .upsert(pagePermissions);
+          .insert(pagePermissions);
+
+        if (permissionsError) throw permissionsError;
       }
 
       toast({
-        title: "Usuário criado com sucesso!",
-        description: `${formData.fullName} foi adicionado ao sistema.`,
+        title: "Usuário atualizado com sucesso!",
+        description: `${formData.fullName} foi atualizado no sistema.`,
       });
 
-      onUserCreated();
+      onUserUpdated();
       onClose();
     } catch (error: any) {
-      console.error('Error creating user:', error);
+      console.error('Error updating user:', error);
       toast({
-        title: "Erro ao criar usuário",
-        description: error.message || "Ocorreu um erro ao criar o usuário.",
+        title: "Erro ao atualizar usuário",
+        description: error.message || "Ocorreu um erro ao atualizar o usuário.",
         variant: "destructive",
       });
     } finally {
-      setCreating(false);
+      setUpdating(false);
     }
   };
 
-  const handlePagePermissionChange = (page: keyof UserFormData['pagePermissions'], checked: boolean) => {
+  const handlePagePermissionChange = (page: keyof typeof formData.pagePermissions, checked: boolean) => {
     setFormData(prev => ({
       ...prev,
       pagePermissions: {
@@ -131,9 +123,9 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
     <Card className="bg-slate-800/50 border-slate-700">
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle className="text-white">Novo Usuário</CardTitle>
+          <CardTitle className="text-white">Editar Usuário</CardTitle>
           <CardDescription className="text-slate-400">
-            Preencha as informações para criar um novo usuário
+            Atualize as informações do usuário
           </CardDescription>
         </div>
         <Button 
@@ -181,11 +173,10 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
                   id="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="usuario@exemplo.com"
-                  required
-                  className="bg-slate-900/50 border-slate-600 text-white"
+                  disabled
+                  className="bg-slate-900/50 border-slate-600 text-slate-400"
                 />
+                <p className="text-xs text-slate-500">O email não pode ser alterado</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone" className="text-white">Telefone/WhatsApp</Label>
@@ -199,44 +190,20 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-white">Senha *</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="Mínimo 6 caracteres"
-                  required
-                  className="bg-slate-900/50 border-slate-600 text-white"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="role" className="text-white">Perfil *</Label>
-                <Select 
-                  value={formData.role} 
-                  onValueChange={(value: 'admin' | 'user') => setFormData({ ...formData, role: value })}
-                >
-                  <SelectTrigger className="bg-slate-900/50 border-slate-600 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-700">
-                    <SelectItem value="user">
-                      <div className="flex items-center">
-                        <Shield className="w-4 h-4 mr-2" />
-                        Usuário
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="admin">
-                      <div className="flex items-center">
-                        <ShieldCheck className="w-4 h-4 mr-2" />
-                        Administrador
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="role" className="text-white">Perfil *</Label>
+              <Select 
+                value={formData.role} 
+                onValueChange={(value: 'admin' | 'user') => setFormData({ ...formData, role: value })}
+              >
+                <SelectTrigger className="bg-slate-900/50 border-slate-600 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-slate-700">
+                  <SelectItem value="user">Usuário</SelectItem>
+                  <SelectItem value="admin">Administrador</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -250,7 +217,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
                     id={page}
                     checked={hasAccess}
                     onCheckedChange={(checked) => 
-                      handlePagePermissionChange(page as keyof UserFormData['pagePermissions'], checked as boolean)
+                      handlePagePermissionChange(page as keyof typeof formData.pagePermissions, checked as boolean)
                     }
                     className="border-slate-600"
                   />
@@ -269,9 +236,9 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
             <Button 
               type="submit" 
               className="bg-blue-600 hover:bg-blue-700"
-              disabled={creating}
+              disabled={updating}
             >
-              {creating ? "Criando..." : "Criar Usuário"}
+              {updating ? "Atualizando..." : "Atualizar Usuário"}
             </Button>
             <Button 
               type="button" 

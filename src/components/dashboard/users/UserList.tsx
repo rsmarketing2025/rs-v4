@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Search, User, Mail, Phone, Shield, ShieldCheck, Edit, Trash2 } from 'lucide-react';
+import { EditUserForm } from './EditUserForm';
 
 interface UserProfile {
   id: string;
@@ -21,6 +22,7 @@ interface UserProfile {
     creatives: boolean;
     sales: boolean;
     affiliates: boolean;
+    revenue: boolean;
   };
 }
 
@@ -32,6 +34,7 @@ export const UserList: React.FC<UserListProps> = ({ refreshTrigger }) => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -56,7 +59,6 @@ export const UserList: React.FC<UserListProps> = ({ refreshTrigger }) => {
         `);
 
       if (profilesError) throw profilesError;
-
       if (!profilesData) return;
 
       // Fetch roles for each user
@@ -85,6 +87,7 @@ export const UserList: React.FC<UserListProps> = ({ refreshTrigger }) => {
           creatives: userPagePermissions.find(p => p.page === 'creatives')?.can_access ?? true,
           sales: userPagePermissions.find(p => p.page === 'sales')?.can_access ?? true,
           affiliates: userPagePermissions.find(p => p.page === 'affiliates')?.can_access ?? true,
+          revenue: userPagePermissions.find(p => p.page === 'revenue')?.can_access ?? true,
         };
 
         return {
@@ -149,10 +152,24 @@ export const UserList: React.FC<UserListProps> = ({ refreshTrigger }) => {
           className="bg-blue-600/20 text-blue-300 text-xs"
         >
           {page === 'creatives' ? 'Criativos' : 
-           page === 'sales' ? 'Vendas' : 'Afiliados'}
+           page === 'sales' ? 'Vendas' : 
+           page === 'affiliates' ? 'Afiliados' : 'Receita'}
         </Badge>
       ));
   };
+
+  if (editingUser) {
+    return (
+      <EditUserForm
+        user={editingUser}
+        onClose={() => setEditingUser(null)}
+        onUserUpdated={() => {
+          fetchUsers();
+          setEditingUser(null);
+        }}
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -256,6 +273,7 @@ export const UserList: React.FC<UserListProps> = ({ refreshTrigger }) => {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => setEditingUser(user)}
                         className="border-slate-600 text-slate-300 hover:bg-slate-800"
                       >
                         <Edit className="w-3 h-3" />
