@@ -153,11 +153,11 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, onUse
         if (permissionsError) throw permissionsError;
       }
 
-      // Update chart permissions
+      // Update chart permissions with proper type casting
       const chartPermissions = formData.chartPermissions.map(permission => ({
         user_id: user.id,
-        chart_type: permission.chartType,
-        page: permission.page,
+        chart_type: permission.chartType as 'performance_overview' | 'time_series' | 'top_creatives' | 'metrics_comparison' | 'conversion_funnel' | 'roi_analysis' | 'sales_summary' | 'affiliate_performance' | 'revenue_breakdown',
+        page: permission.page as 'creatives' | 'sales' | 'affiliates' | 'revenue',
         can_view: permission.canView
       }));
 

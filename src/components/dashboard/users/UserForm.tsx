@@ -121,13 +121,13 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
           .upsert(pagePermissions);
       }
 
-      // Set chart permissions
+      // Set chart permissions with proper type casting
       const chartPermissions = formData.chartPermissions
         .filter(permission => permission.canView)
         .map(permission => ({
           user_id: data.user.id,
-          chart_type: permission.chartType,
-          page: permission.page,
+          chart_type: permission.chartType as 'performance_overview' | 'time_series' | 'top_creatives' | 'metrics_comparison' | 'conversion_funnel' | 'roi_analysis' | 'sales_summary' | 'affiliate_performance' | 'revenue_breakdown',
+          page: permission.page as 'creatives' | 'sales' | 'affiliates' | 'revenue',
           can_view: permission.canView
         }));
 
