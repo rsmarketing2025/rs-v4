@@ -1,6 +1,4 @@
-
 import React, { useState } from 'react';
-import { TopTenChart } from "./creatives/TopTenChart";
 import { MetricsOverviewCharts } from "./creatives/MetricsOverviewCharts";
 import { TimeSeriesChart } from "./creatives/TimeSeriesChart";
 import { CreativesFilters } from "./creatives/CreativesFilters";
@@ -17,7 +15,6 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showZeroValues, setShowZeroValues] = useState(false);
-  const [selectedTopMetric, setSelectedTopMetric] = useState("amount_spent");
 
   const filteredCreatives = creatives.filter(creative => {
     const matchesSearch = creative.creative_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -93,12 +90,6 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
       <CreativesSummaryCards 
         totalMetrics={totalMetrics}
         avgROI={avgROI}
-      />
-
-      <TopTenChart 
-        creatives={filteredCreatives}
-        selectedMetric={selectedTopMetric}
-        onMetricChange={setSelectedTopMetric}
       />
 
       <MetricsOverviewCharts creatives={filteredCreatives} />

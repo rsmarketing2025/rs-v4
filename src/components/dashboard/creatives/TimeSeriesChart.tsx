@@ -3,6 +3,9 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 
 interface CreativeData {
   creative_name: string;
@@ -38,12 +41,25 @@ const COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#06b6d4'
 
 export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ creatives, dateRange }) => {
   const [selectedMetric, setSelectedMetric] = React.useState('amount_spent');
+  const [selectedCreatives, setSelectedCreatives] = React.useState<string[]>([]);
   
+  // Filtrar e ordenar criativos com base na métrica selecionada
+  const relevantCreatives = React.useMemo(() => {
+    return creatives
+      .filter(creative => (creative as any)[selectedMetric] > 0)
+      .sort((a, b) => (b as any)[selectedMetric] - (a as any)[selectedMetric]);
+  }, [creatives, selectedMetric]);
+
+  // Inicializar com os top 10 quando a métrica mudar
+  React.useEffect(() => {
+    const top10 = relevantCreatives.slice(0, 10).map(c => c.creative_name);
+    setSelectedCreatives(top10);
+  }, [selectedMetric, relevantCreatives]);
+
   const currentMetric = metricOptions.find(m => m.value === selectedMetric) || metricOptions[0];
 
   // Gerar dados para série temporal
   const generateTimeSeriesData = () => {
-    // Criar array de datas no intervalo
     const startDate = new Date(dateRange.from);
     const endDate = new Date(dateRange.to);
     const dateArray = [];
@@ -52,37 +68,35 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ creatives, dat
       dateArray.push(new Date(d));
     }
 
-    // Filtrar criativos relevantes (com valor > 0 na métrica escolhida)
-    const relevantCreatives = creatives
-      .filter(creative => (creative as any)[selectedMetric] > 0)
-      .slice(0, 10); // Limitar a 10 criativos para melhor visualização
+    const creativesToShow = relevantCreatives.filter(creative => 
+      selectedCreatives.includes(creative.creative_name)
+    );
 
-    // Simular dados temporais (distribuindo o valor total ao longo do período)
     const timeSeriesData = dateArray.map(date => {
       const dateStr = date.toLocaleDateString('pt-BR');
       const dataPoint: any = { date: dateStr, fullDate: date.toISOString().split('T')[0] };
       
-      relevantCreatives.forEach((creative, index) => {
-        const creativeName = creative.creative_name.length > 15 
-          ? creative.creative_name.substring(0, 15) + '...' 
+      creativesToShow.forEach((creative) => {
+        const creativeName = creative.creative_name.length > 20 
+          ? creative.creative_name.substring(0, 20) + '...' 
           : creative.creative_name;
         
-        // Distribuir valor ao longo do período (simulação simples)
+        // Distribuir valor ao longo do período (simulação)
         const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
         const dailyValue = (creative as any)[selectedMetric] / totalDays;
         
         // Adicionar variação aleatória para simular flutuação diária
-        const variation = 0.8 + (Math.random() * 0.4); // Variação entre 80% e 120%
+        const variation = 0.8 + (Math.random() * 0.4);
         dataPoint[creativeName] = dailyValue * variation;
       });
       
       return dataPoint;
     });
 
-    return { timeSeriesData, relevantCreatives };
+    return { timeSeriesData, creativesToShow };
   };
 
-  const { timeSeriesData, relevantCreatives } = generateTimeSeriesData();
+  const { timeSeriesData, creativesToShow } = generateTimeSeriesData();
 
   const formatValue = (value: number) => {
     if (selectedMetric.includes('rate') || selectedMetric === 'roi' || selectedMetric === 'ctr') {
@@ -104,10 +118,23 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ creatives, dat
     return value.toLocaleString('pt-BR');
   };
 
+  const handleCreativeToggle = (creativeName: string) => {
+    setSelectedCreatives(prev => {
+      if (prev.includes(creativeName)) {
+        return prev.filter(name => name !== creativeName);
+      } else {
+        return [...prev, creativeName];
+      }
+    });
+  };
+
+  // Calcular altura dinâmica baseada no número de criativos selecionados
+  const chartHeight = Math.max(300, Math.min(600, 300 + (selectedCreatives.length * 8)));
+
   return (
     <Card className="bg-slate-800/30 border-slate-700">
       <CardHeader>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div>
             <CardTitle className="text-white text-xl">Evolução Temporal - Criativos</CardTitle>
             <CardTitle className="text-slate-400 text-sm font-normal">
@@ -115,7 +142,7 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ creatives, dat
             </CardTitle>
           </div>
           <Select value={selectedMetric} onValueChange={setSelectedMetric}>
-            <SelectTrigger className="w-full sm:w-[200px] bg-slate-900/50 border-slate-600 text-white">
+            <SelectTrigger className="w-full lg:w-[200px] bg-slate-900/50 border-slate-600 text-white">
               <SelectValue placeholder="Selecionar métrica" />
             </SelectTrigger>
             <SelectContent className="bg-slate-900 border-slate-700">
@@ -127,13 +154,54 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ creatives, dat
             </SelectContent>
           </Select>
         </div>
+        
+        {/* Seletor de Criativos */}
+        <div className="mt-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-white text-sm font-medium">
+              Criativos Selecionados ({selectedCreatives.length})
+            </h4>
+            <Badge variant="secondary" className="bg-slate-700 text-slate-300">
+              {currentMetric.label}
+            </Badge>
+          </div>
+          
+          <ScrollArea className="h-32 w-full rounded-md border border-slate-700 bg-slate-900/30 p-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {relevantCreatives.map((creative, index) => (
+                <div key={creative.creative_name} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={creative.creative_name}
+                    checked={selectedCreatives.includes(creative.creative_name)}
+                    onCheckedChange={() => handleCreativeToggle(creative.creative_name)}
+                    className="border-slate-500"
+                  />
+                  <label
+                    htmlFor={creative.creative_name}
+                    className="text-sm text-slate-300 cursor-pointer truncate flex-1"
+                    title={creative.creative_name}
+                  >
+                    {creative.creative_name.length > 25 
+                      ? creative.creative_name.substring(0, 25) + '...' 
+                      : creative.creative_name}
+                  </label>
+                  <div 
+                    className="w-3 h-3 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                  />
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
       </CardHeader>
+      
       <CardContent>
-        <div className="h-96">
+        <div style={{ height: chartHeight }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={timeSeriesData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+              margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
               <XAxis 
@@ -142,7 +210,7 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ creatives, dat
                 fontSize={12}
                 angle={-45}
                 textAnchor="end"
-                height={80}
+                height={100}
               />
               <YAxis 
                 stroke="#9ca3af"
@@ -166,9 +234,9 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ creatives, dat
                 wrapperStyle={{ color: '#9ca3af' }}
                 iconType="line"
               />
-              {relevantCreatives.map((creative, index) => {
-                const creativeName = creative.creative_name.length > 15 
-                  ? creative.creative_name.substring(0, 15) + '...' 
+              {creativesToShow.map((creative, index) => {
+                const creativeName = creative.creative_name.length > 20 
+                  ? creative.creative_name.substring(0, 20) + '...' 
                   : creative.creative_name;
                 
                 return (
@@ -186,10 +254,11 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ creatives, dat
             </LineChart>
           </ResponsiveContainer>
         </div>
-        {relevantCreatives.length === 0 && (
-          <div className="flex items-center justify-center h-96">
+        
+        {selectedCreatives.length === 0 && (
+          <div className="flex items-center justify-center h-64">
             <p className="text-slate-400 text-center">
-              Nenhum criativo encontrado com valor acima de zero para a métrica selecionada.
+              Selecione pelo menos um criativo para visualizar o gráfico.
             </p>
           </div>
         )}
