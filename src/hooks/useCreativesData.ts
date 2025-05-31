@@ -102,11 +102,22 @@ export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
         creative.views_total += campaign.views_total || 0;
         creative.clicks += campaign.clicks || 0;
         
-        if (campaign.ph_hook_rate) creative.pr_hook_rates.push(campaign.ph_hook_rate);
-        if (campaign.hook_rate) creative.hook_rates.push(campaign.hook_rate);
-        if (campaign.body_rate) creative.body_rates.push(campaign.body_rate);
-        if (campaign.cta_rate) creative.cta_rates.push(campaign.cta_rate);
-        if (campaign.ctr) creative.ctrs.push(campaign.ctr);
+        // Coletar taxas para calcular médias
+        if (campaign.ph_hook_rate !== null && campaign.ph_hook_rate !== undefined) {
+          creative.pr_hook_rates.push(campaign.ph_hook_rate);
+        }
+        if (campaign.hook_rate !== null && campaign.hook_rate !== undefined) {
+          creative.hook_rates.push(campaign.hook_rate);
+        }
+        if (campaign.body_rate !== null && campaign.body_rate !== undefined) {
+          creative.body_rates.push(campaign.body_rate);
+        }
+        if (campaign.cta_rate !== null && campaign.cta_rate !== undefined) {
+          creative.cta_rates.push(campaign.cta_rate);
+        }
+        if (campaign.ctr !== null && campaign.ctr !== undefined) {
+          creative.ctrs.push(campaign.ctr);
+        }
       });
 
       salesData?.forEach(sale => {
@@ -119,11 +130,21 @@ export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
       const processedCreatives: CreativeMetrics[] = Array.from(creativesMap.values()).map((creative, index) => {
         const salesCount = creative.sales.length;
         const grossSales = creative.sales.reduce((sum: number, sale: any) => sum + (sale.gross_value || 0), 0);
-        const profit = grossSales - creative.amount_spent;
+        
+        // Calcular custos e comissões
+        const affiliateCommissions = creative.sales.reduce((sum: number, sale: any) => sum + (sale.affiliate_commission || 0), 0);
+        const taxValues = creative.sales.reduce((sum: number, sale: any) => sum + (sale.tax_value || 0), 0);
+        const discountValues = creative.sales.reduce((sum: number, sale: any) => sum + (sale.discount_value || 0), 0);
+        const commissionValues = creative.sales.reduce((sum: number, sale: any) => sum + (sale.commission_value || 0), 0);
+        
+        // Calcular métricas principais
+        const totalCosts = creative.amount_spent + affiliateCommissions + taxValues + discountValues + commissionValues;
+        const profit = grossSales - totalCosts;
         const cpa = salesCount > 0 ? creative.amount_spent / salesCount : 0;
-        const roi = creative.amount_spent > 0 ? (grossSales / creative.amount_spent) * 100 : 0;
+        const roi = creative.amount_spent > 0 ? (profit / creative.amount_spent) * 100 : 0;
         const convBodyRate = creative.views_75_percent > 0 ? (salesCount / creative.views_75_percent) * 100 : 0;
 
+        // Calcular médias das taxas
         const avgPrHookRate = creative.pr_hook_rates.length > 0 
           ? creative.pr_hook_rates.reduce((a: number, b: number) => a + b, 0) / creative.pr_hook_rates.length 
           : 0;
@@ -166,7 +187,15 @@ export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
         };
       });
 
-      setCreatives(processedCreatives);
+      // Filtrar criativos com dados relevantes
+      const filteredCreatives = processedCreatives.filter(creative => 
+        creative.amount_spent > 0 || 
+        creative.sales_count > 0 || 
+        creative.views_3s > 0 ||
+        creative.gross_sales > 0
+      );
+
+      setCreatives(filteredCreatives);
     } catch (error) {
       console.error('Error fetching creatives:', error);
       toast({
