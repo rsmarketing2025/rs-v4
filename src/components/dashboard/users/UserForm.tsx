@@ -9,6 +9,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { User, Shield, ShieldCheck, X } from 'lucide-react';
+import { ChartPermissions } from './ChartPermissions';
+
+interface ChartPermission {
+  chartType: string;
+  page: string;
+  canView: boolean;
+}
 
 interface UserFormData {
   fullName: string;
@@ -23,6 +30,7 @@ interface UserFormData {
     affiliates: boolean;
     revenue: boolean;
   };
+  chartPermissions: ChartPermission[];
 }
 
 interface UserFormProps {
@@ -43,7 +51,22 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
       sales: true,
       affiliates: true,
       revenue: true,
-    }
+    },
+    chartPermissions: [
+      // Default chart permissions for each page
+      { chartType: 'performance_overview', page: 'creatives', canView: true },
+      { chartType: 'time_series', page: 'creatives', canView: true },
+      { chartType: 'top_creatives', page: 'creatives', canView: true },
+      { chartType: 'metrics_comparison', page: 'creatives', canView: true },
+      { chartType: 'sales_summary', page: 'sales', canView: true },
+      { chartType: 'conversion_funnel', page: 'sales', canView: true },
+      { chartType: 'time_series', page: 'sales', canView: true },
+      { chartType: 'affiliate_performance', page: 'affiliates', canView: true },
+      { chartType: 'time_series', page: 'affiliates', canView: true },
+      { chartType: 'revenue_breakdown', page: 'revenue', canView: true },
+      { chartType: 'roi_analysis', page: 'revenue', canView: true },
+      { chartType: 'time_series', page: 'revenue', canView: true },
+    ]
   });
   const [creating, setCreating] = useState(false);
   const { toast } = useToast();
@@ -98,6 +121,22 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
           .upsert(pagePermissions);
       }
 
+      // Set chart permissions
+      const chartPermissions = formData.chartPermissions
+        .filter(permission => permission.canView)
+        .map(permission => ({
+          user_id: data.user.id,
+          chart_type: permission.chartType,
+          page: permission.page,
+          can_view: permission.canView
+        }));
+
+      if (chartPermissions.length > 0) {
+        await supabase
+          .from('user_chart_permissions')
+          .upsert(chartPermissions);
+      }
+
       toast({
         title: "Usuário criado com sucesso!",
         description: `${formData.fullName} foi adicionado ao sistema.`,
@@ -124,6 +163,17 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
         ...prev.pagePermissions,
         [page]: checked
       }
+    }));
+  };
+
+  const handleChartPermissionChange = (chartType: string, page: string, canView: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      chartPermissions: prev.chartPermissions.map(permission =>
+        permission.chartType === chartType && permission.page === page
+          ? { ...permission, canView }
+          : permission
+      )
     }));
   };
 
@@ -263,6 +313,12 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
               ))}
             </div>
           </div>
+
+          {/* Chart Permissions */}
+          <ChartPermissions
+            chartPermissions={formData.chartPermissions}
+            onPermissionChange={handleChartPermissionChange}
+          />
 
           {/* Form Actions */}
           <div className="flex gap-3 pt-4">

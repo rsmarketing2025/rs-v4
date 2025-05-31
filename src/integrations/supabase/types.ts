@@ -366,22 +366,28 @@ export type Database = {
       user_chart_permissions: {
         Row: {
           can_view: boolean | null
+          chart_type: Database["public"]["Enums"]["chart_type"]
           created_at: string | null
           id: string
+          page: Database["public"]["Enums"]["user_page"]
           updated_at: string | null
           user_id: string
         }
         Insert: {
           can_view?: boolean | null
+          chart_type?: Database["public"]["Enums"]["chart_type"]
           created_at?: string | null
           id?: string
+          page?: Database["public"]["Enums"]["user_page"]
           updated_at?: string | null
           user_id: string
         }
         Update: {
           can_view?: boolean | null
+          chart_type?: Database["public"]["Enums"]["chart_type"]
           created_at?: string | null
           id?: string
+          page?: Database["public"]["Enums"]["user_page"]
           updated_at?: string | null
           user_id?: string
         }
@@ -585,6 +591,16 @@ export type Database = {
         | "revenue_top_5_roi"
         | "revenue_pie_chart"
         | "revenue_bar_chart"
+      chart_type:
+        | "performance_overview"
+        | "time_series"
+        | "top_creatives"
+        | "metrics_comparison"
+        | "conversion_funnel"
+        | "roi_analysis"
+        | "sales_summary"
+        | "affiliate_performance"
+        | "revenue_breakdown"
       user_page: "creatives" | "sales" | "affiliates" | "revenue" | "users"
       user_role: "admin" | "user"
     }
@@ -735,6 +751,17 @@ export const Constants = {
         "revenue_top_5_roi",
         "revenue_pie_chart",
         "revenue_bar_chart",
+      ],
+      chart_type: [
+        "performance_overview",
+        "time_series",
+        "top_creatives",
+        "metrics_comparison",
+        "conversion_funnel",
+        "roi_analysis",
+        "sales_summary",
+        "affiliate_performance",
+        "revenue_breakdown",
       ],
       user_page: ["creatives", "sales", "affiliates", "revenue", "users"],
       user_role: ["admin", "user"],

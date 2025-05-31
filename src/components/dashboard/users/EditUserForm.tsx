@@ -9,6 +9,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { X } from 'lucide-react';
+import { ChartPermissions } from './ChartPermissions';
+
+interface ChartPermission {
+  chartType: string;
+  page: string;
+  canView: boolean;
+}
 
 interface UserProfile {
   id: string;
@@ -38,10 +45,66 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, onUse
     email: user.email,
     phone: user.phone || '',
     role: user.role,
-    pagePermissions: user.pagePermissions
+    pagePermissions: user.pagePermissions,
+    chartPermissions: [] as ChartPermission[]
   });
   const [updating, setUpdating] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchChartPermissions();
+  }, [user.id]);
+
+  const fetchChartPermissions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_chart_permissions')
+        .select('chart_type, page, can_view')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Convert to the format expected by ChartPermissions component
+      const chartPermissions: ChartPermission[] = data?.map(permission => ({
+        chartType: permission.chart_type,
+        page: permission.page,
+        canView: permission.can_view ?? true
+      })) || [];
+
+      // Fill in missing permissions with default values
+      const defaultPermissions = [
+        { chartType: 'performance_overview', page: 'creatives', canView: true },
+        { chartType: 'time_series', page: 'creatives', canView: true },
+        { chartType: 'top_creatives', page: 'creatives', canView: true },
+        { chartType: 'metrics_comparison', page: 'creatives', canView: true },
+        { chartType: 'sales_summary', page: 'sales', canView: true },
+        { chartType: 'conversion_funnel', page: 'sales', canView: true },
+        { chartType: 'time_series', page: 'sales', canView: true },
+        { chartType: 'affiliate_performance', page: 'affiliates', canView: true },
+        { chartType: 'time_series', page: 'affiliates', canView: true },
+        { chartType: 'revenue_breakdown', page: 'revenue', canView: true },
+        { chartType: 'roi_analysis', page: 'revenue', canView: true },
+        { chartType: 'time_series', page: 'revenue', canView: true },
+      ];
+
+      const mergedPermissions = defaultPermissions.map(defaultPerm => {
+        const existingPerm = chartPermissions.find(
+          p => p.chartType === defaultPerm.chartType && p.page === defaultPerm.page
+        );
+        return existingPerm || defaultPerm;
+      });
+
+      setFormData(prev => ({
+        ...prev,
+        chartPermissions: mergedPermissions
+      }));
+    } catch (error) {
+      console.error('Error fetching chart permissions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,6 +153,28 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, onUse
         if (permissionsError) throw permissionsError;
       }
 
+      // Update chart permissions
+      const chartPermissions = formData.chartPermissions.map(permission => ({
+        user_id: user.id,
+        chart_type: permission.chartType,
+        page: permission.page,
+        can_view: permission.canView
+      }));
+
+      // Delete existing chart permissions and insert new ones
+      await supabase
+        .from('user_chart_permissions')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (chartPermissions.length > 0) {
+        const { error: chartPermissionsError } = await supabase
+          .from('user_chart_permissions')
+          .insert(chartPermissions);
+
+        if (chartPermissionsError) throw chartPermissionsError;
+      }
+
       toast({
         title: "Usuário atualizado com sucesso!",
         description: `${formData.fullName} foi atualizado no sistema.`,
@@ -118,6 +203,29 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, onUse
       }
     }));
   };
+
+  const handleChartPermissionChange = (chartType: string, page: string, canView: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      chartPermissions: prev.chartPermissions.map(permission =>
+        permission.chartType === chartType && permission.page === page
+          ? { ...permission, canView }
+          : permission
+      )
+    }));
+  };
+
+  if (loading) {
+    return (
+      <Card className="bg-slate-800/50 border-slate-700">
+        <CardContent className="p-6">
+          <div className="text-center text-slate-400">
+            Carregando permissões do usuário...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="bg-slate-800/50 border-slate-700">
@@ -230,6 +338,12 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, onUse
               ))}
             </div>
           </div>
+
+          {/* Chart Permissions */}
+          <ChartPermissions
+            chartPermissions={formData.chartPermissions}
+            onPermissionChange={handleChartPermissionChange}
+          />
 
           {/* Form Actions */}
           <div className="flex gap-3 pt-4">
