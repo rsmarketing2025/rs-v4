@@ -25,14 +25,14 @@ export function AppSidebar() {
   const location = useLocation();
 
   return (
-    <Sidebar>
-      <SidebarHeader className="p-6">
+    <Sidebar className="bg-blue-950 border-blue-800">
+      <SidebarHeader className="p-6 bg-blue-900">
         <h2 className="text-lg font-semibold text-white">DW Marketing</h2>
-        <p className="text-sm text-slate-400">Manager</p>
+        <p className="text-sm text-blue-200">Manager</p>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="bg-blue-950">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-slate-300">Menu</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-blue-200">Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -40,8 +40,9 @@ export function AppSidebar() {
                   <SidebarMenuButton 
                     asChild
                     isActive={location.pathname === item.url}
+                    className="text-blue-100 hover:text-white hover:bg-blue-800 data-[state=active]:bg-blue-700 data-[state=active]:text-white"
                   >
-                    <a href={item.url} className="text-slate-300 hover:text-white">
+                    <a href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
                     </a>
