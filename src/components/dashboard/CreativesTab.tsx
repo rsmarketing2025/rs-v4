@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,7 @@ interface CreativeMetrics {
   views_3s: number;
   views_75_percent: number;
   views_total: number;
+  clicks: number;
   pr_hook_rate: number;
   hook_rate: number;
   body_rate: number;
@@ -104,6 +104,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
             views_3s: 0,
             views_75_percent: 0,
             views_total: 0,
+            clicks: 0,
             pr_hook_rates: [],
             hook_rates: [],
             body_rates: [],
@@ -119,6 +120,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
         creative.views_3s += campaign.views_3s || 0;
         creative.views_75_percent += campaign.views_75_percent || 0;
         creative.views_total += campaign.views_total || 0;
+        creative.clicks += campaign.clicks || 0;
         
         if (campaign.ph_hook_rate) creative.pr_hook_rates.push(campaign.ph_hook_rate);
         if (campaign.hook_rate) creative.hook_rates.push(campaign.hook_rate);
@@ -171,6 +173,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
           views_3s: creative.views_3s,
           views_75_percent: creative.views_75_percent,
           views_total: creative.views_total,
+          clicks: creative.clicks,
           pr_hook_rate: avgPrHookRate,
           hook_rate: avgHookRate,
           body_rate: avgBodyRate,
@@ -219,7 +222,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
 
   const exportToCSV = () => {
     const headers = [
-      'Criativo', 'Campanha', 'Período', 'Valor Gasto', 'Views 3s', 'Views 75%', 'Views Total',
+      'Criativo', 'Campanha', 'Período', 'Valor Gasto', 'Views 3s', 'Views 75%', 'Views Total', 'Clicks',
       'PR Hook %', 'Hook Rate %', 'Body Rate %', 'CTA %', 'CTR %', 'Conv. Body %',
       'Qtd Vendas', 'Vendas Bruto', 'Lucro', 'CPA', 'ROI %', 'Status'
     ];
@@ -234,6 +237,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
         creative.views_3s,
         creative.views_75_percent,
         creative.views_total,
+        creative.clicks,
         creative.pr_hook_rate.toFixed(1),
         creative.hook_rate.toFixed(1),
         creative.body_rate.toFixed(1),
@@ -386,6 +390,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
                   <TableHead className="text-slate-300">Views 3s</TableHead>
                   <TableHead className="text-slate-300">Views 75%</TableHead>
                   <TableHead className="text-slate-300">Views Total</TableHead>
+                  <TableHead className="text-slate-300">Clicks</TableHead>
                   <TableHead className="text-slate-300">PR Hook %</TableHead>
                   <TableHead className="text-slate-300">Hook Rate %</TableHead>
                   <TableHead className="text-slate-300">Body Rate %</TableHead>
@@ -403,13 +408,13 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={19} className="text-center text-slate-400 py-8">
+                    <TableCell colSpan={20} className="text-center text-slate-400 py-8">
                       Carregando...
                     </TableCell>
                   </TableRow>
                 ) : displayedCreatives.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={19} className="text-center text-slate-400 py-8">
+                    <TableCell colSpan={20} className="text-center text-slate-400 py-8">
                       Nenhum criativo encontrado
                     </TableCell>
                   </TableRow>
@@ -436,6 +441,9 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
                       </TableCell>
                       <TableCell className="text-slate-300">
                         {creative.views_total.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.clicks.toLocaleString()}
                       </TableCell>
                       <TableCell className="text-slate-300">
                         {creative.pr_hook_rate.toFixed(1)}%
