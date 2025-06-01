@@ -40,9 +40,12 @@ export function AppSidebar() {
 
   return (
     <Sidebar className="bg-blue-950 border-blue-800">
-      <SidebarHeader className="p-6 bg-blue-900">
-        <h2 className="text-lg font-semibold text-white">DW Marketing</h2>
-        <p className="text-sm text-blue-200">Manager</p>
+      <SidebarHeader className="p-6 bg-blue-900 flex items-center justify-center">
+        <img 
+          src="https://recuperacaoexponencial.com.br/wp-content/uploads/2025/06/ChatGPT-Image-31-de-mai.-de-2025-23_21_38.png" 
+          alt="Logo da Empresa" 
+          className="h-12 w-auto"
+        />
       </SidebarHeader>
       <SidebarContent className="bg-blue-950">
         <SidebarGroup>

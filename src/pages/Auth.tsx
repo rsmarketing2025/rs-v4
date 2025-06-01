@@ -10,8 +10,11 @@ const Auth = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">DW Marketing</h1>
-          <p className="text-slate-400">Manager</p>
+          <img 
+            src="https://recuperacaoexponencial.com.br/wp-content/uploads/2025/06/ChatGPT-Image-31-de-mai.-de-2025-23_21_38.png" 
+            alt="Logo da Empresa" 
+            className="h-16 w-auto mx-auto mb-4"
+          />
         </div>
         
         {isLogin ? (

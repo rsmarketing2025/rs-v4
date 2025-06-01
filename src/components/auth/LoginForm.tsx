@@ -38,7 +38,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
       } else {
         toast({
           title: "Login realizado com sucesso!",
-          description: "Bem-vindo ao DW Marketing Manager.",
+          description: "Bem-vindo ao sistema.",
         });
       }
     } catch (error) {
@@ -114,16 +114,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
           >
             {loading ? "Entrando..." : "Entrar"}
           </Button>
-          
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={onSwitchToSignUp}
-              className="text-sm text-blue-400 hover:text-blue-300 underline"
-            >
-              Não tem uma conta? Cadastre-se
-            </button>
-          </div>
         </form>
       </CardContent>
     </Card>
