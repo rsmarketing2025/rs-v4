@@ -23,7 +23,6 @@ export const AffiliateChart: React.FC<AffiliateChartProps> = ({ affiliates }) =>
       ? affiliate.affiliate_name.substring(0, 15) + '...' 
       : affiliate.affiliate_name,
     revenue: affiliate.total_revenue,
-    commission: affiliate.total_commission,
     conversion: affiliate.conversion_rate,
     sales: affiliate.total_sales,
   }));
@@ -38,7 +37,7 @@ export const AffiliateChart: React.FC<AffiliateChartProps> = ({ affiliates }) =>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={400}>
-          <BarChart data={topAffiliates} layout="horizontal">
+          <BarChart data={topAffiliates} layout="vertical">
             <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
             <XAxis 
               type="number" 
@@ -60,15 +59,12 @@ export const AffiliateChart: React.FC<AffiliateChartProps> = ({ affiliates }) =>
                 borderRadius: '8px',
                 color: '#fff'
               }}
-              formatter={(value: any, name: string) => [
-                name === 'revenue' 
-                  ? `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` 
-                  : `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-                name === 'revenue' ? 'Receita' : 'Comissão'
+              formatter={(value: any) => [
+                `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+                'Receita'
               ]}
             />
             <Bar dataKey="revenue" fill="#3b82f6" radius={[0, 4, 4, 0]} />
-            <Bar dataKey="commission" fill="#10b981" radius={[0, 4, 4, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Search, Users, DollarSign, TrendingUp, Percent, Download } from "lucide-react";
+import { Search, Users, DollarSign, Percent, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AffiliateChart } from "./AffiliateChart";
@@ -118,9 +118,8 @@ export const AffiliatesTab: React.FC<AffiliatesTabProps> = ({ dateRange }) => {
   const totalMetrics = filteredAffiliates.reduce((acc, affiliate) => ({
     affiliates: acc.affiliates + 1,
     revenue: acc.revenue + affiliate.total_revenue,
-    commission: acc.commission + affiliate.total_commission,
     sales: acc.sales + affiliate.total_sales,
-  }), { affiliates: 0, revenue: 0, commission: 0, sales: 0 });
+  }), { affiliates: 0, revenue: 0, sales: 0 });
 
   const exportToCSV = () => {
     const headers = ['Afiliado', 'ID', 'Total Vendas', 'Vendas Concluídas', 'Taxa Conversão', 'Receita Total', 'Comissão Total', 'Ticket Médio'];
@@ -152,7 +151,7 @@ export const AffiliatesTab: React.FC<AffiliatesTabProps> = ({ dateRange }) => {
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card className="bg-slate-800/30 border-slate-700">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -175,20 +174,6 @@ export const AffiliatesTab: React.FC<AffiliatesTabProps> = ({ dateRange }) => {
                 <p className="text-sm text-slate-400">Receita de Afiliados</p>
                 <p className="text-xl font-bold text-white">
                   R$ {totalMetrics.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-slate-800/30 border-slate-700">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="w-5 h-5 text-purple-400" />
-              <div>
-                <p className="text-sm text-slate-400">Comissões Pagas</p>
-                <p className="text-xl font-bold text-white">
-                  R$ {totalMetrics.commission.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
               </div>
             </div>
