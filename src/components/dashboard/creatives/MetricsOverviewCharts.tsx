@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -53,7 +52,7 @@ export const MetricsOverviewCharts: React.FC<MetricsOverviewChartsProps> = ({ cr
   const formatCurrency = (value: number) => 
     `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 
-  const formatPercentage = (value: number) => `${value.toFixed(1)}%`;
+  const formatROI = (value: number) => `${value.toFixed(2)}x`;
 
   const getRankingBadge = (index: number) => {
     switch (index) {
@@ -98,7 +97,7 @@ export const MetricsOverviewCharts: React.FC<MetricsOverviewChartsProps> = ({ cr
                     {formatCurrency(creative.gross_sales)}
                   </p>
                   <p className="text-slate-400 text-xs">
-                    ROI: {formatPercentage(creative.roi)}
+                    ROI: {formatROI(creative.roi)}
                   </p>
                 </div>
               </div>
@@ -136,7 +135,7 @@ export const MetricsOverviewCharts: React.FC<MetricsOverviewChartsProps> = ({ cr
                 </div>
                 <div className="text-right">
                   <p className="text-blue-400 font-bold text-sm">
-                    {formatPercentage(creative.roi)}
+                    {formatROI(creative.roi)}
                   </p>
                   <p className="text-slate-400 text-xs">
                     {formatCurrency(creative.profit)} lucro

@@ -26,7 +26,7 @@ interface TopTenChartProps {
 const metricOptions = [
   { value: 'amount_spent', label: 'Valor Gasto', color: '#ef4444' },
   { value: 'sales_count', label: 'Qtd de Vendas', color: '#22c55e' },
-  { value: 'roi', label: 'ROI %', color: '#3b82f6' },
+  { value: 'roi', label: 'ROI', color: '#3b82f6' },
   { value: 'profit', label: 'Lucro', color: '#8b5cf6' },
   { value: 'gross_sales', label: 'Vendas Bruto', color: '#f59e0b' },
   { value: 'views_3s', label: 'Views 3s', color: '#06b6d4' },
@@ -55,7 +55,10 @@ export const TopTenChart: React.FC<TopTenChartProps> = ({
     }));
 
   const formatValue = (value: number) => {
-    if (selectedMetric.includes('rate') || selectedMetric === 'roi' || selectedMetric === 'ctr') {
+    if (selectedMetric === 'roi') {
+      return value.toFixed(2);
+    }
+    if (selectedMetric.includes('rate') || selectedMetric === 'ctr') {
       return `${value.toFixed(1)}%`;
     }
     if (selectedMetric.includes('spent') || selectedMetric.includes('sales') || selectedMetric === 'profit' || selectedMetric === 'cpa') {

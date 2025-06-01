@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { MetricsOverviewCharts } from "./creatives/MetricsOverviewCharts";
 import { TimeSeriesChart } from "./creatives/TimeSeriesChart";
@@ -39,13 +40,14 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
     revenue: acc.revenue + creative.gross_sales,
   }), { spent: 0, views: 0, sales: 0, revenue: 0 });
 
-  const avgROI = totalMetrics.spent > 0 ? (totalMetrics.revenue / totalMetrics.spent) * 100 : 0;
+  // Calcular ROI médio usando a fórmula correta: receita / investimento
+  const avgROI = totalMetrics.spent > 0 ? totalMetrics.revenue / totalMetrics.spent : 0;
 
   const exportToCSV = () => {
     const headers = [
       'Criativo', 'Campanha', 'Período', 'Valor Gasto', 'Views 3s', 'Views 75%', 'Views Total', 'Clicks',
       'PR Hook %', 'Hook Rate %', 'Body Rate %', 'CTA %', 'CTR %', 'Conv. Body %',
-      'Qtd Vendas', 'Vendas Bruto', 'Lucro', 'CPA', 'ROI %', 'Status'
+      'Qtd Vendas', 'Vendas Bruto', 'Lucro', 'CPA', 'ROI', 'Status'
     ];
     
     const csvData = [
@@ -69,7 +71,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
         creative.gross_sales.toFixed(2),
         creative.profit.toFixed(2),
         creative.cpa.toFixed(2),
-        creative.roi.toFixed(1),
+        creative.roi.toFixed(2),
         creative.status
       ].join(','))
     ].join('\n');

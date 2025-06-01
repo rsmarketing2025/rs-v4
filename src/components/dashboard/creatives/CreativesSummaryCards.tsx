@@ -70,7 +70,7 @@ export const CreativesSummaryCards: React.FC<CreativesSummaryCardsProps> = ({
             <div>
               <p className="text-sm text-slate-400">ROI Médio</p>
               <p className="text-xl font-bold text-white">
-                {avgROI.toFixed(1)}%
+                {avgROI.toFixed(2)}x
               </p>
             </div>
           </div>

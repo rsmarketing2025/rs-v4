@@ -30,7 +30,7 @@ const metricOptions = [
   { value: 'amount_spent', label: 'Valor Gasto', color: '#ef4444' },
   { value: 'gross_sales', label: 'Receita Bruta', color: '#22c55e' },
   { value: 'profit', label: 'Lucro', color: '#3b82f6' },
-  { value: 'roi', label: 'ROI %', color: '#8b5cf6' },
+  { value: 'roi', label: 'ROI', color: '#8b5cf6' },
   { value: 'sales_count', label: 'Qtd de Vendas', color: '#f59e0b' },
   { value: 'views_3s', label: 'Views 3s', color: '#06b6d4' },
   { value: 'ctr', label: 'CTR %', color: '#ec4899' },
@@ -102,7 +102,10 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ creatives, dat
   const { timeSeriesData, creativesToShow } = generateTimeSeriesData();
 
   const formatValue = (value: number) => {
-    if (selectedMetric.includes('rate') || selectedMetric === 'roi' || selectedMetric === 'ctr') {
+    if (selectedMetric === 'roi') {
+      return value.toFixed(2);
+    }
+    if (selectedMetric.includes('rate') || selectedMetric === 'ctr') {
       return `${value.toFixed(1)}%`;
     }
     if (selectedMetric.includes('spent') || selectedMetric.includes('sales') || selectedMetric === 'profit') {
@@ -112,7 +115,10 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ creatives, dat
   };
 
   const formatTooltipValue = (value: number) => {
-    if (selectedMetric.includes('rate') || selectedMetric === 'roi' || selectedMetric === 'ctr') {
+    if (selectedMetric === 'roi') {
+      return value.toFixed(2);
+    }
+    if (selectedMetric.includes('rate') || selectedMetric === 'ctr') {
       return `${value.toFixed(2)}%`;
     }
     if (selectedMetric.includes('spent') || selectedMetric.includes('sales') || selectedMetric === 'profit') {

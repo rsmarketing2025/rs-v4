@@ -88,7 +88,7 @@ export const CreativesTable: React.FC<CreativesTableProps> = ({
                 <TableHead className="text-slate-300">Vendas Bruto</TableHead>
                 <TableHead className="text-slate-300">Lucro</TableHead>
                 <TableHead className="text-slate-300">CPA</TableHead>
-                <TableHead className="text-slate-300">ROI %</TableHead>
+                <TableHead className="text-slate-300">ROI</TableHead>
                 <TableHead className="text-slate-300">Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -162,8 +162,8 @@ export const CreativesTable: React.FC<CreativesTableProps> = ({
                     <TableCell className="text-slate-300">
                       R$ {creative.cpa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </TableCell>
-                    <TableCell className={`${creative.roi >= 100 ? 'text-green-400' : 'text-orange-400'}`}>
-                      {creative.roi.toFixed(1)}%
+                    <TableCell className={`${creative.roi >= 1 ? 'text-green-400' : 'text-orange-400'}`}>
+                      {creative.roi.toFixed(2)}x
                     </TableCell>
                     <TableCell>
                       <Badge 
