@@ -27,7 +27,8 @@ export const ChartPermissions: React.FC<ChartPermissionsProps> = ({
     'roi_analysis': 'Análise de ROI',
     'sales_summary': 'Resumo de Vendas',
     'affiliate_performance': 'Performance de Afiliados',
-    'revenue_breakdown': 'Detalhamento de Receita'
+    'revenue_breakdown': 'Detalhamento de Receita',
+    'creatives_sales': 'Vendas por Criativo'
   };
 
   const pageLabels: Record<string, string> = {
@@ -39,7 +40,7 @@ export const ChartPermissions: React.FC<ChartPermissionsProps> = ({
 
   const chartsByPage = {
     'creatives': ['performance_overview', 'time_series', 'top_creatives', 'metrics_comparison'],
-    'sales': ['sales_summary', 'conversion_funnel', 'time_series'],
+    'sales': ['sales_summary', 'conversion_funnel', 'time_series', 'creatives_sales'],
     'affiliates': ['affiliate_performance', 'time_series'],
     'revenue': ['revenue_breakdown', 'roi_analysis', 'time_series']
   };

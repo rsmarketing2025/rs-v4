@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +9,7 @@ import { Search, DollarSign, ShoppingCart, TrendingUp, CreditCard, Download } fr
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SalesChart } from "./SalesChart";
+import { CreativesSalesChart } from "./CreativesSalesChart";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -214,8 +214,9 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
         </Card>
       </div>
 
-      {/* Chart */}
+      {/* Charts */}
       <SalesChart sales={filteredSales} />
+      <CreativesSalesChart sales={filteredSales} />
 
       {/* Filters */}
       <Card className="bg-slate-800/30 border-slate-700">

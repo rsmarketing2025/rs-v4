@@ -31,25 +31,27 @@ export const SalesChart: React.FC<SalesChartProps> = ({ sales }) => {
     .map(([date, revenue]) => ({ date, revenue }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  // Prepare payment method distribution
-  const paymentDistribution = sales.reduce((acc, sale) => {
-    const method = sale.payment_method;
-    acc[method] = (acc[method] || 0) + 1;
+  // Prepare sales status distribution
+  const statusDistribution = sales.reduce((acc, sale) => {
+    const status = sale.status;
+    acc[status] = (acc[status] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  const paymentData = Object.entries(paymentDistribution).map(([method, count]) => ({
-    name: method === 'pix' ? 'PIX' : method === 'cartao_credito' ? 'Cartão' : method === 'boleto' ? 'Boleto' : method,
+  const statusData = Object.entries(statusDistribution).map(([status, count]) => ({
+    name: status === 'completed' ? 'Concluído' : 
+          status === 'refunded' ? 'Reembolsado' : 
+          status === 'chargeback' ? 'Chargeback' : status,
     value: count
   }));
 
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
+  const COLORS = ['#10b981', '#ef4444', '#f59e0b', '#3b82f6'];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card className="bg-slate-800/30 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white">Receita Diária</CardTitle>
+          <CardTitle className="text-white">Receita</CardTitle>
           <CardDescription className="text-slate-400">
             Evolução da receita ao longo do tempo
           </CardDescription>
@@ -91,16 +93,16 @@ export const SalesChart: React.FC<SalesChartProps> = ({ sales }) => {
 
       <Card className="bg-slate-800/30 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white">Métodos de Pagamento</CardTitle>
+          <CardTitle className="text-white">Status das Vendas</CardTitle>
           <CardDescription className="text-slate-400">
-            Distribuição por forma de pagamento
+            Distribuição por status da venda
           </CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
-                data={paymentData}
+                data={statusData}
                 cx="50%"
                 cy="50%"
                 outerRadius={100}
@@ -108,7 +110,7 @@ export const SalesChart: React.FC<SalesChartProps> = ({ sales }) => {
                 dataKey="value"
                 label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
               >
-                {paymentData.map((entry, index) => (
+                {statusData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
