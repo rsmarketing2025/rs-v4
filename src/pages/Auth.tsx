@@ -13,7 +13,7 @@ const Auth = () => {
           <img 
             src="https://recuperacaoexponencial.com.br/wp-content/uploads/2025/06/ChatGPT-Image-31-de-mai.-de-2025-23_21_38.png" 
             alt="Logo da Empresa" 
-            className="h-16 w-auto mx-auto mb-4"
+            className="h-80 w-auto mx-auto mb-4"
           />
         </div>
         
