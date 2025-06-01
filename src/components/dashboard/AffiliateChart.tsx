@@ -19,8 +19,8 @@ interface AffiliateChartProps {
 export const AffiliateChart: React.FC<AffiliateChartProps> = ({ affiliates }) => {
   // Top 10 affiliates by revenue
   const topAffiliates = affiliates.slice(0, 10).map(affiliate => ({
-    name: affiliate.affiliate_name.length > 15 
-      ? affiliate.affiliate_name.substring(0, 15) + '...' 
+    name: affiliate.affiliate_name.length > 10 
+      ? affiliate.affiliate_name.substring(0, 10) + '...' 
       : affiliate.affiliate_name,
     revenue: affiliate.total_revenue,
     conversion: affiliate.conversion_rate,
@@ -37,20 +37,20 @@ export const AffiliateChart: React.FC<AffiliateChartProps> = ({ affiliates }) =>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={400}>
-          <BarChart data={topAffiliates} layout="vertical">
+          <BarChart data={topAffiliates}>
             <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
             <XAxis 
-              type="number" 
-              stroke="#94a3b8"
-              fontSize={12}
-              tickFormatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`}
-            />
-            <YAxis 
-              type="category" 
               dataKey="name" 
               stroke="#94a3b8"
               fontSize={12}
-              width={120}
+              angle={-45}
+              textAnchor="end"
+              height={80}
+            />
+            <YAxis 
+              stroke="#94a3b8"
+              fontSize={12}
+              tickFormatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`}
             />
             <Tooltip 
               contentStyle={{ 
@@ -64,7 +64,7 @@ export const AffiliateChart: React.FC<AffiliateChartProps> = ({ affiliates }) =>
                 'Receita'
               ]}
             />
-            <Bar dataKey="revenue" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+            <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
