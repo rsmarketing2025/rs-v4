@@ -72,17 +72,25 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, onUse
         canView: permission.can_view ?? true
       })) || [];
 
-      // Fill in missing permissions with default values
+      // Fill in missing permissions with default values - using correct chart names
       const defaultPermissions = [
+        // Criativos
         { chartType: 'performance_overview', page: 'creatives', canView: true },
         { chartType: 'time_series', page: 'creatives', canView: true },
         { chartType: 'top_creatives', page: 'creatives', canView: true },
         { chartType: 'metrics_comparison', page: 'creatives', canView: true },
+        
+        // Vendas
         { chartType: 'sales_summary', page: 'sales', canView: true },
         { chartType: 'conversion_funnel', page: 'sales', canView: true },
         { chartType: 'time_series', page: 'sales', canView: true },
+        { chartType: 'creatives_sales', page: 'sales', canView: true },
+        
+        // Afiliados
         { chartType: 'affiliate_performance', page: 'affiliates', canView: true },
         { chartType: 'time_series', page: 'affiliates', canView: true },
+        
+        // Receita
         { chartType: 'revenue_breakdown', page: 'revenue', canView: true },
         { chartType: 'roi_analysis', page: 'revenue', canView: true },
         { chartType: 'time_series', page: 'revenue', canView: true },

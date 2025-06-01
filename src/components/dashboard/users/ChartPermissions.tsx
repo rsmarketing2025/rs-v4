@@ -19,16 +19,23 @@ export const ChartPermissions: React.FC<ChartPermissionsProps> = ({
   onPermissionChange
 }) => {
   const chartTypeLabels: Record<string, string> = {
-    'performance_overview': 'Visão Geral de Performance',
-    'time_series': 'Séries Temporais',
-    'top_creatives': 'Top Criativos',
+    // Criativos
+    'performance_overview': 'Resumo de Performance dos Criativos',
+    'time_series': 'Performance ao Longo do Tempo',
+    'top_creatives': 'Top 10 Criativos',
     'metrics_comparison': 'Comparação de Métricas',
-    'conversion_funnel': 'Funil de Conversão',
-    'roi_analysis': 'Análise de ROI',
+    
+    // Vendas
     'sales_summary': 'Resumo de Vendas',
-    'affiliate_performance': 'Performance de Afiliados',
+    'conversion_funnel': 'Funil de Conversão',
+    'creatives_sales': 'Vendas por Criativo',
+    
+    // Afiliados
+    'affiliate_performance': 'Top Afiliados - Receita',
+    
+    // Receita
     'revenue_breakdown': 'Detalhamento de Receita',
-    'creatives_sales': 'Vendas por Criativo'
+    'roi_analysis': 'Análise de ROI'
   };
 
   const pageLabels: Record<string, string> = {
