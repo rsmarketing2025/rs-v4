@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -15,6 +14,9 @@ interface CreativeData {
   views_3s: number;
   ctr: number;
   conv_body_rate: number;
+  pr_hook_rate: number;
+  hook_rate: number;
+  body_rate: number;
   start_date: string;
   end_date: string;
 }
@@ -32,7 +34,10 @@ const metricOptions = [
   { value: 'sales_count', label: 'Qtd de Vendas', color: '#f59e0b' },
   { value: 'views_3s', label: 'Views 3s', color: '#06b6d4' },
   { value: 'ctr', label: 'CTR %', color: '#ec4899' },
-  { value: 'conv_body_rate', label: 'Conv. Body %', color: '#10b981' }
+  { value: 'conv_body_rate', label: 'Conv. Body %', color: '#10b981' },
+  { value: 'pr_hook_rate', label: 'PR Hook %', color: '#f97316' },
+  { value: 'hook_rate', label: 'Hook Rate %', color: '#84cc16' },
+  { value: 'body_rate', label: 'Body Rate %', color: '#a855f7' }
 ];
 
 const COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899', '#10b981', '#f97316', '#84cc16'];
