@@ -72,7 +72,24 @@ serve(async (req) => {
 
     console.log('Admin verified:', user.id)
 
-    const { formData } = await req.json()
+    // Parse request body properly
+    let requestBody;
+    try {
+      const bodyText = await req.text();
+      console.log('Request body text:', bodyText);
+      
+      if (!bodyText) {
+        throw new Error('Request body is empty');
+      }
+      
+      requestBody = JSON.parse(bodyText);
+      console.log('Parsed request body:', requestBody);
+    } catch (parseError) {
+      console.error('Error parsing request body:', parseError);
+      throw new Error('Invalid JSON in request body');
+    }
+
+    const { formData } = requestBody;
     
     console.log('Creating user with data:', {
       email: formData.email,

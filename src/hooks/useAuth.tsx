@@ -95,13 +95,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             checkAdminStatus(session.user.id);
           }, 0);
 
-          // Show welcome message on successful login
+          // Show welcome message and redirect on successful login
           if (event === 'SIGNED_IN') {
             setTimeout(() => {
               toast({
                 title: "Bem-vindo!",
                 description: "Login realizado com sucesso.",
               });
+              
+              // Redirect to dashboard if currently on auth page
+              if (window.location.pathname === '/auth') {
+                window.location.href = '/dashboard';
+              }
             }, 500);
           }
 
