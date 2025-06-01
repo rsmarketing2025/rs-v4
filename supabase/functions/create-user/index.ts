@@ -32,21 +32,33 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     )
 
-    // Verify the requesting user is an admin
+    // Verify the requesting user is authenticated
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.error('Missing or invalid authorization header')
       throw new Error('Authorization header is required')
     }
 
     const token = authHeader.replace('Bearer ', '')
+    console.log('Received token (first 20 chars):', token.substring(0, 20))
+
+    // Verify the token and get user
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
     
-    if (authError || !user) {
-      throw new Error('Invalid authentication')
+    if (authError) {
+      console.error('Auth error:', authError)
+      throw new Error(`Invalid authentication: ${authError.message}`)
     }
 
+    if (!user) {
+      console.error('No user found for token')
+      throw new Error('Invalid authentication: User not found')
+    }
+
+    console.log('Authenticated user:', user.id)
+
     // Check if user is admin
-    const { data: userRole, error: roleError } = await supabaseClient
+    const { data: userRole, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
@@ -54,8 +66,11 @@ serve(async (req) => {
       .single()
 
     if (roleError || !userRole) {
+      console.error('Role check failed:', roleError)
       throw new Error('Admin access required')
     }
+
+    console.log('Admin verified:', user.id)
 
     const { formData } = await req.json()
     
@@ -64,6 +79,11 @@ serve(async (req) => {
       fullName: formData.fullName,
       role: formData.role
     })
+
+    // Validate required fields
+    if (!formData.email || !formData.password || !formData.fullName) {
+      throw new Error('Email, password, and full name are required')
+    }
 
     // Create user via Supabase Auth Admin API
     const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -77,11 +97,11 @@ serve(async (req) => {
 
     if (createError) {
       console.error('Error creating user:', createError)
-      throw createError
+      throw new Error(`User creation failed: ${createError.message}`)
     }
 
     if (!userData.user) {
-      throw new Error('User creation failed')
+      throw new Error('User creation failed - no user returned')
     }
 
     console.log('User created successfully:', userData.user.id)
@@ -97,7 +117,8 @@ serve(async (req) => {
 
     if (profileError) {
       console.error('Error updating profile:', profileError)
-      throw profileError
+      // Don't throw here as user was created successfully
+      console.warn('Profile update failed but user was created')
     }
 
     // Set user role
@@ -108,7 +129,8 @@ serve(async (req) => {
 
     if (roleUpdateError) {
       console.error('Error updating role:', roleUpdateError)
-      throw roleUpdateError
+      // Don't throw here as user was created successfully
+      console.warn('Role update failed but user was created')
     }
 
     // Set page permissions
@@ -133,7 +155,7 @@ serve(async (req) => {
 
       if (pagePermError) {
         console.error('Error setting page permissions:', pagePermError)
-        throw pagePermError
+        console.warn('Page permissions update failed but user was created')
       }
     }
 
@@ -160,7 +182,7 @@ serve(async (req) => {
 
       if (chartPermError) {
         console.error('Error setting chart permissions:', chartPermError)
-        throw chartPermError
+        console.warn('Chart permissions update failed but user was created')
       }
     }
 
@@ -179,13 +201,31 @@ serve(async (req) => {
     )
   } catch (error) {
     console.error('Function error:', error)
+    
+    let status = 400;
+    let errorMessage = error.message || 'Erro interno do servidor';
+    
+    // Set appropriate status codes
+    if (errorMessage.includes('Invalid authentication') || 
+        errorMessage.includes('Authorization header is required') ||
+        errorMessage.includes('User not found')) {
+      status = 401;
+    } else if (errorMessage.includes('Admin access required')) {
+      status = 403;
+    } else if (errorMessage.includes('User creation failed') ||
+               errorMessage.includes('required')) {
+      status = 400;
+    } else {
+      status = 500;
+    }
+    
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Erro interno do servidor'
+        error: errorMessage
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
+        status: status,
       },
     )
   }

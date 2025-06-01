@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { User, Shield, ShieldCheck, X } from 'lucide-react';
 import { ChartPermissions } from './ChartPermissions';
@@ -70,6 +71,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
   });
   const [creating, setCreating] = useState(false);
   const { toast } = useToast();
+  const { session, refreshSession } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,27 +80,54 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
     try {
       console.log('Submitting user creation form with data:', formData);
 
-      // Get current session for authorization
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session) {
+      // Ensure we have a valid session
+      if (!session) {
         throw new Error('Você precisa estar logado para criar usuários');
       }
+
+      // Check if session is expired or about to expire (within 1 minute)
+      const now = Date.now();
+      const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
+      
+      if (expiresAt < now + 60000) { // Expires within 1 minute
+        console.log('Session expired or about to expire, refreshing...');
+        try {
+          await refreshSession();
+          // Get the new session after refresh
+          const { data: { session: newSession } } = await supabase.auth.getSession();
+          if (!newSession) {
+            throw new Error('Falha ao renovar sessão. Faça login novamente.');
+          }
+        } catch (refreshError) {
+          console.error('Failed to refresh session:', refreshError);
+          throw new Error('Sessão expirada. Faça login novamente.');
+        }
+      }
+
+      // Get the current session after potential refresh
+      const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !currentSession?.access_token) {
+        throw new Error('Sessão inválida. Faça login novamente.');
+      }
+
+      console.log('Using session with token:', currentSession.access_token.substring(0, 20) + '...');
 
       // Call the Edge Function to create user
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: { formData },
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${currentSession.access_token}`,
+          'Content-Type': 'application/json',
         },
       });
 
       if (error) {
         console.error('Edge function error:', error);
-        throw error;
+        throw new Error(error.message || 'Erro ao chamar função de criação de usuário');
       }
 
-      if (data.error) {
+      if (data?.error) {
         console.error('User creation error:', data.error);
         throw new Error(data.error);
       }
@@ -114,9 +143,19 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
       onClose();
     } catch (error: any) {
       console.error('Error creating user:', error);
+      
+      let errorMessage = error.message || "Ocorreu um erro ao criar o usuário.";
+      
+      // Handle specific error cases
+      if (errorMessage.includes('Invalid authentication') || errorMessage.includes('refresh_token_not_found')) {
+        errorMessage = "Sessão expirada. Por favor, faça login novamente.";
+      } else if (errorMessage.includes('Admin access required')) {
+        errorMessage = "Você não tem permissão para criar usuários. Acesso de administrador necessário.";
+      }
+      
       toast({
         title: "Erro ao criar usuário",
-        description: error.message || "Ocorreu um erro ao criar o usuário.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
