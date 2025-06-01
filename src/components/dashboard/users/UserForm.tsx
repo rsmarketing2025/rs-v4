@@ -76,66 +76,34 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
     setCreating(true);
 
     try {
-      // Create user via Supabase Auth Admin
-      const { data, error } = await supabase.auth.admin.createUser({
-        email: formData.email,
-        password: formData.password,
-        user_metadata: {
-          full_name: formData.fullName
+      console.log('Submitting user creation form with data:', formData);
+
+      // Get current session for authorization
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        throw new Error('Você precisa estar logado para criar usuários');
+      }
+
+      // Call the Edge Function to create user
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: { formData },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         },
-        email_confirm: true
       });
 
-      if (error) throw error;
-      if (!data.user) throw new Error('Usuário não foi criado');
-
-      // Update profile with additional information
-      await supabase
-        .from('profiles')
-        .update({
-          username: formData.username,
-          phone: formData.phone
-        })
-        .eq('id', data.user.id);
-
-      // Set user role if admin
-      if (formData.role === 'admin') {
-        await supabase
-          .from('user_roles')
-          .update({ role: 'admin' })
-          .eq('user_id', data.user.id);
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
       }
 
-      // Set page permissions
-      const pagePermissions = Object.entries(formData.pagePermissions)
-        .filter(([_, canAccess]) => canAccess)
-        .map(([page, canAccess]) => ({
-          user_id: data.user.id,
-          page: page as 'creatives' | 'sales' | 'affiliates' | 'revenue',
-          can_access: canAccess
-        }));
-
-      if (pagePermissions.length > 0) {
-        await supabase
-          .from('user_page_permissions')
-          .upsert(pagePermissions);
+      if (data.error) {
+        console.error('User creation error:', data.error);
+        throw new Error(data.error);
       }
 
-      // Set chart permissions with proper type casting
-      const chartPermissions = formData.chartPermissions
-        .filter(permission => permission.canView)
-        .map(permission => ({
-          user_id: data.user.id,
-          chart_type: permission.chartType as 'performance_overview' | 'time_series' | 'top_creatives' | 'metrics_comparison' | 'conversion_funnel' | 'roi_analysis' | 'sales_summary' | 'affiliate_performance' | 'revenue_breakdown',
-          page: permission.page as 'creatives' | 'sales' | 'affiliates' | 'revenue',
-          can_view: permission.canView
-        }));
-
-      if (chartPermissions.length > 0) {
-        await supabase
-          .from('user_chart_permissions')
-          .upsert(chartPermissions);
-      }
+      console.log('User created successfully:', data);
 
       toast({
         title: "Usuário criado com sucesso!",
