@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { DollarSign, TrendingUp } from 'lucide-react';
 
@@ -25,7 +26,7 @@ export const MetricsOverviewCharts: React.FC<MetricsOverviewChartsProps> = ({ cr
     c.amount_spent > 0 || c.sales_count > 0 || c.gross_sales > 0
   );
 
-  // Dados para gráfico de barras de investimento vs receita
+  // Dados para gráfico de barras de investimento vs receita - TODOS os criativos
   const investmentData = nonZeroCreatives
     .map(creative => ({
       name: creative.creative_name.length > 15 
@@ -36,8 +37,10 @@ export const MetricsOverviewCharts: React.FC<MetricsOverviewChartsProps> = ({ cr
       revenue: creative.gross_sales,
       profit: creative.profit
     }))
-    .sort((a, b) => b.revenue - a.revenue)
-    .slice(0, 15); // Limitar para melhor visualização
+    .sort((a, b) => b.revenue - a.revenue);
+
+  // Calculate minimum width based on number of items for better visualization
+  const minChartWidth = Math.max(1200, investmentData.length * 80);
 
   // Top 5 criativos para cards
   const top5ByRevenue = [...nonZeroCreatives]
@@ -152,16 +155,28 @@ export const MetricsOverviewCharts: React.FC<MetricsOverviewChartsProps> = ({ cr
         </Card>
       </div>
 
-      {/* Gráfico de barras - Investimento vs Receita - Full Width */}
+      {/* Gráfico de barras - Investimento vs Receita - TODOS os criativos com scroll horizontal */}
       <Card className="bg-slate-800/30 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white">Investimento vs Receita - Panorama Geral</CardTitle>
+          <CardTitle className="text-white flex items-center justify-between">
+            <span>Investimento vs Receita - Panorama Geral</span>
+            <span className="text-sm text-slate-400 font-normal">
+              {investmentData.length} criativos
+            </span>
+          </CardTitle>
+          <p className="text-slate-400 text-sm">
+            Use a barra de rolagem horizontal para navegar por todos os criativos
+          </p>
         </CardHeader>
         <CardContent>
-          <div className="h-80 w-full overflow-x-auto">
-            <div style={{ minWidth: Math.max(800, investmentData.length * 60) }}>
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={investmentData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+          <ScrollArea className="w-full border border-slate-700/50 rounded-lg">
+            <div style={{ width: minChartWidth, minWidth: minChartWidth }}>
+              <ResponsiveContainer width={minChartWidth} height={400}>
+                <BarChart 
+                  data={investmentData} 
+                  margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                  barCategoryGap="15%"
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis 
                     dataKey="name" 
@@ -169,7 +184,8 @@ export const MetricsOverviewCharts: React.FC<MetricsOverviewChartsProps> = ({ cr
                     fontSize={11}
                     angle={-45}
                     textAnchor="end"
-                    height={80}
+                    height={100}
+                    interval={0}
                   />
                   <YAxis 
                     stroke="#9ca3af" 
@@ -197,12 +213,26 @@ export const MetricsOverviewCharts: React.FC<MetricsOverviewChartsProps> = ({ cr
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          </div>
+            <ScrollBar orientation="horizontal" className="bg-slate-800/50" />
+          </ScrollArea>
+          
           {investmentData.length === 0 && (
             <div className="flex items-center justify-center h-80">
               <p className="text-slate-400 text-center">
                 Nenhum dado de investimento/receita encontrado para o período selecionado.
               </p>
+            </div>
+          )}
+          
+          {/* Visual indicator for scroll when there are many creatives */}
+          {investmentData.length > 10 && (
+            <div className="mt-4 flex items-center justify-center gap-2 text-slate-400 text-xs">
+              <div className="flex gap-1">
+                <div className="w-2 h-2 bg-slate-600 rounded-full"></div>
+                <div className="w-2 h-2 bg-slate-500 rounded-full"></div>
+                <div className="w-2 h-2 bg-slate-400 rounded-full"></div>
+              </div>
+              <span>Deslize horizontalmente para ver mais criativos</span>
             </div>
           )}
         </CardContent>
