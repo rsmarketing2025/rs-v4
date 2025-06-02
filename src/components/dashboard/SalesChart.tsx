@@ -31,21 +31,52 @@ export const SalesChart: React.FC<SalesChartProps> = ({ sales }) => {
     .map(([date, revenue]) => ({ date, revenue }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  // Prepare sales status distribution
+  // Prepare sales status distribution with quantities and values
   const statusDistribution = sales.reduce((acc, sale) => {
     const status = sale.status;
-    acc[status] = (acc[status] || 0) + 1;
+    if (!acc[status]) {
+      acc[status] = { count: 0, value: 0 };
+    }
+    acc[status].count += 1;
+    acc[status].value += (sale.gross_value || 0);
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, { count: number; value: number }>);
 
-  const statusData = Object.entries(statusDistribution).map(([status, count]) => ({
+  const statusData = Object.entries(statusDistribution).map(([status, data]) => ({
     name: status === 'completed' ? 'Concluído' : 
           status === 'refunded' ? 'Reembolsado' : 
           status === 'chargeback' ? 'Chargeback' : status,
-    value: count
+    value: data.count,
+    monetaryValue: data.value
   }));
 
   const COLORS = ['#10b981', '#ef4444', '#f59e0b', '#3b82f6'];
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div 
+          style={{ 
+            backgroundColor: '#1e293b', 
+            border: '1px solid #475569',
+            borderRadius: '8px',
+            padding: '8px',
+            color: '#ffffff'
+          }}
+        >
+          <p style={{ color: '#ffffff', margin: '0 0 4px 0' }}>{data.name}</p>
+          <p style={{ color: '#ffffff', margin: '0 0 4px 0' }}>
+            Quantidade: {data.value}
+          </p>
+          <p style={{ color: '#ffffff', margin: '0' }}>
+            Valor: R$ {data.monetaryValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -114,14 +145,7 @@ export const SalesChart: React.FC<SalesChartProps> = ({ sales }) => {
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1e293b', 
-                  border: '1px solid #475569',
-                  borderRadius: '8px',
-                  color: '#fff'
-                }}
-              />
+              <Tooltip content={<CustomTooltip />} />
             </PieChart>
           </ResponsiveContainer>
         </CardContent>

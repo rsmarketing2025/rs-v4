@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -5,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Search, DollarSign, ShoppingCart, TrendingUp, CreditCard, Download } from "lucide-react";
+import { Search, DollarSign, ShoppingCart, RefreshCw, CreditCard, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SalesChart } from "./SalesChart";
@@ -93,11 +94,9 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   const totalMetrics = filteredSales.reduce((acc, sale) => ({
     revenue: acc.revenue + (sale.status === 'completed' ? (sale.gross_value || 0) : 0),
     orders: acc.orders + 1,
-    completedOrders: acc.completedOrders + (sale.status === 'completed' ? 1 : 0),
-    avgOrderValue: 0, // Will be calculated after
-  }), { revenue: 0, orders: 0, completedOrders: 0, avgOrderValue: 0 });
-
-  totalMetrics.avgOrderValue = totalMetrics.completedOrders > 0 ? totalMetrics.revenue / totalMetrics.completedOrders : 0;
+    refundedValue: acc.refundedValue + (sale.status === 'refunded' ? (sale.gross_value || 0) : 0),
+    chargebackValue: acc.chargebackValue + (sale.status === 'chargeback' ? (sale.gross_value || 0) : 0),
+  }), { revenue: 0, orders: 0, refundedValue: 0, chargebackValue: 0 });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -188,11 +187,11 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
         <Card className="bg-slate-800/30 border-slate-700">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <TrendingUp className="w-5 h-5 text-purple-400" />
+              <RefreshCw className="w-5 h-5 text-red-400" />
               <div>
-                <p className="text-sm text-slate-400">Pedidos Concluídos</p>
+                <p className="text-sm text-slate-400">Valor Reembolsado</p>
                 <p className="text-xl font-bold text-white">
-                  {totalMetrics.completedOrders.toLocaleString()}
+                  R$ {totalMetrics.refundedValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
               </div>
             </div>
@@ -204,9 +203,9 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
             <div className="flex items-center space-x-2">
               <CreditCard className="w-5 h-5 text-orange-400" />
               <div>
-                <p className="text-sm text-slate-400">Ticket Médio</p>
+                <p className="text-sm text-slate-400">Total de Chargeback</p>
                 <p className="text-xl font-bold text-white">
-                  R$ {totalMetrics.avgOrderValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  R$ {totalMetrics.chargebackValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
               </div>
             </div>
