@@ -186,6 +186,7 @@ export type Database = {
           affiliate_id: string | null
           affiliate_name: string | null
           commission_value: number | null
+          country: string | null
           created_at: string | null
           creative_name: string
           customer_email: string | null
@@ -199,6 +200,7 @@ export type Database = {
           order_id: string
           payment_method: string
           sale_date: string | null
+          state: string | null
           status: string
           tax_value: number | null
           updated_at: string | null
@@ -208,6 +210,7 @@ export type Database = {
           affiliate_id?: string | null
           affiliate_name?: string | null
           commission_value?: number | null
+          country?: string | null
           created_at?: string | null
           creative_name: string
           customer_email?: string | null
@@ -221,6 +224,7 @@ export type Database = {
           order_id: string
           payment_method: string
           sale_date?: string | null
+          state?: string | null
           status?: string
           tax_value?: number | null
           updated_at?: string | null
@@ -230,6 +234,7 @@ export type Database = {
           affiliate_id?: string | null
           affiliate_name?: string | null
           commission_value?: number | null
+          country?: string | null
           created_at?: string | null
           creative_name?: string
           customer_email?: string | null
@@ -243,6 +248,7 @@ export type Database = {
           order_id?: string
           payment_method?: string
           sale_date?: string | null
+          state?: string | null
           status?: string
           tax_value?: number | null
           updated_at?: string | null
@@ -290,6 +296,7 @@ export type Database = {
           cart_discount: number | null
           commission_cartpanda: number | null
           conversion_value: number | null
+          country: string | null
           created_at: string
           creative_name: string | null
           customer_email: string | null
@@ -303,6 +310,7 @@ export type Database = {
           payment_method: string
           profit_margin: number | null
           sale_date: string
+          state: string | null
           status: string
           tax_value: number | null
           total_value_with_taxes: number | null
@@ -316,6 +324,7 @@ export type Database = {
           cart_discount?: number | null
           commission_cartpanda?: number | null
           conversion_value?: number | null
+          country?: string | null
           created_at?: string
           creative_name?: string | null
           customer_email?: string | null
@@ -329,6 +338,7 @@ export type Database = {
           payment_method: string
           profit_margin?: number | null
           sale_date: string
+          state?: string | null
           status: string
           tax_value?: number | null
           total_value_with_taxes?: number | null
@@ -342,6 +352,7 @@ export type Database = {
           cart_discount?: number | null
           commission_cartpanda?: number | null
           conversion_value?: number | null
+          country?: string | null
           created_at?: string
           creative_name?: string | null
           customer_email?: string | null
@@ -355,6 +366,7 @@ export type Database = {
           payment_method?: string
           profit_margin?: number | null
           sale_date?: string
+          state?: string | null
           status?: string
           tax_value?: number | null
           total_value_with_taxes?: number | null

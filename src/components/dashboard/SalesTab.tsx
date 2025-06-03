@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Search, DollarSign, ShoppingCart, RefreshCw, CreditCard, Download } from "lucide-react";
+import { Search, DollarSign, ShoppingCart, RefreshCw, CreditCard, Download, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SalesChart } from "./SalesChart";
@@ -28,6 +28,8 @@ interface Sale {
   is_affiliate: boolean;
   affiliate_commission: number;
   sale_date: string;
+  country: string;
+  state: string;
 }
 
 interface SalesTabProps {
@@ -40,6 +42,8 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
+  const [countryFilter, setCountryFilter] = useState("all");
+  const [stateFilter, setStateFilter] = useState("all");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -86,10 +90,16 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
                          sale.customer_name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || sale.status === statusFilter;
     const matchesPayment = paymentFilter === "all" || sale.payment_method === paymentFilter;
-    return matchesSearch && matchesStatus && matchesPayment;
+    const matchesCountry = countryFilter === "all" || sale.country === countryFilter;
+    const matchesState = stateFilter === "all" || sale.state === stateFilter;
+    return matchesSearch && matchesStatus && matchesPayment && matchesCountry && matchesState;
   });
 
   const displayedSales = filteredSales.slice(0, 20);
+
+  // Get unique countries and states for filters
+  const uniqueCountries = [...new Set(sales.map(sale => sale.country).filter(Boolean))].sort();
+  const uniqueStates = [...new Set(sales.map(sale => sale.state).filter(Boolean))].sort();
 
   const totalMetrics = filteredSales.reduce((acc, sale) => ({
     revenue: acc.revenue + (sale.status === 'completed' ? (sale.gross_value || 0) : 0),
@@ -97,6 +107,31 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
     refundedValue: acc.refundedValue + (sale.status === 'refunded' ? (sale.gross_value || 0) : 0),
     chargebackValue: acc.chargebackValue + (sale.status === 'chargeback' ? (sale.gross_value || 0) : 0),
   }), { revenue: 0, orders: 0, refundedValue: 0, chargebackValue: 0 });
+
+  // Regional metrics
+  const regionalMetrics = filteredSales.reduce((acc, sale) => {
+    const country = sale.country || 'Não informado';
+    const state = sale.state || 'Não informado';
+    
+    if (!acc[country]) {
+      acc[country] = { orders: 0, revenue: 0, states: {} };
+    }
+    
+    acc[country].orders += 1;
+    if (sale.status === 'completed') {
+      acc[country].revenue += (sale.gross_value || 0);
+    }
+    
+    if (!acc[country].states[state]) {
+      acc[country].states[state] = { orders: 0, revenue: 0 };
+    }
+    acc[country].states[state].orders += 1;
+    if (sale.status === 'completed') {
+      acc[country].states[state].revenue += (sale.gross_value || 0);
+    }
+    
+    return acc;
+  }, {} as Record<string, { orders: number; revenue: number; states: Record<string, { orders: number; revenue: number }> }>);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -126,7 +161,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   };
 
   const exportToCSV = () => {
-    const headers = ['Pedido', 'Data', 'Cliente', 'Criativo', 'Status', 'Pagamento', 'Valor Bruto', 'Afiliado'];
+    const headers = ['Pedido', 'Data', 'Cliente', 'Criativo', 'Status', 'Pagamento', 'Valor Bruto', 'País', 'Estado', 'Afiliado'];
     const csvData = [
       headers.join(','),
       ...displayedSales.map(sale => [
@@ -137,6 +172,8 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
         getStatusLabel(sale.status),
         getPaymentMethodLabel(sale.payment_method),
         (sale.gross_value || 0).toFixed(2),
+        `"${sale.country || 'Não informado'}"`,
+        `"${sale.state || 'Não informado'}"`,
         sale.is_affiliate ? `"${sale.affiliate_name || 'Afiliado'}"` : '-'
       ].join(','))
     ].join('\n');
@@ -145,7 +182,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', 'vendas.csv');
+    link.setAttribute('download', 'vendas_regionais.csv');
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -213,6 +250,49 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
         </Card>
       </div>
 
+      {/* Regional Analysis Card */}
+      {Object.keys(regionalMetrics).length > 0 && (
+        <Card className="bg-slate-800/30 border-slate-700">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <MapPin className="w-5 h-5" />
+              Análise Regional
+            </CardTitle>
+            <CardDescription className="text-slate-400">
+              Distribuição de vendas por região
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Object.entries(regionalMetrics)
+                .sort(([,a], [,b]) => b.revenue - a.revenue)
+                .slice(0, 6)
+                .map(([country, data]) => (
+                <div key={country} className="bg-slate-900/50 p-4 rounded-lg border border-slate-700">
+                  <h4 className="text-white font-medium mb-2">{country}</h4>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Pedidos:</span>
+                      <span className="text-white">{data.orders}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Receita:</span>
+                      <span className="text-green-400">
+                        R$ {data.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Estados:</span>
+                      <span className="text-white">{Object.keys(data.states).length}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Charts */}
       <SalesChart sales={filteredSales} />
       <CreativesSalesChart sales={filteredSales} />
@@ -223,8 +303,8 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
           <CardTitle className="text-white">Filtros e Busca</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            <div className="relative">
               <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
               <Input
                 placeholder="Buscar por pedido, criativo ou cliente..."
@@ -234,7 +314,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px] bg-slate-900/50 border-slate-600 text-white">
+              <SelectTrigger className="bg-slate-900/50 border-slate-600 text-white">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent className="bg-slate-900 border-slate-700">
@@ -245,7 +325,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
               </SelectContent>
             </Select>
             <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-              <SelectTrigger className="w-full sm:w-[180px] bg-slate-900/50 border-slate-600 text-white">
+              <SelectTrigger className="bg-slate-900/50 border-slate-600 text-white">
                 <SelectValue placeholder="Pagamento" />
               </SelectTrigger>
               <SelectContent className="bg-slate-900 border-slate-700">
@@ -255,6 +335,41 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
                 <SelectItem value="boleto">Boleto</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={countryFilter} onValueChange={setCountryFilter}>
+              <SelectTrigger className="bg-slate-900/50 border-slate-600 text-white">
+                <SelectValue placeholder="País" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-900 border-slate-700">
+                <SelectItem value="all">Todos os Países</SelectItem>
+                {uniqueCountries.map(country => (
+                  <SelectItem key={country} value={country}>{country}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={stateFilter} onValueChange={setStateFilter}>
+              <SelectTrigger className="bg-slate-900/50 border-slate-600 text-white">
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-900 border-slate-700">
+                <SelectItem value="all">Todos os Estados</SelectItem>
+                {uniqueStates.map(state => (
+                  <SelectItem key={state} value={state}>{state}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button 
+              onClick={() => {
+                setSearchTerm("");
+                setStatusFilter("all");
+                setPaymentFilter("all");
+                setCountryFilter("all");
+                setStateFilter("all");
+              }}
+              variant="outline" 
+              className="border-slate-700 text-slate-300 hover:bg-slate-800"
+            >
+              Limpar Filtros
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -290,19 +405,21 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
                   <TableHead className="text-slate-300">Status</TableHead>
                   <TableHead className="text-slate-300">Pagamento</TableHead>
                   <TableHead className="text-slate-300">Valor Bruto</TableHead>
+                  <TableHead className="text-slate-300">País</TableHead>
+                  <TableHead className="text-slate-300">Estado</TableHead>
                   <TableHead className="text-slate-300">Afiliado</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-slate-400 py-8">
+                    <TableCell colSpan={10} className="text-center text-slate-400 py-8">
                       Carregando...
                     </TableCell>
                   </TableRow>
                 ) : displayedSales.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-slate-400 py-8">
+                    <TableCell colSpan={10} className="text-center text-slate-400 py-8">
                       Nenhuma venda encontrada
                     </TableCell>
                   </TableRow>
@@ -331,6 +448,12 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
                       </TableCell>
                       <TableCell className="text-slate-300">
                         R$ {(sale.gross_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {sale.country || '-'}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {sale.state || '-'}
                       </TableCell>
                       <TableCell className="text-slate-300">
                         {sale.is_affiliate ? (
