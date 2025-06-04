@@ -1,211 +1,153 @@
-
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { 
-  TrendingUp, 
-  DollarSign, 
-  Users, 
-  Eye, 
-  MousePointer, 
-  Target,
-  BarChart3
-} from "lucide-react";
+import { Calendar } from "@/components/ui/calendar"
+import { CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
+import { format } from "date-fns"
+import { DateRange } from "react-day-picker"
 import { CreativesTab } from "@/components/dashboard/CreativesTab";
 import { SalesTab } from "@/components/dashboard/SalesTab";
 import { AffiliatesTab } from "@/components/dashboard/AffiliatesTab";
 import { UsersTab } from "@/components/dashboard/UsersTab";
-import { KPICard } from "@/components/dashboard/KPICard";
-import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { useAuth } from "@/hooks/useAuth";
-import { useLocation } from "react-router-dom";
+import { BMTab } from "@/components/dashboard/BMTab";
 
-const Dashboard = () => {
+export default function Dashboard() {
+  const [activeTab, setActiveTab] = useState('creatives');
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
+    from: new Date(new Date().getFullYear(), new Date().getMonth() - 1, new Date().getDate()),
+    to: new Date(),
+  })
   const { isAdmin } = useAuth();
-  const location = useLocation();
-  const [activeTab, setActiveTab] = useState(() => {
-    // Set active tab based on current route
-    if (location.pathname === '/users') return "users";
-    return "creatives";
-  });
-  
-  const [dateRange, setDateRange] = useState({
-    from: new Date(new Date().setDate(new Date().getDate() - 30)),
-    to: new Date()
-  });
 
-  // Mock KPI data - will be replaced with real data from Supabase
-  const kpis = {
-    totalSpent: 42580.50,
-    totalRevenue: 128450.75,
-    totalOrders: 456,
-    roas: 3.02,
-    conversionRate: 4.8,
-    avgOrderValue: 281.69
+  const renderTabContent = () => {
+    if (activeTab === 'users' && !isAdmin) {
+      return (
+        <div className="text-center py-8">
+          <p className="text-slate-400">Você não tem permissão para acessar esta área.</p>
+        </div>
+      );
+    }
+
+    switch (activeTab) {
+      case 'creatives':
+        return <CreativesTab dateRange={dateRange} />;
+      case 'sales':
+        return <SalesTab dateRange={dateRange} />;
+      case 'affiliates':
+        return <AffiliatesTab dateRange={dateRange} />;
+      case 'users':
+        return <UsersTab />;
+      case 'bm':
+        return <BMTab />;
+      default:
+        return <CreativesTab dateRange={dateRange} />;
+    }
   };
 
-  // Update URL when tab changes
-  React.useEffect(() => {
-    if (activeTab === "users") {
-      window.history.pushState({}, '', '/users');
-    } else {
-      window.history.pushState({}, '', '/dashboard');
-    }
-  }, [activeTab]);
-
-  // Show users page when on /users route
-  if (location.pathname === '/users' && isAdmin) {
-    return (
-      <SidebarInset>
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 light:from-slate-50 light:via-slate-100 light:to-slate-50">
-          <div className="container mx-auto p-6">
-            {/* Header */}
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
-              <div className="flex items-center gap-4">
-                <SidebarTrigger className="text-white dark:text-white light:text-slate-900" />
-                <div>
-                  <h1 className="text-5xl font-bold text-white dark:text-white light:text-slate-900 mb-2">
-                    Dashboard
-                  </h1>
-                  <p className="text-slate-400 dark:text-slate-400 light:text-slate-600 text-lg">
-                    Gerenciamento de usuários
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row gap-3">
-                <ThemeToggle />
-              </div>
-            </div>
-
-            {/* Users Content */}
-            <Card className="bg-slate-900/50 dark:bg-slate-900/50 light:bg-white border-slate-800 dark:border-slate-800 light:border-slate-200 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <UsersTab />
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </SidebarInset>
-    );
-  }
-
   return (
-    <SidebarInset>
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 light:from-slate-50 light:via-slate-100 light:to-slate-50">
-        <div className="container mx-auto p-6">
-          {/* Header */}
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger className="text-white dark:text-white light:text-slate-900" />
-              <div>
-                <h1 className="text-5xl font-bold text-white dark:text-white light:text-slate-900 mb-2">
-                  Dashboard
-                </h1>
-                <p className="text-slate-400 dark:text-slate-400 light:text-slate-600 text-lg">
-                  Insights detalhados de Criativos e Métricas de vendas
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-3">
-              <DateRangePicker 
-                dateRange={dateRange} 
-                onDateRangeChange={setDateRange} 
-              />
-              <ThemeToggle />
-            </div>
-          </div>
-
-          {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
-            <KPICard
-              title="Total Investido"
-              value={`R$ ${kpis.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              change="+12.5%"
-              icon={DollarSign}
-              trend="up"
-            />
-            <KPICard
-              title="Receita Total"
-              value={`R$ ${kpis.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              change="+18.2%"
-              icon={TrendingUp}
-              trend="up"
-            />
-            <KPICard
-              title="Total de Pedidos"
-              value={kpis.totalOrders.toLocaleString()}
-              change="+15.8%"
-              icon={Target}
-              trend="up"
-            />
-            <KPICard
-              title="ROAS"
-              value={`${kpis.roas.toFixed(2)}x`}
-              change="+0.3x"
-              icon={BarChart3}
-              trend="up"
-            />
-            <KPICard
-              title="Taxa de Conversão"
-              value={`${kpis.conversionRate}%`}
-              change="+0.8%"
-              icon={MousePointer}
-              trend="up"
-            />
-            <KPICard
-              title="Ticket Médio"
-              value={`R$ ${kpis.avgOrderValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              change="+5.2%"
-              icon={DollarSign}
-              trend="up"
-            />
-          </div>
-
-          {/* Main Content Tabs */}
-          <Card className="bg-slate-900/50 dark:bg-slate-900/50 light:bg-white border-slate-800 dark:border-slate-800 light:border-slate-200 backdrop-blur-sm">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <CardHeader className="pb-4">
-                <TabsList className="grid w-full grid-cols-3 bg-slate-800/50 dark:bg-slate-800/50 light:bg-slate-100">
-                  <TabsTrigger value="creatives" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
-                    <Eye className="w-4 h-4 mr-2" />
-                    Criativos
-                  </TabsTrigger>
-                  <TabsTrigger value="sales" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
-                    <DollarSign className="w-4 h-4 mr-2" />
-                    Vendas
-                  </TabsTrigger>
-                  <TabsTrigger value="affiliates" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
-                    <Users className="w-4 h-4 mr-2" />
-                    Afiliados
-                  </TabsTrigger>
-                </TabsList>
-              </CardHeader>
-
-              <CardContent className="p-6">
-                <TabsContent value="creatives" className="mt-0">
-                  <CreativesTab dateRange={dateRange} />
-                </TabsContent>
-                
-                <TabsContent value="sales" className="mt-0">
-                  <SalesTab dateRange={dateRange} />
-                </TabsContent>
-                
-                <TabsContent value="affiliates" className="mt-0">
-                  <AffiliatesTab dateRange={dateRange} />
-                </TabsContent>
-              </CardContent>
-            </Tabs>
-          </Card>
+    <div className="flex-1 flex flex-col min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      <header className="flex items-center justify-between p-4 md:p-8">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger />
+          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
         </div>
-      </div>
-    </SidebarInset>
-  );
-};
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              id="date"
+              variant={"outline"}
+              className={cn(
+                "w-[300px] justify-start text-left font-normal",
+                !dateRange?.from && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {dateRange?.from ? (
+                dateRange.to ? (
+                  `${format(dateRange.from, "dd MMM yyyy")} - ${format(dateRange.to, "dd MMM yyyy")}`
+                ) : (
+                  format(dateRange.from, "dd MMM yyyy")
+                )
+              ) : (
+                <span>Pick a date</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <Calendar
+              mode="range"
+              defaultMonth={dateRange?.from}
+              selected={dateRange}
+              onSelect={setDateRange}
+              disabled={{ before: new Date('2024-01-01') }}
+              numberOfMonths={2}
+              pagedNavigation
+            />
+          </PopoverContent>
+        </Popover>
+      </header>
+      
+      <main className="flex-1 p-4 md:p-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Tabs */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={activeTab === 'creatives' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('creatives')}
+              className={activeTab === 'creatives' ? 'bg-blue-600 hover:bg-blue-700' : 'border-slate-600 text-slate-300 hover:bg-slate-700'}
+            >
+              Criativos
+            </Button>
+            <Button
+              variant={activeTab === 'sales' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('sales')}
+              className={activeTab === 'sales' ? 'bg-blue-600 hover:bg-blue-700' : 'border-slate-600 text-slate-300 hover:bg-slate-700'}
+            >
+              Vendas
+            </Button>
+            <Button
+              variant={activeTab === 'affiliates' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('affiliates')}
+              className={activeTab === 'affiliates' ? 'bg-blue-600 hover:bg-blue-700' : 'border-slate-600 text-slate-300 hover:bg-slate-700'}
+            >
+              Afiliados
+            </Button>
+            {isAdmin && (
+              <>
+                <Button
+                  variant={activeTab === 'users' ? 'default' : 'outline'}
+                  onClick={() => setActiveTab('users')}
+                  className={activeTab === 'users' ? 'bg-blue-600 hover:bg-blue-700' : 'border-slate-600 text-slate-300 hover:bg-slate-700'}
+                >
+                  Usuários
+                </Button>
+                <Button
+                  variant={activeTab === 'bm' ? 'default' : 'outline'}
+                  onClick={() => setActiveTab('bm')}
+                  className={activeTab === 'bm' ? 'bg-blue-600 hover:bg-blue-700' : 'border-slate-600 text-slate-300 hover:bg-slate-700'}
+                >
+                  Business Managers
+                </Button>
+              </>
+            )}
+          </div>
 
-export default Dashboard;
+          {/* Date Range Picker */}
+          {/* <DateRangePicker
+            date={dateRange}
+            setDate={setDateRange}
+          /> */}
+
+          {/* Tab Content */}
+          {renderTabContent()}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+const SidebarTrigger = () => {
+  return null;
+}
