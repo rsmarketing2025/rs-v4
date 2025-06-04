@@ -33,21 +33,13 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'revenue' | 'orders'>('revenue');
 
-  // Debug logs
-  console.log('CountrySalesChart - countryFilter:', countryFilter);
-  console.log('CountrySalesChart - sales sample:', sales.slice(0, 3));
-
   // Determinar se devemos mostrar estados ou países
   const showingStates = countryFilter !== "all";
-  console.log('CountrySalesChart - showingStates:', showingStates);
   
   // Filtrar vendas por país se um país específico estiver selecionado
   const countryFilteredSales = showingStates 
     ? sales.filter(sale => sale.country === countryFilter)
     : sales;
-  
-  console.log('CountrySalesChart - countryFilteredSales length:', countryFilteredSales.length);
-  console.log('CountrySalesChart - sample filtered sales states:', countryFilteredSales.slice(0, 5).map(s => s.state));
 
   // Calcular métricas por país ou estado
   const metrics = countryFilteredSales.reduce((acc, sale) => {
@@ -65,8 +57,6 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
     return acc;
   }, {} as Record<string, { orders: number; revenue: number }>);
 
-  console.log('CountrySalesChart - metrics keys:', Object.keys(metrics));
-
   // Converter para array e ordenar
   const chartDataPoints: ChartDataPoint[] = Object.entries(metrics)
     .map(([key, data]) => ({
@@ -76,14 +66,11 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
     }))
     .sort((a, b) => sortBy === 'revenue' ? b.revenue - a.revenue : b.orders - a.orders);
 
-  console.log('CountrySalesChart - chartDataPoints:', chartDataPoints);
-
   // Preparar dados do gráfico
   let chartData: ChartDataPoint[];
   if (showingStates) {
     // Mostrar todos os estados quando um país está selecionado
     chartData = chartDataPoints;
-    console.log('CountrySalesChart - showing states, chartData:', chartData);
   } else {
     // Para países: usar seleção múltipla
     const availableCountries = chartDataPoints
@@ -102,7 +89,6 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
     }, [chartDataPoints.length]);
 
     chartData = chartDataPoints.filter(item => item.country && selectedCountries.includes(item.country));
-    console.log('CountrySalesChart - showing countries, chartData:', chartData);
   }
 
   const handleCountryToggle = (country: string) => {
@@ -172,10 +158,6 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
                   {totalMetrics.orders.toLocaleString()}
                 </span>
               </div>
-            </div>
-            {/* Debug info */}
-            <div className="mt-2 text-xs text-yellow-400">
-              Debug: showingStates={showingStates ? 'true' : 'false'}, countryFilter="{countryFilter}", chartData.length={chartData.length}
             </div>
           </div>
           

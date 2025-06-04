@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -183,6 +184,9 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
     link.click();
     document.body.removeChild(link);
   };
+
+  // Debug log for SalesTab
+  console.log('SalesTab - countryFilter being passed to CountrySalesChart:', countryFilter);
 
   return (
     <div className="space-y-6">
