@@ -86,8 +86,23 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
 
   console.log('CountrySalesChart - Chart data points:', chartDataPoints);
 
-  // Preparar dados do gráfico
-  const chartData = chartDataPoints;
+  // Quando mostrando estados, usar todos os dados calculados
+  // Quando mostrando países, aplicar filtro de seleção múltipla
+  let chartData: ChartDataPoint[];
+  
+  if (showingStates) {
+    // Para estados: mostrar todos os estados do país selecionado
+    chartData = chartDataPoints;
+  } else {
+    // Para países: aplicar filtro de seleção múltipla
+    if (selectedCountries.length === 0) {
+      chartData = chartDataPoints;
+    } else {
+      chartData = chartDataPoints.filter(item => 
+        item.country && selectedCountries.includes(item.country)
+      );
+    }
+  }
   
   // Para países: inicializar com top 5 países se nenhum estiver selecionado
   React.useEffect(() => {
