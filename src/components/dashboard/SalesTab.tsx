@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -187,7 +188,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   return (
     <div className="space-y-6">
       <SalesSummaryCards totalMetrics={totalMetrics} />
-      <CountrySalesChart sales={filteredSales} countryFilter={countryFilter} />
+      <CountrySalesChart sales={filteredSales} />
       <SalesChart sales={filteredSales} />
       <CreativesSalesChart sales={filteredSales} />
       <SalesFilters
