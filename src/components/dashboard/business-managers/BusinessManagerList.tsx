@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/use-toast";
 import { BusinessManagerForm } from './BusinessManagerForm';
+import { BusinessManagerFilter } from './BusinessManagerFilter';
 
 interface BusinessManager {
   id: string;
@@ -30,6 +31,7 @@ export const BusinessManagerList: React.FC<BusinessManagerListProps> = ({ refres
   const [loading, setLoading] = useState(true);
   const [editingBM, setEditingBM] = useState<BusinessManager | null>(null);
   const [showTokens, setShowTokens] = useState<{ [key: string]: boolean }>({});
+  const [selectedBMs, setSelectedBMs] = useState<string[]>([]);
 
   // Function to truncate text if it exceeds 10 characters
   const truncateText = (text: string, maxLength: number = 10) => {
@@ -64,6 +66,12 @@ export const BusinessManagerList: React.FC<BusinessManagerListProps> = ({ refres
   useEffect(() => {
     fetchBusinessManagers();
   }, [user, refreshTrigger]);
+
+  // Filter business managers based on selected filters
+  const filteredBusinessManagers = businessManagers.filter(bm => {
+    if (selectedBMs.length === 0) return true;
+    return selectedBMs.includes(bm.bm_name);
+  });
 
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir esta conta de anúncio?')) return;
@@ -123,12 +131,35 @@ export const BusinessManagerList: React.FC<BusinessManagerListProps> = ({ refres
         />
       )}
 
+      {/* Filter Section */}
+      <Card className="bg-slate-900/50 border-slate-800">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <h3 className="text-lg font-medium text-white">Filtros</h3>
+            <BusinessManagerFilter
+              businessManagers={businessManagers}
+              selectedBMs={selectedBMs}
+              onFilterChange={setSelectedBMs}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       <Card className="bg-slate-900/50 border-slate-800">
         <CardContent className="p-6">
-          {businessManagers.length === 0 ? (
+          {filteredBusinessManagers.length === 0 ? (
             <div className="text-center text-slate-400 py-8">
-              <p className="mb-2">Nenhuma conta de anúncio encontrada</p>
-              <p className="text-sm">Adicione sua primeira conta para começar</p>
+              {businessManagers.length === 0 ? (
+                <>
+                  <p className="mb-2">Nenhuma conta de anúncio encontrada</p>
+                  <p className="text-sm">Adicione sua primeira conta para começar</p>
+                </>
+              ) : (
+                <>
+                  <p className="mb-2">Nenhuma conta encontrada com os filtros aplicados</p>
+                  <p className="text-sm">Ajuste os filtros para ver mais resultados</p>
+                </>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -144,7 +175,7 @@ export const BusinessManagerList: React.FC<BusinessManagerListProps> = ({ refres
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {businessManagers.map((bm) => (
+                  {filteredBusinessManagers.map((bm) => (
                     <TableRow key={bm.id} className="border-slate-700">
                       <TableCell className="text-white font-medium" title={bm.bm_name}>
                         {truncateText(bm.bm_name)}
