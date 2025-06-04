@@ -14,6 +14,8 @@ export type Database = {
           access_token: string
           ad_account_id: string
           ad_account_name: string
+          app_id: string | null
+          app_secret: string | null
           bm_name: string
           created_at: string
           id: string
@@ -24,6 +26,8 @@ export type Database = {
           access_token: string
           ad_account_id: string
           ad_account_name: string
+          app_id?: string | null
+          app_secret?: string | null
           bm_name: string
           created_at?: string
           id?: string
@@ -34,6 +38,8 @@ export type Database = {
           access_token?: string
           ad_account_id?: string
           ad_account_name?: string
+          app_id?: string | null
+          app_secret?: string | null
           bm_name?: string
           created_at?: string
           id?: string

@@ -31,7 +31,9 @@ export const BusinessManagerForm: React.FC<BusinessManagerFormProps> = ({
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     bm_name: '',
-    access_token: ''
+    access_token: '',
+    app_id: '',
+    app_secret: ''
   });
   const [adAccounts, setAdAccounts] = useState<AdAccount[]>([
     { id: '1', ad_account_name: '', ad_account_id: '' }
@@ -41,7 +43,9 @@ export const BusinessManagerForm: React.FC<BusinessManagerFormProps> = ({
     if (editingBM) {
       setFormData({
         bm_name: editingBM.bm_name || '',
-        access_token: editingBM.access_token || ''
+        access_token: editingBM.access_token || '',
+        app_id: editingBM.app_id || '',
+        app_secret: editingBM.app_secret || ''
       });
       setAdAccounts([
         {
@@ -106,6 +110,8 @@ export const BusinessManagerForm: React.FC<BusinessManagerFormProps> = ({
           .update({
             bm_name: formData.bm_name,
             access_token: formData.access_token,
+            app_id: formData.app_id,
+            app_secret: formData.app_secret,
             ad_account_name: validAccounts[0].ad_account_name,
             ad_account_id: validAccounts[0].ad_account_id
           })
@@ -119,6 +125,8 @@ export const BusinessManagerForm: React.FC<BusinessManagerFormProps> = ({
             user_id: user.id,
             bm_name: formData.bm_name,
             access_token: formData.access_token,
+            app_id: formData.app_id,
+            app_secret: formData.app_secret,
             ad_account_name: account.ad_account_name,
             ad_account_id: account.ad_account_id
           }));
@@ -140,6 +148,8 @@ export const BusinessManagerForm: React.FC<BusinessManagerFormProps> = ({
           user_id: user.id,
           bm_name: formData.bm_name,
           access_token: formData.access_token,
+          app_id: formData.app_id,
+          app_secret: formData.app_secret,
           ad_account_name: account.ad_account_name,
           ad_account_id: account.ad_account_id
         }));
@@ -213,6 +223,30 @@ export const BusinessManagerForm: React.FC<BusinessManagerFormProps> = ({
                   placeholder="Insira o token de acesso"
                   className="bg-slate-800 border-slate-700 text-white"
                   required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="app_id" className="text-white">ID do Aplicativo</Label>
+                <Input
+                  id="app_id"
+                  type="text"
+                  value={formData.app_id}
+                  onChange={(e) => setFormData({ ...formData, app_id: e.target.value })}
+                  placeholder="Ex: 123456789012345"
+                  className="bg-slate-800 border-slate-700 text-white"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="app_secret" className="text-white">Chave Secreta</Label>
+                <Input
+                  id="app_secret"
+                  type="password"
+                  value={formData.app_secret}
+                  onChange={(e) => setFormData({ ...formData, app_secret: e.target.value })}
+                  placeholder="Insira a chave secreta"
+                  className="bg-slate-800 border-slate-700 text-white"
                 />
               </div>
             </div>
