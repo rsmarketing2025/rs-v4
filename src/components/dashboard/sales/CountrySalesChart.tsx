@@ -8,12 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { MapPin, ChevronDown, X } from "lucide-react";
+import { MapPin, ChevronDown, X, ArrowLeft } from "lucide-react";
 
 interface Sale {
   country: string;
   status: string;
   gross_value: number;
+  state?: string;
 }
 
 interface CountrySalesChartProps {
@@ -23,22 +24,33 @@ interface CountrySalesChartProps {
 export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) => {
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'revenue' | 'orders'>('revenue');
+  const [selectedCountryDrillDown, setSelectedCountryDrillDown] = useState<string | null>(null);
 
   // Calcular métricas por país
   const countryMetrics = sales.reduce((acc, sale) => {
     const country = sale.country || 'Não informado';
     
     if (!acc[country]) {
-      acc[country] = { orders: 0, revenue: 0 };
+      acc[country] = { orders: 0, revenue: 0, states: {} };
     }
     
     acc[country].orders += 1;
     if (sale.status === 'completed') {
       acc[country].revenue += (sale.gross_value || 0);
     }
+
+    // Calcular métricas por estado dentro do país
+    const state = sale.state || 'Não informado';
+    if (!acc[country].states[state]) {
+      acc[country].states[state] = { orders: 0, revenue: 0 };
+    }
+    acc[country].states[state].orders += 1;
+    if (sale.status === 'completed') {
+      acc[country].states[state].revenue += (sale.gross_value || 0);
+    }
     
     return acc;
-  }, {} as Record<string, { orders: number; revenue: number }>);
+  }, {} as Record<string, { orders: number; revenue: number; states: Record<string, { orders: number; revenue: number }> }>);
 
   // Converter para array e ordenar
   const countriesData = Object.entries(countryMetrics)
@@ -48,6 +60,17 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) =
       revenue: data.revenue
     }))
     .sort((a, b) => sortBy === 'revenue' ? b.revenue - a.revenue : b.orders - a.orders);
+
+  // Dados dos estados para o país selecionado
+  const statesData = selectedCountryDrillDown && countryMetrics[selectedCountryDrillDown]
+    ? Object.entries(countryMetrics[selectedCountryDrillDown].states)
+        .map(([state, data]) => ({
+          state,
+          orders: data.orders,
+          revenue: data.revenue
+        }))
+        .sort((a, b) => sortBy === 'revenue' ? b.revenue - a.revenue : b.orders - a.orders)
+    : [];
 
   // Países únicos para seleção
   const availableCountries = countriesData.map(item => item.country);
@@ -59,10 +82,10 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) =
     }
   }, [countriesData]);
 
-  // Dados filtrados para o gráfico
-  const chartData = countriesData.filter(item => 
-    selectedCountries.includes(item.country)
-  );
+  // Dados filtrados para o gráfico principal
+  const chartData = selectedCountryDrillDown 
+    ? statesData 
+    : countriesData.filter(item => selectedCountries.includes(item.country));
 
   const handleCountryToggle = (country: string) => {
     setSelectedCountries(prev => {
@@ -86,9 +109,23 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) =
     setSelectedCountries(prev => prev.filter(c => c !== country));
   };
 
+  const handleBarClick = (data: any) => {
+    if (!selectedCountryDrillDown && data.country) {
+      setSelectedCountryDrillDown(data.country);
+    }
+  };
+
+  const handleBackToCountries = () => {
+    setSelectedCountryDrillDown(null);
+  };
+
   if (sales.length === 0) {
     return null;
   }
+
+  const selectedCountryTotal = selectedCountryDrillDown && countryMetrics[selectedCountryDrillDown]
+    ? countryMetrics[selectedCountryDrillDown]
+    : null;
 
   return (
     <Card className="bg-slate-800/30 border-slate-700">
@@ -97,14 +134,44 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) =
           <div>
             <CardTitle className="text-white flex items-center gap-2">
               <MapPin className="w-5 h-5" />
-              Vendas por País
+              {selectedCountryDrillDown ? `Vendas por Estado - ${selectedCountryDrillDown}` : 'Vendas por País'}
             </CardTitle>
             <CardDescription className="text-slate-400">
-              Distribuição de vendas e pedidos por país
+              {selectedCountryDrillDown 
+                ? `Distribuição de vendas e pedidos por estado em ${selectedCountryDrillDown}`
+                : 'Distribuição de vendas e pedidos por país'
+              }
             </CardDescription>
+            {selectedCountryTotal && (
+              <div className="mt-2 flex flex-wrap gap-4">
+                <div className="text-sm text-slate-300">
+                  <span className="text-slate-400">Total do País:</span>{' '}
+                  <span className="font-semibold text-green-400">
+                    R$ {selectedCountryTotal.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="text-sm text-slate-300">
+                  <span className="text-slate-400">Pedidos:</span>{' '}
+                  <span className="font-semibold text-blue-400">
+                    {selectedCountryTotal.orders.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="flex flex-col sm:flex-row gap-2">
+            {selectedCountryDrillDown && (
+              <Button 
+                variant="outline" 
+                onClick={handleBackToCountries}
+                className="bg-slate-900/50 border-slate-600 text-white hover:bg-slate-800/50"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Voltar para Países
+              </Button>
+            )}
+
             <Select value={sortBy} onValueChange={(value: 'revenue' | 'orders') => setSortBy(value)}>
               <SelectTrigger className="w-full sm:w-[140px] bg-slate-900/50 border-slate-600 text-white">
                 <SelectValue placeholder="Ordenar por" />
@@ -115,75 +182,77 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) =
               </SelectContent>
             </Select>
 
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  className="w-full sm:w-[200px] justify-between bg-slate-900/50 border-slate-600 text-white hover:bg-slate-800/50"
-                >
-                  <span>
-                    {selectedCountries.length === 0 
-                      ? "Selecionar países"
-                      : `${selectedCountries.length} país${selectedCountries.length !== 1 ? 'es' : ''} selecionado${selectedCountries.length !== 1 ? 's' : ''}`
-                    }
-                  </span>
-                  <ChevronDown className="h-4 w-4 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-0 bg-slate-900 border-slate-700" align="end">
-                <div className="p-3 border-b border-slate-700">
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="text-white text-sm font-medium">Selecionar Países</h4>
-                    <div className="flex gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={handleSelectAll}
-                        className="text-xs text-slate-400 hover:text-white"
-                      >
-                        Todos
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={handleClearAll}
-                        className="text-xs text-slate-400 hover:text-white"
-                      >
-                        Limpar
-                      </Button>
+            {!selectedCountryDrillDown && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="w-full sm:w-[200px] justify-between bg-slate-900/50 border-slate-600 text-white hover:bg-slate-800/50"
+                  >
+                    <span>
+                      {selectedCountries.length === 0 
+                        ? "Selecionar países"
+                        : `${selectedCountries.length} país${selectedCountries.length !== 1 ? 'es' : ''} selecionado${selectedCountries.length !== 1 ? 's' : ''}`
+                      }
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0 bg-slate-900 border-slate-700" align="end">
+                  <div className="p-3 border-b border-slate-700">
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="text-white text-sm font-medium">Selecionar Países</h4>
+                      <div className="flex gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={handleSelectAll}
+                          className="text-xs text-slate-400 hover:text-white"
+                        >
+                          Todos
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={handleClearAll}
+                          className="text-xs text-slate-400 hover:text-white"
+                        >
+                          Limpar
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <ScrollArea className="h-64">
-                  <div className="p-3 space-y-2">
-                    {availableCountries.map((country) => (
-                      <div key={country} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={country}
-                          checked={selectedCountries.includes(country)}
-                          onCheckedChange={() => handleCountryToggle(country)}
-                          className="border-slate-500"
-                        />
-                        <label
-                          htmlFor={country}
-                          className="text-sm text-slate-300 cursor-pointer flex-1"
-                        >
-                          {country}
-                        </label>
-                        <div className="text-xs text-slate-400">
-                          {countryMetrics[country]?.orders || 0} pedidos
+                  <ScrollArea className="h-64">
+                    <div className="p-3 space-y-2">
+                      {availableCountries.map((country) => (
+                        <div key={country} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={country}
+                            checked={selectedCountries.includes(country)}
+                            onCheckedChange={() => handleCountryToggle(country)}
+                            className="border-slate-500"
+                          />
+                          <label
+                            htmlFor={country}
+                            className="text-sm text-slate-300 cursor-pointer flex-1"
+                          >
+                            {country}
+                          </label>
+                          <div className="text-xs text-slate-400">
+                            {countryMetrics[country]?.orders || 0} pedidos
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </PopoverContent>
-            </Popover>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
         </div>
 
-        {/* Países selecionados */}
-        {selectedCountries.length > 0 && (
+        {/* Países selecionados - apenas mostrar quando não estiver em drill-down */}
+        {!selectedCountryDrillDown && selectedCountries.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-3">
             {selectedCountries.map((country) => (
               <Badge 
@@ -208,7 +277,10 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) =
         {chartData.length === 0 ? (
           <div className="flex items-center justify-center h-64">
             <p className="text-slate-400 text-center">
-              Selecione pelo menos um país para visualizar o gráfico.
+              {selectedCountryDrillDown 
+                ? `Nenhum estado encontrado para ${selectedCountryDrillDown}.`
+                : "Selecione pelo menos um país para visualizar o gráfico."
+              }
             </p>
           </div>
         ) : (
@@ -217,7 +289,7 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) =
               <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis 
-                  dataKey="country"
+                  dataKey={selectedCountryDrillDown ? "state" : "country"}
                   stroke="#9ca3af"
                   fontSize={12}
                   angle={-45}
@@ -250,15 +322,24 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) =
                       : value.toLocaleString(),
                     name === 'revenue' ? 'Receita' : 'Pedidos'
                   ]}
-                  labelFormatter={(label) => `País: ${label}`}
+                  labelFormatter={(label) => `${selectedCountryDrillDown ? 'Estado' : 'País'}: ${label}`}
                 />
                 <Bar 
                   dataKey={sortBy}
                   fill={sortBy === 'revenue' ? '#22c55e' : '#3b82f6'}
                   radius={[4, 4, 0, 0]}
+                  onClick={handleBarClick}
+                  style={{ cursor: selectedCountryDrillDown ? 'default' : 'pointer' }}
                 />
               </BarChart>
             </ResponsiveContainer>
+            {!selectedCountryDrillDown && (
+              <div className="mt-2 text-center">
+                <p className="text-xs text-slate-400">
+                  Clique em uma barra para ver os dados por estado
+                </p>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
