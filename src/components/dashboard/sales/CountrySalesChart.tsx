@@ -19,73 +19,67 @@ interface Sale {
 
 interface CountrySalesChartProps {
   sales: Sale[];
+  countryFilter: string;
 }
 
-export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) => {
+export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, countryFilter }) => {
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'revenue' | 'orders'>('revenue');
   const [selectedCountryDrillDown, setSelectedCountryDrillDown] = useState<string | null>(null);
 
-  // Calcular métricas por país
-  const countryMetrics = sales.reduce((acc, sale) => {
-    const country = sale.country || 'Não informado';
-    
-    if (!acc[country]) {
-      acc[country] = { orders: 0, revenue: 0, states: {} };
-    }
-    
-    acc[country].orders += 1;
-    if (sale.status === 'completed') {
-      acc[country].revenue += (sale.gross_value || 0);
-    }
+  // Determinar se devemos mostrar estados ou países
+  const showingStates = countryFilter !== "all";
+  
+  // Filtrar vendas por país se um país específico estiver selecionado
+  const countryFilteredSales = showingStates 
+    ? sales.filter(sale => sale.country === countryFilter)
+    : sales;
 
-    // Calcular métricas por estado dentro do país
-    const state = sale.state || 'Não informado';
-    if (!acc[country].states[state]) {
-      acc[country].states[state] = { orders: 0, revenue: 0 };
+  // Calcular métricas por país ou estado
+  const metrics = countryFilteredSales.reduce((acc, sale) => {
+    const key = showingStates ? (sale.state || 'Não informado') : (sale.country || 'Não informado');
+    
+    if (!acc[key]) {
+      acc[key] = { orders: 0, revenue: 0 };
     }
-    acc[country].states[state].orders += 1;
+    
+    acc[key].orders += 1;
     if (sale.status === 'completed') {
-      acc[country].states[state].revenue += (sale.gross_value || 0);
+      acc[key].revenue += (sale.gross_value || 0);
     }
     
     return acc;
-  }, {} as Record<string, { orders: number; revenue: number; states: Record<string, { orders: number; revenue: number }> }>);
+  }, {} as Record<string, { orders: number; revenue: number }>);
 
   // Converter para array e ordenar
-  const countriesData = Object.entries(countryMetrics)
-    .map(([country, data]) => ({
-      country,
+  const chartDataPoints = Object.entries(metrics)
+    .map(([key, data]) => ({
+      [showingStates ? 'state' : 'country']: key,
       orders: data.orders,
       revenue: data.revenue
     }))
     .sort((a, b) => sortBy === 'revenue' ? b.revenue - a.revenue : b.orders - a.orders);
 
-  // Dados dos estados para o país selecionado
-  const statesData = selectedCountryDrillDown && countryMetrics[selectedCountryDrillDown]
-    ? Object.entries(countryMetrics[selectedCountryDrillDown].states)
-        .map(([state, data]) => ({
-          state,
-          orders: data.orders,
-          revenue: data.revenue
-        }))
-        .sort((a, b) => sortBy === 'revenue' ? b.revenue - a.revenue : b.orders - a.orders)
-    : [];
+  // Para países: usar seleção múltipla; para estados: mostrar todos
+  let chartData;
+  if (showingStates) {
+    // Mostrar todos os estados quando um país está selecionado
+    chartData = chartDataPoints;
+  } else {
+    // Lógica original para países
+    const availableCountries = chartDataPoints.map(item => item.country);
+    
+    // Inicializar com top 5 países se nenhum estiver selecionado
+    React.useEffect(() => {
+      if (selectedCountries.length === 0 && chartDataPoints.length > 0) {
+        setSelectedCountries(chartDataPoints.slice(0, 5).map(item => item.country));
+      }
+    }, [chartDataPoints]);
 
-  // Países únicos para seleção
-  const availableCountries = countriesData.map(item => item.country);
-
-  // Inicializar com top 5 países se nenhum estiver selecionado
-  React.useEffect(() => {
-    if (selectedCountries.length === 0 && countriesData.length > 0) {
-      setSelectedCountries(countriesData.slice(0, 5).map(item => item.country));
-    }
-  }, [countriesData]);
-
-  // Dados filtrados para o gráfico principal
-  const chartData = selectedCountryDrillDown 
-    ? statesData 
-    : countriesData.filter(item => selectedCountries.includes(item.country));
+    chartData = selectedCountryDrillDown 
+      ? [] // Não usado quando showingStates é true
+      : chartDataPoints.filter(item => selectedCountries.includes(item.country));
+  }
 
   const handleCountryToggle = (country: string) => {
     setSelectedCountries(prev => {
@@ -98,6 +92,7 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) =
   };
 
   const handleSelectAll = () => {
+    const availableCountries = chartDataPoints.map(item => item.country);
     setSelectedCountries(availableCountries);
   };
 
@@ -110,7 +105,7 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) =
   };
 
   const handleBarClick = (data: any) => {
-    if (!selectedCountryDrillDown && data.country) {
+    if (!showingStates && !selectedCountryDrillDown && data.country) {
       setSelectedCountryDrillDown(data.country);
     }
   };
@@ -123,9 +118,13 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) =
     return null;
   }
 
-  const selectedCountryTotal = selectedCountryDrillDown && countryMetrics[selectedCountryDrillDown]
-    ? countryMetrics[selectedCountryDrillDown]
-    : null;
+  // Calcular totais para exibição
+  const totalMetrics = chartData.reduce((acc, item) => ({
+    revenue: acc.revenue + item.revenue,
+    orders: acc.orders + item.orders
+  }), { revenue: 0, orders: 0 });
+
+  const availableCountries = showingStates ? [] : chartDataPoints.map(item => item.country);
 
   return (
     <Card className="bg-slate-800/30 border-slate-700">
@@ -134,26 +133,26 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) =
           <div>
             <CardTitle className="text-white flex items-center gap-2">
               <MapPin className="w-5 h-5" />
-              {selectedCountryDrillDown ? `Vendas por Estado - ${selectedCountryDrillDown}` : 'Vendas por País'}
+              {showingStates ? `Vendas por Estado - ${countryFilter}` : 'Vendas por País'}
             </CardTitle>
             <CardDescription className="text-slate-400">
-              {selectedCountryDrillDown 
-                ? `Distribuição de vendas e pedidos por estado em ${selectedCountryDrillDown}`
+              {showingStates 
+                ? `Distribuição de vendas e pedidos por estado em ${countryFilter}`
                 : 'Distribuição de vendas e pedidos por país'
               }
             </CardDescription>
-            {selectedCountryTotal && (
+            {(showingStates || selectedCountryDrillDown) && (
               <div className="mt-2 flex flex-wrap gap-4">
                 <div className="text-sm text-slate-300">
-                  <span className="text-slate-400">Total do País:</span>{' '}
+                  <span className="text-slate-400">Total:</span>{' '}
                   <span className="font-semibold text-green-400">
-                    R$ {selectedCountryTotal.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    R$ {totalMetrics.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </span>
                 </div>
                 <div className="text-sm text-slate-300">
                   <span className="text-slate-400">Pedidos:</span>{' '}
                   <span className="font-semibold text-blue-400">
-                    {selectedCountryTotal.orders.toLocaleString()}
+                    {totalMetrics.orders.toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -182,7 +181,7 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) =
               </SelectContent>
             </Select>
 
-            {!selectedCountryDrillDown && (
+            {!showingStates && !selectedCountryDrillDown && (
               <Popover>
                 <PopoverTrigger asChild>
                   <Button 
@@ -239,7 +238,7 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) =
                             {country}
                           </label>
                           <div className="text-xs text-slate-400">
-                            {countryMetrics[country]?.orders || 0} pedidos
+                            {metrics[country]?.orders || 0} pedidos
                           </div>
                         </div>
                       ))}
@@ -251,8 +250,8 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) =
           </div>
         </div>
 
-        {/* Países selecionados - apenas mostrar quando não estiver em drill-down */}
-        {!selectedCountryDrillDown && selectedCountries.length > 0 && (
+        {/* Países selecionados - apenas mostrar quando não estiver em drill-down nem mostrando estados */}
+        {!showingStates && !selectedCountryDrillDown && selectedCountries.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-3">
             {selectedCountries.map((country) => (
               <Badge 
@@ -275,26 +274,26 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) =
       
       <CardContent>
         {chartData.length === 0 ? (
-          <div className="flex items-center justify-center h-64">
+          <div className="flex items-center justify-center h-96">
             <p className="text-slate-400 text-center">
-              {selectedCountryDrillDown 
-                ? `Nenhum estado encontrado para ${selectedCountryDrillDown}.`
+              {showingStates 
+                ? `Nenhum estado encontrado para ${countryFilter}.`
                 : "Selecione pelo menos um país para visualizar o gráfico."
               }
             </p>
           </div>
         ) : (
-          <div className="h-80">
+          <div className="h-96">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis 
-                  dataKey={selectedCountryDrillDown ? "state" : "country"}
+                  dataKey={showingStates ? "state" : "country"}
                   stroke="#9ca3af"
                   fontSize={12}
                   angle={-45}
                   textAnchor="end"
-                  height={80}
+                  height={100}
                 />
                 <YAxis 
                   stroke="#9ca3af"
@@ -322,18 +321,18 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) =
                       : value.toLocaleString(),
                     name === 'revenue' ? 'Receita' : 'Pedidos'
                   ]}
-                  labelFormatter={(label) => `${selectedCountryDrillDown ? 'Estado' : 'País'}: ${label}`}
+                  labelFormatter={(label) => `${showingStates ? 'Estado' : 'País'}: ${label}`}
                 />
                 <Bar 
                   dataKey={sortBy}
                   fill={sortBy === 'revenue' ? '#22c55e' : '#3b82f6'}
                   radius={[4, 4, 0, 0]}
                   onClick={handleBarClick}
-                  style={{ cursor: selectedCountryDrillDown ? 'default' : 'pointer' }}
+                  style={{ cursor: (showingStates || selectedCountryDrillDown) ? 'default' : 'pointer' }}
                 />
               </BarChart>
             </ResponsiveContainer>
-            {!selectedCountryDrillDown && (
+            {!showingStates && !selectedCountryDrillDown && (
               <div className="mt-2 text-center">
                 <p className="text-xs text-slate-400">
                   Clique em uma barra para ver os dados por estado
