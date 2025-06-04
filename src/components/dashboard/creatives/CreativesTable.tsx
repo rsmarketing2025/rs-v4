@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 
 interface CreativeMetrics {
   id: string;
@@ -44,7 +45,18 @@ export const CreativesTable: React.FC<CreativesTableProps> = ({
   loading,
   onExportCSV
 }) => {
-  const displayedCreatives = filteredCreatives.slice(0, 50);
+  const {
+    displayedItems: displayedCreatives,
+    hasMore,
+    isLoading: loadingMore,
+    handleScroll,
+    displayedCount,
+    totalItems
+  } = useInfiniteScroll({
+    items: filteredCreatives,
+    initialItemCount: 25,
+    itemsPerPage: 25
+  });
 
   return (
     <Card className="bg-slate-800/30 border-slate-700">
@@ -52,7 +64,7 @@ export const CreativesTable: React.FC<CreativesTableProps> = ({
         <div>
           <CardTitle className="text-white">Performance Detalhada dos Criativos</CardTitle>
           <CardDescription className="text-slate-400">
-            Mostrando {Math.min(displayedCreatives.length, 50)} de {filteredCreatives.length} criativos
+            Mostrando {displayedCount} de {totalItems} criativos
           </CardDescription>
         </div>
         <Button 
@@ -66,7 +78,10 @@ export const CreativesTable: React.FC<CreativesTableProps> = ({
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+        <div 
+          className="overflow-x-auto max-h-[600px] overflow-y-auto"
+          onScroll={handleScroll}
+        >
           <Table>
             <TableHeader>
               <TableRow className="border-slate-700">
@@ -96,7 +111,10 @@ export const CreativesTable: React.FC<CreativesTableProps> = ({
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={20} className="text-center text-slate-400 py-8">
-                    Carregando...
+                    <div className="flex items-center justify-center">
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Carregando...
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : displayedCreatives.length === 0 ? (
@@ -106,81 +124,100 @@ export const CreativesTable: React.FC<CreativesTableProps> = ({
                   </TableCell>
                 </TableRow>
               ) : (
-                displayedCreatives.map((creative) => (
-                  <TableRow key={creative.id} className="border-slate-700 hover:bg-slate-800/50">
-                    <TableCell className="text-white font-medium">
-                      {creative.creative_name}
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {creative.campaign_name}
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {creative.start_date} - {creative.end_date}
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      R$ {creative.amount_spent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {creative.views_3s.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {creative.views_75_percent.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {creative.views_total.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {creative.clicks.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {creative.pr_hook_rate.toFixed(1)}%
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {creative.hook_rate.toFixed(1)}%
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {creative.body_rate.toFixed(1)}%
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {creative.cta_rate.toFixed(1)}%
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {creative.ctr.toFixed(2)}%
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {creative.conv_body_rate.toFixed(2)}%
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {creative.sales_count}
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      R$ {creative.gross_sales.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </TableCell>
-                    <TableCell className={`${creative.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      R$ {creative.profit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      R$ {creative.cpa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </TableCell>
-                    <TableCell className={`${creative.roi >= 1 ? 'text-green-400' : 'text-orange-400'}`}>
-                      {creative.roi.toFixed(2)}x
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant="secondary"
-                        className={
-                          creative.status === 'active' 
-                            ? "bg-green-500/20 text-green-400" 
-                            : creative.status === 'paused'
-                            ? "bg-yellow-500/20 text-yellow-400"
-                            : "bg-red-500/20 text-red-400"
-                        }
-                      >
-                        {creative.status}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))
+                <>
+                  {displayedCreatives.map((creative) => (
+                    <TableRow key={creative.id} className="border-slate-700 hover:bg-slate-800/50">
+                      <TableCell className="text-white font-medium">
+                        {creative.creative_name}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.campaign_name}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.start_date} - {creative.end_date}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        R$ {creative.amount_spent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.views_3s.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.views_75_percent.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.views_total.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.clicks.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.pr_hook_rate.toFixed(1)}%
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.hook_rate.toFixed(1)}%
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.body_rate.toFixed(1)}%
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.cta_rate.toFixed(1)}%
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.ctr.toFixed(2)}%
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.conv_body_rate.toFixed(2)}%
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.sales_count}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        R$ {creative.gross_sales.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className={`${creative.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        R$ {creative.profit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        R$ {creative.cpa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className={`${creative.roi >= 1 ? 'text-green-400' : 'text-orange-400'}`}>
+                        {creative.roi.toFixed(2)}x
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant="secondary"
+                          className={
+                            creative.status === 'active' 
+                              ? "bg-green-500/20 text-green-400" 
+                              : creative.status === 'paused'
+                              ? "bg-yellow-500/20 text-yellow-400"
+                              : "bg-red-500/20 text-red-400"
+                          }
+                        >
+                          {creative.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {loadingMore && (
+                    <TableRow>
+                      <TableCell colSpan={20} className="text-center text-slate-400 py-4">
+                        <div className="flex items-center justify-center">
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          Carregando mais criativos...
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {!hasMore && totalItems > 25 && (
+                    <TableRow>
+                      <TableCell colSpan={20} className="text-center text-slate-400 py-4">
+                        Todos os criativos foram carregados
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
               )}
             </TableBody>
           </Table>

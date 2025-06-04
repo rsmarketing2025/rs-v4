@@ -4,9 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 
 interface Sale {
   id: string;
@@ -39,7 +40,18 @@ export const SalesTable: React.FC<SalesTableProps> = ({
   loading,
   onExportCSV
 }) => {
-  const displayedSales = filteredSales.slice(0, 20);
+  const {
+    displayedItems: displayedSales,
+    hasMore,
+    isLoading: loadingMore,
+    handleScroll,
+    displayedCount,
+    totalItems
+  } = useInfiniteScroll({
+    items: filteredSales,
+    initialItemCount: 20,
+    itemsPerPage: 20
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -74,7 +86,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
         <div>
           <CardTitle className="text-white">Histórico de Vendas</CardTitle>
           <CardDescription className="text-slate-400">
-            Mostrando {Math.min(displayedSales.length, 20)} de {filteredSales.length} vendas
+            Mostrando {displayedCount} de {totalItems} vendas
           </CardDescription>
         </div>
         <Button 
@@ -88,7 +100,10 @@ export const SalesTable: React.FC<SalesTableProps> = ({
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+        <div 
+          className="overflow-x-auto max-h-[600px] overflow-y-auto"
+          onScroll={handleScroll}
+        >
           <Table>
             <TableHeader>
               <TableRow className="border-slate-700">
@@ -108,7 +123,10 @@ export const SalesTable: React.FC<SalesTableProps> = ({
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={10} className="text-center text-slate-400 py-8">
-                    Carregando...
+                    <div className="flex items-center justify-center">
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Carregando...
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : displayedSales.length === 0 ? (
@@ -118,48 +136,67 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                   </TableCell>
                 </TableRow>
               ) : (
-                displayedSales.map((sale) => (
-                  <TableRow key={sale.id} className="border-slate-700 hover:bg-slate-800/50">
-                    <TableCell className="text-white font-medium">
-                      {sale.order_id}
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {sale.sale_date ? format(new Date(sale.sale_date), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : '-'}
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {sale.customer_name}
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {sale.creative_name}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className={getStatusColor(sale.status)}>
-                        {getStatusLabel(sale.status)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {getPaymentMethodLabel(sale.payment_method)}
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      R$ {(sale.gross_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {sale.country || '-'}
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {sale.state || '-'}
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {sale.is_affiliate ? (
-                        <Badge variant="secondary" className="bg-blue-500/20 text-blue-400">
-                          {sale.affiliate_name || 'Afiliado'}
+                <>
+                  {displayedSales.map((sale) => (
+                    <TableRow key={sale.id} className="border-slate-700 hover:bg-slate-800/50">
+                      <TableCell className="text-white font-medium">
+                        {sale.order_id}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {sale.sale_date ? format(new Date(sale.sale_date), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : '-'}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {sale.customer_name}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {sale.creative_name}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className={getStatusColor(sale.status)}>
+                          {getStatusLabel(sale.status)}
                         </Badge>
-                      ) : (
-                        <span className="text-slate-500">-</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {getPaymentMethodLabel(sale.payment_method)}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        R$ {(sale.gross_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {sale.country || '-'}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {sale.state || '-'}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {sale.is_affiliate ? (
+                          <Badge variant="secondary" className="bg-blue-500/20 text-blue-400">
+                            {sale.affiliate_name || 'Afiliado'}
+                          </Badge>
+                        ) : (
+                          <span className="text-slate-500">-</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {loadingMore && (
+                    <TableRow>
+                      <TableCell colSpan={10} className="text-center text-slate-400 py-4">
+                        <div className="flex items-center justify-center">
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          Carregando mais vendas...
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {!hasMore && totalItems > 20 && (
+                    <TableRow>
+                      <TableCell colSpan={10} className="text-center text-slate-400 py-4">
+                        Todas as vendas foram carregadas
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
               )}
             </TableBody>
           </Table>
