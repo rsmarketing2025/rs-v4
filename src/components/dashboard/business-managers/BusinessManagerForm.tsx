@@ -4,10 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { X, Save } from 'lucide-react';
+import { X, Save, Plus, Trash2 } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/use-toast";
+
+interface AdAccount {
+  id: string;
+  ad_account_name: string;
+  ad_account_id: string;
+}
 
 interface BusinessManagerFormProps {
   onClose: () => void;
@@ -25,21 +31,44 @@ export const BusinessManagerForm: React.FC<BusinessManagerFormProps> = ({
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     bm_name: '',
-    access_token: '',
-    ad_account_name: '',
-    ad_account_id: ''
+    access_token: ''
   });
+  const [adAccounts, setAdAccounts] = useState<AdAccount[]>([
+    { id: '1', ad_account_name: '', ad_account_id: '' }
+  ]);
 
   useEffect(() => {
     if (editingBM) {
       setFormData({
         bm_name: editingBM.bm_name || '',
-        access_token: editingBM.access_token || '',
-        ad_account_name: editingBM.ad_account_name || '',
-        ad_account_id: editingBM.ad_account_id || ''
+        access_token: editingBM.access_token || ''
       });
+      setAdAccounts([
+        {
+          id: '1',
+          ad_account_name: editingBM.ad_account_name || '',
+          ad_account_id: editingBM.ad_account_id || ''
+        }
+      ]);
     }
   }, [editingBM]);
+
+  const addAdAccount = () => {
+    const newId = Date.now().toString();
+    setAdAccounts([...adAccounts, { id: newId, ad_account_name: '', ad_account_id: '' }]);
+  };
+
+  const removeAdAccount = (id: string) => {
+    if (adAccounts.length > 1) {
+      setAdAccounts(adAccounts.filter(account => account.id !== id));
+    }
+  };
+
+  const updateAdAccount = (id: string, field: string, value: string) => {
+    setAdAccounts(adAccounts.map(account => 
+      account.id === id ? { ...account, [field]: value } : account
+    ));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +77,20 @@ export const BusinessManagerForm: React.FC<BusinessManagerFormProps> = ({
       toast({
         title: "Erro",
         description: "Usuário não autenticado",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validar se há pelo menos uma conta de anúncio preenchida
+    const validAccounts = adAccounts.filter(account => 
+      account.ad_account_name.trim() && account.ad_account_id.trim()
+    );
+
+    if (validAccounts.length === 0) {
+      toast({
+        title: "Erro",
+        description: "Adicione pelo menos uma conta de anúncio válida",
         variant: "destructive"
       });
       return;
@@ -63,34 +106,53 @@ export const BusinessManagerForm: React.FC<BusinessManagerFormProps> = ({
           .update({
             bm_name: formData.bm_name,
             access_token: formData.access_token,
-            ad_account_name: formData.ad_account_name,
-            ad_account_id: formData.ad_account_id
+            ad_account_name: validAccounts[0].ad_account_name,
+            ad_account_id: validAccounts[0].ad_account_id
           })
           .eq('id', editingBM.id);
 
         if (error) throw error;
 
-        toast({
-          title: "Sucesso",
-          description: "Conta de anúncio atualizada com sucesso!"
-        });
-      } else {
-        // Create new record
-        const { error } = await supabase
-          .from('business_managers')
-          .insert({
+        // Se há mais de uma conta de anúncio, criar registros adicionais
+        if (validAccounts.length > 1) {
+          const additionalAccounts = validAccounts.slice(1).map(account => ({
             user_id: user.id,
             bm_name: formData.bm_name,
             access_token: formData.access_token,
-            ad_account_name: formData.ad_account_name,
-            ad_account_id: formData.ad_account_id
-          });
+            ad_account_name: account.ad_account_name,
+            ad_account_id: account.ad_account_id
+          }));
+
+          const { error: insertError } = await supabase
+            .from('business_managers')
+            .insert(additionalAccounts);
+
+          if (insertError) throw insertError;
+        }
+
+        toast({
+          title: "Sucesso",
+          description: "Business Manager atualizado com sucesso!"
+        });
+      } else {
+        // Create new records - one for each ad account
+        const recordsToInsert = validAccounts.map(account => ({
+          user_id: user.id,
+          bm_name: formData.bm_name,
+          access_token: formData.access_token,
+          ad_account_name: account.ad_account_name,
+          ad_account_id: account.ad_account_id
+        }));
+
+        const { error } = await supabase
+          .from('business_managers')
+          .insert(recordsToInsert);
 
         if (error) throw error;
 
         toast({
           title: "Sucesso",
-          description: "Conta de anúncio adicionada com sucesso!"
+          description: `Business Manager criado com ${validAccounts.length} conta(s) de anúncio!`
         });
       }
 
@@ -99,7 +161,7 @@ export const BusinessManagerForm: React.FC<BusinessManagerFormProps> = ({
     } catch (error: any) {
       toast({
         title: "Erro",
-        description: error.message || "Erro ao salvar conta de anúncio",
+        description: error.message || "Erro ao salvar Business Manager",
         variant: "destructive"
       });
     } finally {
@@ -111,7 +173,7 @@ export const BusinessManagerForm: React.FC<BusinessManagerFormProps> = ({
     <Card className="bg-slate-900/50 border-slate-800">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle className="text-white">
-          {editingBM ? 'Editar Conta de Anúncio' : 'Nova Conta de Anúncio'}
+          {editingBM ? 'Editar Business Manager' : 'Novo Business Manager'}
         </CardTitle>
         <Button
           variant="ghost"
@@ -123,61 +185,101 @@ export const BusinessManagerForm: React.FC<BusinessManagerFormProps> = ({
         </Button>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="bm_name" className="text-white">Nome do Business Manager</Label>
-              <Input
-                id="bm_name"
-                type="text"
-                value={formData.bm_name}
-                onChange={(e) => setFormData({ ...formData, bm_name: e.target.value })}
-                placeholder="Ex: Minha Empresa BM"
-                className="bg-slate-800 border-slate-700 text-white"
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="access_token" className="text-white">Token de Acesso</Label>
-              <Input
-                id="access_token"
-                type="password"
-                value={formData.access_token}
-                onChange={(e) => setFormData({ ...formData, access_token: e.target.value })}
-                placeholder="Insira o token de acesso"
-                className="bg-slate-800 border-slate-700 text-white"
-                required
-              />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Business Manager Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-white">Informações do Business Manager</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="bm_name" className="text-white">Nome do Business Manager</Label>
+                <Input
+                  id="bm_name"
+                  type="text"
+                  value={formData.bm_name}
+                  onChange={(e) => setFormData({ ...formData, bm_name: e.target.value })}
+                  placeholder="Ex: Minha Empresa BM"
+                  className="bg-slate-800 border-slate-700 text-white"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="access_token" className="text-white">Token de Acesso</Label>
+                <Input
+                  id="access_token"
+                  type="password"
+                  value={formData.access_token}
+                  onChange={(e) => setFormData({ ...formData, access_token: e.target.value })}
+                  placeholder="Insira o token de acesso"
+                  className="bg-slate-800 border-slate-700 text-white"
+                  required
+                />
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="ad_account_name" className="text-white">Nome da Conta de Anúncio</Label>
-              <Input
-                id="ad_account_name"
-                type="text"
-                value={formData.ad_account_name}
-                onChange={(e) => setFormData({ ...formData, ad_account_name: e.target.value })}
-                placeholder="Ex: Conta Principal"
-                className="bg-slate-800 border-slate-700 text-white"
-                required
-              />
+          {/* Ad Accounts Section */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-medium text-white">Contas de Anúncio</h3>
+              <Button
+                type="button"
+                onClick={addAdAccount}
+                className="bg-green-600 hover:bg-green-700"
+                size="sm"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Adicionar Conta
+              </Button>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="ad_account_id" className="text-white">ID da Conta de Anúncio</Label>
-              <Input
-                id="ad_account_id"
-                type="text"
-                value={formData.ad_account_id}
-                onChange={(e) => setFormData({ ...formData, ad_account_id: e.target.value })}
-                placeholder="Ex: act_123456789"
-                className="bg-slate-800 border-slate-700 text-white"
-                required
-              />
-            </div>
+
+            {adAccounts.map((account, index) => (
+              <Card key={account.id} className="bg-slate-800/50 border-slate-700">
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="text-sm font-medium text-slate-300">
+                      Conta de Anúncio #{index + 1}
+                    </h4>
+                    {adAccounts.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeAdAccount(account.id)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-white">Nome da Conta de Anúncio</Label>
+                      <Input
+                        type="text"
+                        value={account.ad_account_name}
+                        onChange={(e) => updateAdAccount(account.id, 'ad_account_name', e.target.value)}
+                        placeholder="Ex: Conta Principal"
+                        className="bg-slate-700 border-slate-600 text-white"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-white">ID da Conta de Anúncio</Label>
+                      <Input
+                        type="text"
+                        value={account.ad_account_id}
+                        onChange={(e) => updateAdAccount(account.id, 'ad_account_id', e.target.value)}
+                        placeholder="Ex: act_123456789"
+                        className="bg-slate-700 border-slate-600 text-white"
+                        required
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
