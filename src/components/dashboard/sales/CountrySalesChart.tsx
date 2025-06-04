@@ -79,8 +79,9 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
 
   // Preparar dados do gráfico
   let chartData: ChartDataPoint[];
+  
   if (showingStates) {
-    // Mostrar todos os estados quando um país está selecionado
+    // Quando mostrando estados, usar todos os pontos de dados (não filtrar por selectedCountries)
     chartData = chartDataPoints;
   } else {
     // Para países: usar seleção múltipla
