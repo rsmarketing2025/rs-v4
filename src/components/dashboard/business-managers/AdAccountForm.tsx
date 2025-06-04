@@ -29,14 +29,23 @@ export const AdAccountForm: React.FC<AdAccountFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!formData.account_name.trim() || !formData.account_id.trim()) {
+      toast({
+        title: "Erro",
+        description: "Por favor, preencha todos os campos.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const { error } = await supabase
         .from('ad_accounts')
         .insert({
           business_manager_id: businessManagerId,
-          account_name: formData.account_name,
-          account_id: formData.account_id
+          account_name: formData.account_name.trim(),
+          account_id: formData.account_id.trim()
         });
 
       if (error) throw error;
@@ -83,7 +92,7 @@ export const AdAccountForm: React.FC<AdAccountFormProps> = ({
               onChange={(e) => setFormData({ ...formData, account_name: e.target.value })}
               placeholder="Digite o nome da conta de anúncios"
               required
-              className="bg-slate-700 border-slate-600 text-white"
+              className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
             />
           </div>
 
@@ -96,7 +105,7 @@ export const AdAccountForm: React.FC<AdAccountFormProps> = ({
               onChange={(e) => setFormData({ ...formData, account_id: e.target.value })}
               placeholder="Digite o ID da conta de anúncios"
               required
-              className="bg-slate-700 border-slate-600 text-white"
+              className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
             />
           </div>
 
