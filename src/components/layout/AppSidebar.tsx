@@ -1,3 +1,4 @@
+
 import {
   Sidebar,
   SidebarContent,
@@ -11,7 +12,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Users, LogOut } from "lucide-react";
+import { BarChart3, Users, LogOut, Building2 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -20,6 +21,11 @@ const menuItems = [
     title: "Performance",
     url: "/dashboard",
     icon: BarChart3,
+  },
+  {
+    title: "Business Managers",
+    url: "/business-managers",
+    icon: Building2,
   },
   {
     title: "Usuários",

@@ -9,6 +9,83 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ad_accounts: {
+        Row: {
+          account_id: string
+          account_name: string
+          business_manager_id: string
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          account_name: string
+          business_manager_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          account_name?: string
+          business_manager_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_accounts_business_manager_id_fkey"
+            columns: ["business_manager_id"]
+            isOneToOne: false
+            referencedRelation: "business_manager_accounts"
+            referencedColumns: ["business_manager_id"]
+          },
+          {
+            foreignKeyName: "ad_accounts_business_manager_id_fkey"
+            columns: ["business_manager_id"]
+            isOneToOne: false
+            referencedRelation: "business_managers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_managers: {
+        Row: {
+          access_token: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_managers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaigns: {
         Row: {
           ad_id: string
@@ -471,6 +548,30 @@ export type Database = {
       }
     }
     Views: {
+      business_manager_accounts: {
+        Row: {
+          access_token: string | null
+          account_created_at: string | null
+          account_id: string | null
+          account_name: string | null
+          account_updated_at: string | null
+          ad_account_id: string | null
+          bm_created_at: string | null
+          bm_updated_at: string | null
+          business_manager_id: string | null
+          business_manager_name: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_managers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creative_performance_analysis: {
         Row: {
           ad_id: string | null
