@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, X } from 'lucide-react';
+import { Search, Filter, X, Users } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,77 +57,100 @@ export const BusinessManagerFilter: React.FC<BusinessManagerFilterProps> = ({
     <div className="flex flex-wrap items-center gap-2">
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700">
-            <Filter className="w-4 h-4 mr-2" />
+          <Button variant="outline" className="bg-slate-800/90 border-slate-600 text-white hover:bg-slate-700/90 rounded-xl">
+            <Users className="w-4 h-4 mr-2" />
             Business Manager
             {selectedBMs.length > 0 && (
-              <Badge variant="secondary" className="ml-2 bg-blue-600 text-white">
+              <Badge variant="secondary" className="ml-2 bg-blue-600 text-white rounded-full">
                 {selectedBMs.length}
               </Badge>
             )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent 
-          className="w-80 bg-slate-800 border-slate-700 text-white p-0" 
+          className="w-96 bg-slate-800/95 backdrop-blur-sm border-slate-600 text-white p-0 rounded-xl z-50" 
           align="start"
         >
           <div className="p-4 space-y-4">
-            {/* Search Field */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                placeholder="Buscar Business Manager..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
-              />
+            {/* Header with selection info */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-slate-400" />
+                <span className="text-white text-sm font-medium">
+                  {selectedBMs.length} selecionados
+                </span>
+              </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSelectAll}
-                className="flex-1 bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
-              >
-                Selecionar Todos
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClearAll}
-                className="flex-1 bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
-              >
-                Limpar
-              </Button>
+            {/* Title and action buttons */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-white font-medium">
+                  Selecionar Business Managers ({uniqueBMs.length} disponíveis)
+                </h4>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSelectAll}
+                    className="text-slate-300 hover:text-white hover:bg-slate-700/50 text-xs px-3 py-1"
+                  >
+                    Todos
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearAll}
+                    className="text-slate-300 hover:text-white hover:bg-slate-700/50 text-xs px-3 py-1"
+                  >
+                    Limpar
+                  </Button>
+                </div>
+              </div>
+
+              {/* Search Field */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input
+                  placeholder="Buscar Business Managers..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 rounded-xl focus:border-slate-500"
+                />
+              </div>
             </div>
 
             {/* Business Manager List */}
-            <div className="max-h-60 overflow-y-auto space-y-2">
+            <div className="max-h-64 overflow-y-auto space-y-1 bg-slate-900/30 rounded-xl p-3">
               {filteredBMs.length === 0 ? (
-                <div className="text-slate-400 text-center py-4">
+                <div className="text-slate-400 text-center py-6">
                   Nenhum Business Manager encontrado
                 </div>
               ) : (
-                filteredBMs.map((bmName) => (
+                filteredBMs.map((bmName, index) => (
                   <div
                     key={bmName}
-                    className="flex items-center space-x-2 p-2 rounded hover:bg-slate-700 cursor-pointer"
+                    className="flex items-center space-x-3 p-3 rounded-lg hover:bg-slate-700/50 cursor-pointer transition-colors"
                     onClick={() => handleBMToggle(bmName)}
                   >
                     <Checkbox
                       id={bmName}
                       checked={selectedBMs.includes(bmName)}
                       onChange={() => handleBMToggle(bmName)}
-                      className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                      className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500 border-slate-500 rounded"
                     />
                     <label
                       htmlFor={bmName}
-                      className="text-sm text-white cursor-pointer flex-1"
+                      className="text-sm text-white cursor-pointer flex-1 font-medium"
                     >
                       {bmName}
                     </label>
+                    <div 
+                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      style={{ 
+                        backgroundColor: `hsl(${(index * 137.5) % 360}, 70%, 60%)` 
+                      }}
+                    />
                   </div>
                 ))
               )}
@@ -138,19 +161,25 @@ export const BusinessManagerFilter: React.FC<BusinessManagerFilterProps> = ({
 
       {/* Selected Filters Display */}
       {selectedBMs.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {selectedBMs.map((bmName) => (
+        <div className="flex flex-wrap gap-2">
+          {selectedBMs.map((bmName, index) => (
             <Badge
               key={bmName}
               variant="secondary"
-              className="bg-blue-600 text-white hover:bg-blue-700"
+              className="bg-slate-800/90 border border-slate-600 text-white hover:bg-slate-700/90 rounded-xl px-3 py-1 flex items-center gap-2"
             >
+              <div 
+                className="w-2 h-2 rounded-full"
+                style={{ 
+                  backgroundColor: `hsl(${(uniqueBMs.indexOf(bmName) * 137.5) % 360}, 70%, 60%)` 
+                }}
+              />
               {bmName}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => handleBMToggle(bmName)}
-                className="ml-1 h-auto p-0 text-white hover:bg-blue-700"
+                className="ml-1 h-auto p-0 text-white hover:bg-slate-600/50 w-4 h-4 rounded-full"
               >
                 <X className="w-3 h-3" />
               </Button>
