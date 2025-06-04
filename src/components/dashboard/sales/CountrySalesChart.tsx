@@ -36,14 +36,11 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
   // Filtrar vendas concluídas
   const completedSales = sales.filter(sale => sale.status === 'completed');
 
-  // Determinar se deve mostrar países ou estados
-  const showStates = countryFilter !== 'all';
-
   let chartData: ChartData[] = [];
   let chartTitle = '';
   let chartDescription = '';
 
-  if (showStates) {
+  if (countryFilter !== 'all') {
     // Mostrar estados do país selecionado
     const statesSales = completedSales
       .filter(sale => sale.country === countryFilter)
@@ -68,7 +65,7 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
     chartTitle = `Vendas por Estado - ${countryFilter}`;
     chartDescription = `Distribuição de vendas por estado em ${countryFilter}`;
   } else {
-    // Mostrar países
+    // Mostrar países quando nenhum país específico for selecionado
     const salesByCountry = completedSales.reduce((acc, sale) => {
       const country = sale.country || 'Não informado';
       if (!acc[country]) {
@@ -119,7 +116,7 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
       <CardContent>
         {chartData.length === 0 ? (
           <div className="flex items-center justify-center h-[400px] text-slate-400">
-            {showStates ? `Nenhuma venda encontrada para ${countryFilter}` : 'Nenhuma venda encontrada'}
+            {countryFilter !== 'all' ? `Nenhuma venda encontrada para ${countryFilter}` : 'Nenhuma venda encontrada'}
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={400}>
