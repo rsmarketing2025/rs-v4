@@ -36,10 +36,17 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
   // Determinar se devemos mostrar estados ou países
   const showingStates = countryFilter !== "all";
   
+  console.log('CountrySalesChart - Received countryFilter:', countryFilter);
+  console.log('CountrySalesChart - showingStates:', showingStates);
+  
   // Filtrar vendas por país se um país específico estiver selecionado
   const countryFilteredSales = showingStates 
     ? sales.filter(sale => sale.country === countryFilter)
     : sales;
+
+  console.log('CountrySalesChart - Total sales:', sales.length);
+  console.log('CountrySalesChart - Filtered sales:', countryFilteredSales.length);
+  console.log('CountrySalesChart - Sample states from filtered data:', countryFilteredSales.slice(0, 3).map(s => s.state));
 
   // Calcular métricas por país ou estado
   const metrics = countryFilteredSales.reduce((acc, sale) => {
@@ -57,6 +64,8 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
     return acc;
   }, {} as Record<string, { orders: number; revenue: number }>);
 
+  console.log('CountrySalesChart - Calculated metrics:', metrics);
+
   // Converter para array e ordenar
   const chartDataPoints: ChartDataPoint[] = Object.entries(metrics)
     .map(([key, data]) => ({
@@ -65,6 +74,8 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
       revenue: data.revenue
     }))
     .sort((a, b) => sortBy === 'revenue' ? b.revenue - a.revenue : b.orders - a.orders);
+
+  console.log('CountrySalesChart - Chart data points:', chartDataPoints);
 
   // Preparar dados do gráfico
   let chartData: ChartDataPoint[];
@@ -90,6 +101,8 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
 
     chartData = chartDataPoints.filter(item => item.country && selectedCountries.includes(item.country));
   }
+
+  console.log('CountrySalesChart - Final chart data:', chartData);
 
   const handleCountryToggle = (country: string) => {
     setSelectedCountries(prev => {

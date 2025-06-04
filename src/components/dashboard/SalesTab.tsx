@@ -47,6 +47,13 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
     fetchSales();
   }, [dateRange]);
 
+  // Resetar filtro de estado quando o país mudar
+  useEffect(() => {
+    if (countryFilter === "all") {
+      setStateFilter("all");
+    }
+  }, [countryFilter]);
+
   const fetchSales = async () => {
     try {
       setLoading(true);
@@ -185,13 +192,13 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
     document.body.removeChild(link);
   };
 
-  // Debug log for SalesTab
-  console.log('SalesTab - countryFilter being passed to CountrySalesChart:', countryFilter);
+  console.log('SalesTab - Current countryFilter:', countryFilter);
+  console.log('SalesTab - Filtered sales for chart:', filteredSales.length);
 
   return (
     <div className="space-y-6">
       <SalesSummaryCards totalMetrics={totalMetrics} />
-      <CountrySalesChart sales={filteredSales} countryFilter={countryFilter} />
+      <CountrySalesChart sales={sales} countryFilter={countryFilter} />
       <SalesChart sales={filteredSales} />
       <CreativesSalesChart sales={filteredSales} />
       <SalesFilters
