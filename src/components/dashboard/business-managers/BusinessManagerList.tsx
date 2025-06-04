@@ -31,6 +31,12 @@ export const BusinessManagerList: React.FC<BusinessManagerListProps> = ({ refres
   const [editingBM, setEditingBM] = useState<BusinessManager | null>(null);
   const [showTokens, setShowTokens] = useState<{ [key: string]: boolean }>({});
 
+  // Function to truncate text if it exceeds 10 characters
+  const truncateText = (text: string, maxLength: number = 10) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
   const fetchBusinessManagers = async () => {
     if (!user) return;
 
@@ -140,19 +146,19 @@ export const BusinessManagerList: React.FC<BusinessManagerListProps> = ({ refres
                 <TableBody>
                   {businessManagers.map((bm) => (
                     <TableRow key={bm.id} className="border-slate-700">
-                      <TableCell className="text-white font-medium">
-                        {bm.bm_name}
+                      <TableCell className="text-white font-medium" title={bm.bm_name}>
+                        {truncateText(bm.bm_name)}
                       </TableCell>
-                      <TableCell className="text-slate-300">
-                        {bm.ad_account_name}
+                      <TableCell className="text-slate-300" title={bm.ad_account_name}>
+                        {truncateText(bm.ad_account_name)}
                       </TableCell>
-                      <TableCell className="text-slate-300 font-mono text-sm">
-                        {bm.ad_account_id}
+                      <TableCell className="text-slate-300 font-mono text-sm" title={bm.ad_account_id}>
+                        {truncateText(bm.ad_account_id)}
                       </TableCell>
                       <TableCell className="text-slate-300">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-sm">
-                            {showTokens[bm.id] ? bm.access_token : maskToken(bm.access_token)}
+                          <span className="font-mono text-sm" title={showTokens[bm.id] ? bm.access_token : maskToken(bm.access_token)}>
+                            {showTokens[bm.id] ? truncateText(bm.access_token, 15) : truncateText(maskToken(bm.access_token), 15)}
                           </span>
                           <Button
                             variant="ghost"
