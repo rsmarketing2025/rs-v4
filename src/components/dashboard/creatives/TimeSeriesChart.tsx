@@ -65,10 +65,10 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ creatives, dat
     return filtered.sort((a, b) => (b as any)[selectedMetric] - (a as any)[selectedMetric]);
   }, [creatives, selectedMetric]);
 
-  // Initialize with top 10 when metric changes
+  // Initialize with ALL creatives when metric changes (instead of top 10)
   React.useEffect(() => {
-    const top10 = relevantCreatives.slice(0, 10).map(c => c.creative_name);
-    setSelectedCreatives(top10);
+    const allCreatives = relevantCreatives.map(c => c.creative_name);
+    setSelectedCreatives(allCreatives);
   }, [selectedMetric, relevantCreatives]);
 
   const currentMetric = metricOptions.find(m => m.value === selectedMetric) || metricOptions[0];

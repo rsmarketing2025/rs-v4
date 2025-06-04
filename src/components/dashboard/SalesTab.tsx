@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { SalesChart } from "./SalesChart";
 import { CreativesSalesChart } from "./CreativesSalesChart";
 import { SalesSummaryCards } from "./sales/SalesSummaryCards";
-import { RegionalAnalysis } from "./sales/RegionalAnalysis";
+import { CountrySalesChart } from "./sales/CountrySalesChart";
 import { SalesFilters } from "./sales/SalesFilters";
 import { SalesTable } from "./sales/SalesTable";
 import { format } from "date-fns";
@@ -188,7 +188,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   return (
     <div className="space-y-6">
       <SalesSummaryCards totalMetrics={totalMetrics} />
-      <RegionalAnalysis regionalMetrics={regionalMetrics} />
+      <CountrySalesChart sales={filteredSales} />
       <SalesChart sales={filteredSales} />
       <CreativesSalesChart sales={filteredSales} />
       <SalesFilters
