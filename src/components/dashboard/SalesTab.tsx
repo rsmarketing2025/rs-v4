@@ -6,6 +6,7 @@ import { SalesChart } from "./SalesChart";
 import { CreativesSalesChart } from "./CreativesSalesChart";
 import { SalesSummaryCards } from "./sales/SalesSummaryCards";
 import { CountrySalesChart } from "./sales/CountrySalesChart";
+import { StateSalesChart } from "./sales/StateSalesChart";
 import { SalesFilters } from "./sales/SalesFilters";
 import { SalesTable } from "./sales/SalesTable";
 import { format } from "date-fns";
@@ -199,6 +200,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
     <div className="space-y-6">
       <SalesSummaryCards totalMetrics={totalMetrics} />
       <CountrySalesChart sales={sales} countryFilter={countryFilter} />
+      <StateSalesChart sales={sales} />
       <SalesChart sales={filteredSales} />
       <CreativesSalesChart sales={filteredSales} />
       <SalesFilters
