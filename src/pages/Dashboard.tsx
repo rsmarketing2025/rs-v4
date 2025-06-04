@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar"
@@ -30,19 +31,28 @@ export default function Dashboard() {
       );
     }
 
+    // Create a safe date range object with both from and to dates
+    const safeDateRange = dateRange?.from && dateRange?.to ? {
+      from: dateRange.from,
+      to: dateRange.to
+    } : {
+      from: new Date(new Date().getFullYear(), new Date().getMonth() - 1, new Date().getDate()),
+      to: new Date()
+    };
+
     switch (activeTab) {
       case 'creatives':
-        return <CreativesTab dateRange={dateRange} />;
+        return <CreativesTab dateRange={safeDateRange} />;
       case 'sales':
-        return <SalesTab dateRange={dateRange} />;
+        return <SalesTab dateRange={safeDateRange} />;
       case 'affiliates':
-        return <AffiliatesTab dateRange={dateRange} />;
+        return <AffiliatesTab dateRange={safeDateRange} />;
       case 'users':
         return <UsersTab />;
       case 'bm':
         return <BMTab />;
       default:
-        return <CreativesTab dateRange={dateRange} />;
+        return <CreativesTab dateRange={safeDateRange} />;
     }
   };
 
@@ -133,12 +143,6 @@ export default function Dashboard() {
               </>
             )}
           </div>
-
-          {/* Date Range Picker */}
-          {/* <DateRangePicker
-            date={dateRange}
-            setDate={setDateRange}
-          /> */}
 
           {/* Tab Content */}
           {renderTabContent()}
