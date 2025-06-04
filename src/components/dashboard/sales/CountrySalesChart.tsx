@@ -22,6 +22,13 @@ interface CountrySalesChartProps {
   countryFilter: string;
 }
 
+interface ChartDataPoint {
+  country?: string;
+  state?: string;
+  orders: number;
+  revenue: number;
+}
+
 export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, countryFilter }) => {
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'revenue' | 'orders'>('revenue');
@@ -52,33 +59,39 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
   }, {} as Record<string, { orders: number; revenue: number }>);
 
   // Converter para array e ordenar
-  const chartDataPoints = Object.entries(metrics)
+  const chartDataPoints: ChartDataPoint[] = Object.entries(metrics)
     .map(([key, data]) => ({
-      [showingStates ? 'state' : 'country']: key,
+      ...(showingStates ? { state: key } : { country: key }),
       orders: data.orders,
       revenue: data.revenue
     }))
     .sort((a, b) => sortBy === 'revenue' ? b.revenue - a.revenue : b.orders - a.orders);
 
   // Para países: usar seleção múltipla; para estados: mostrar todos
-  let chartData;
+  let chartData: ChartDataPoint[];
   if (showingStates) {
     // Mostrar todos os estados quando um país está selecionado
     chartData = chartDataPoints;
   } else {
     // Lógica original para países
-    const availableCountries = chartDataPoints.map(item => item.country);
+    const availableCountries = chartDataPoints
+      .map(item => item.country)
+      .filter((country): country is string => typeof country === 'string');
     
     // Inicializar com top 5 países se nenhum estiver selecionado
     React.useEffect(() => {
       if (selectedCountries.length === 0 && chartDataPoints.length > 0) {
-        setSelectedCountries(chartDataPoints.slice(0, 5).map(item => item.country));
+        const topCountries = chartDataPoints
+          .slice(0, 5)
+          .map(item => item.country)
+          .filter((country): country is string => typeof country === 'string');
+        setSelectedCountries(topCountries);
       }
-    }, [chartDataPoints]);
+    }, [chartDataPoints.length]);
 
     chartData = selectedCountryDrillDown 
       ? [] // Não usado quando showingStates é true
-      : chartDataPoints.filter(item => selectedCountries.includes(item.country));
+      : chartDataPoints.filter(item => item.country && selectedCountries.includes(item.country));
   }
 
   const handleCountryToggle = (country: string) => {
@@ -92,7 +105,9 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
   };
 
   const handleSelectAll = () => {
-    const availableCountries = chartDataPoints.map(item => item.country);
+    const availableCountries = chartDataPoints
+      .map(item => item.country)
+      .filter((country): country is string => typeof country === 'string');
     setSelectedCountries(availableCountries);
   };
 
@@ -105,7 +120,7 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
   };
 
   const handleBarClick = (data: any) => {
-    if (!showingStates && !selectedCountryDrillDown && data.country) {
+    if (!showingStates && !selectedCountryDrillDown && data.country && typeof data.country === 'string') {
       setSelectedCountryDrillDown(data.country);
     }
   };
@@ -124,7 +139,9 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
     orders: acc.orders + item.orders
   }), { revenue: 0, orders: 0 });
 
-  const availableCountries = showingStates ? [] : chartDataPoints.map(item => item.country);
+  const availableCountries = showingStates ? [] : chartDataPoints
+    .map(item => item.country)
+    .filter((country): country is string => typeof country === 'string');
 
   return (
     <Card className="bg-slate-800/30 border-slate-700">
