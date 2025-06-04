@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      business_managers: {
+        Row: {
+          access_token: string
+          ad_account_id: string
+          ad_account_name: string
+          bm_name: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          ad_account_id: string
+          ad_account_name: string
+          bm_name: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          ad_account_id?: string
+          ad_account_name?: string
+          bm_name?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       campaigns: {
         Row: {
           ad_id: string

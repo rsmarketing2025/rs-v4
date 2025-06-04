@@ -13,12 +13,14 @@ import {
   Eye, 
   MousePointer, 
   Target,
-  BarChart3
+  BarChart3,
+  Settings
 } from "lucide-react";
 import { CreativesTab } from "@/components/dashboard/CreativesTab";
 import { SalesTab } from "@/components/dashboard/SalesTab";
 import { AffiliatesTab } from "@/components/dashboard/AffiliatesTab";
 import { UsersTab } from "@/components/dashboard/UsersTab";
+import { BusinessManagersTab } from "@/components/dashboard/BusinessManagersTab";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,6 +32,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState(() => {
     // Set active tab based on current route
     if (location.pathname === '/users') return "users";
+    if (location.pathname === '/business-managers') return "business-managers";
     return "creatives";
   });
   
@@ -52,6 +55,8 @@ const Dashboard = () => {
   React.useEffect(() => {
     if (activeTab === "users") {
       window.history.pushState({}, '', '/users');
+    } else if (activeTab === "business-managers") {
+      window.history.pushState({}, '', '/business-managers');
     } else {
       window.history.pushState({}, '', '/dashboard');
     }
@@ -86,6 +91,43 @@ const Dashboard = () => {
             <Card className="bg-slate-900/50 dark:bg-slate-900/50 light:bg-white border-slate-800 dark:border-slate-800 light:border-slate-200 backdrop-blur-sm">
               <CardContent className="p-6">
                 <UsersTab />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </SidebarInset>
+    );
+  }
+
+  // Show business managers page when on /business-managers route
+  if (location.pathname === '/business-managers' && isAdmin) {
+    return (
+      <SidebarInset>
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 light:from-slate-50 light:via-slate-100 light:to-slate-50">
+          <div className="container mx-auto p-6">
+            {/* Header */}
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
+              <div className="flex items-center gap-4">
+                <SidebarTrigger className="text-white dark:text-white light:text-slate-900" />
+                <div>
+                  <h1 className="text-5xl font-bold text-white dark:text-white light:text-slate-900 mb-2">
+                    Dashboard
+                  </h1>
+                  <p className="text-slate-400 dark:text-slate-400 light:text-slate-600 text-lg">
+                    Gerenciamento de Business Managers
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <ThemeToggle />
+              </div>
+            </div>
+
+            {/* Business Managers Content */}
+            <Card className="bg-slate-900/50 dark:bg-slate-900/50 light:bg-white border-slate-800 dark:border-slate-800 light:border-slate-200 backdrop-blur-sm">
+              <CardContent className="p-6">
+                <BusinessManagersTab />
               </CardContent>
             </Card>
           </div>
