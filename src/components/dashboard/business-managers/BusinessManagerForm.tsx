@@ -57,6 +57,15 @@ export const BusinessManagerForm: React.FC<BusinessManagerFormProps> = ({
     }
   }, [editingBM]);
 
+  // Função para formatar o nome da BM para ser compatível com automações
+  const formatBMName = (name: string): string => {
+    return name
+      .trim()
+      .replace(/\s+/g, '_') // Substitui espaços por underscores
+      .replace(/[^\w\-_]/g, '') // Remove caracteres especiais, mantém apenas letras, números, hífens e underscores
+      .toLowerCase(); // Converte para minúsculas para consistência
+  };
+
   const addAdAccount = () => {
     const newId = Date.now().toString();
     setAdAccounts([...adAccounts, { id: newId, ad_account_name: '', ad_account_id: '' }]);
@@ -103,12 +112,23 @@ export const BusinessManagerForm: React.FC<BusinessManagerFormProps> = ({
     setLoading(true);
 
     try {
+      // Formatar o nome da BM para ser compatível com automações
+      const formattedBMName = formatBMName(formData.bm_name);
+      
+      // Mostrar um aviso se o nome foi alterado
+      if (formattedBMName !== formData.bm_name) {
+        toast({
+          title: "Nome formatado",
+          description: `Nome da BM formatado de "${formData.bm_name}" para "${formattedBMName}" para compatibilidade com automações`,
+        });
+      }
+
       if (editingBM) {
         // Update existing record
         const { error } = await supabase
           .from('business_managers')
           .update({
-            bm_name: formData.bm_name,
+            bm_name: formattedBMName,
             access_token: formData.access_token,
             app_id: formData.app_id,
             app_secret: formData.app_secret,
@@ -123,7 +143,7 @@ export const BusinessManagerForm: React.FC<BusinessManagerFormProps> = ({
         if (validAccounts.length > 1) {
           const additionalAccounts = validAccounts.slice(1).map(account => ({
             user_id: user.id,
-            bm_name: formData.bm_name,
+            bm_name: formattedBMName,
             access_token: formData.access_token,
             app_id: formData.app_id,
             app_secret: formData.app_secret,
@@ -146,7 +166,7 @@ export const BusinessManagerForm: React.FC<BusinessManagerFormProps> = ({
         // Create new records - one for each ad account
         const recordsToInsert = validAccounts.map(account => ({
           user_id: user.id,
-          bm_name: formData.bm_name,
+          bm_name: formattedBMName,
           access_token: formData.access_token,
           app_id: formData.app_id,
           app_secret: formData.app_secret,
@@ -211,6 +231,9 @@ export const BusinessManagerForm: React.FC<BusinessManagerFormProps> = ({
                   className="bg-slate-800 border-slate-700 text-white"
                   required
                 />
+                <p className="text-xs text-slate-400">
+                  Espaços serão automaticamente convertidos para underscore (_) para compatibilidade com automações
+                </p>
               </div>
               
               <div className="space-y-2">
