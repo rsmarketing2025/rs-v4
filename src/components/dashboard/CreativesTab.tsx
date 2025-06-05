@@ -45,7 +45,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
 
   const exportToCSV = () => {
     const headers = [
-      'Criativo', 'Campanha', 'Período', 'Valor Gasto', 'Views 3s', 'Views 75%', 'Views Total', 'Clicks',
+      'Criativo', 'Campanha', 'Produtos', 'Período', 'Valor Gasto', 'Views 3s', 'Views 75%', 'Views Total', 'Clicks',
       'PR Hook %', 'Hook Rate %', 'Body Rate %', 'CTA %', 'CTR %', 'Conv. Body %',
       'Qtd Vendas', 'Vendas Bruto', 'Lucro', 'CPA', 'ROI', 'Status'
     ];
@@ -55,6 +55,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
       ...filteredCreatives.map(creative => [
         `"${creative.creative_name}"`,
         `"${creative.campaign_name}"`,
+        `"${creative.products ? creative.products.join('; ') : ''}"`,
         `"${creative.start_date} - ${creative.end_date}"`,
         creative.amount_spent.toFixed(2),
         creative.views_3s,

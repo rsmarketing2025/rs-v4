@@ -26,6 +26,7 @@ interface CreativeMetrics {
   cpa: number;
   roi: number;
   status: string;
+  products: string[]; // Array of product names
 }
 
 export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
@@ -91,7 +92,8 @@ export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
             cta_rates: [],
             ctrs: [],
             status: campaign.status || 'active',
-            sales: []
+            sales: [],
+            products: []
           });
         }
 
@@ -112,7 +114,13 @@ export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
       salesData?.forEach(sale => {
         const key = sale.creative_name;
         if (creativesMap.has(key)) {
-          creativesMap.get(key).sales.push(sale);
+          const creative = creativesMap.get(key);
+          creative.sales.push(sale);
+          
+          // Add product to the products array if it exists and isn't already there
+          if (sale.produto && !creative.products.includes(sale.produto)) {
+            creative.products.push(sale.produto);
+          }
         }
       });
 
@@ -162,7 +170,8 @@ export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
           profit: profit,
           cpa: cpa,
           roi: roi,
-          status: creative.status
+          status: creative.status,
+          products: creative.products
         };
       });
 

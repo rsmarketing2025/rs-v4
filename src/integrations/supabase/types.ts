@@ -238,6 +238,7 @@ export type Database = {
           net_value: number | null
           order_id: string
           payment_method: string
+          produto: string | null
           sale_date: string | null
           state: string | null
           status: string
@@ -262,6 +263,7 @@ export type Database = {
           net_value?: number | null
           order_id: string
           payment_method: string
+          produto?: string | null
           sale_date?: string | null
           state?: string | null
           status?: string
@@ -286,6 +288,7 @@ export type Database = {
           net_value?: number | null
           order_id?: string
           payment_method?: string
+          produto?: string | null
           sale_date?: string | null
           state?: string | null
           status?: string

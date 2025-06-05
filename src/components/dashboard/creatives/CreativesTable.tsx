@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,6 +28,7 @@ interface CreativeMetrics {
   cpa: number;
   roi: number;
   status: string;
+  products: string[];
 }
 
 interface CreativesTableProps {
@@ -72,6 +72,7 @@ export const CreativesTable: React.FC<CreativesTableProps> = ({
               <TableRow className="border-slate-700">
                 <TableHead className="text-slate-300 min-w-[150px]">Criativo</TableHead>
                 <TableHead className="text-slate-300 min-w-[120px]">Campanha</TableHead>
+                <TableHead className="text-slate-300 min-w-[120px]">Produtos</TableHead>
                 <TableHead className="text-slate-300 min-w-[140px]">Período</TableHead>
                 <TableHead className="text-slate-300 min-w-[100px]">Valor Gasto</TableHead>
                 <TableHead className="text-slate-300">Views 3s</TableHead>
@@ -95,13 +96,13 @@ export const CreativesTable: React.FC<CreativesTableProps> = ({
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={20} className="text-center text-slate-400 py-8">
+                  <TableCell colSpan={21} className="text-center text-slate-400 py-8">
                     Carregando...
                   </TableCell>
                 </TableRow>
               ) : displayedCreatives.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={20} className="text-center text-slate-400 py-8">
+                  <TableCell colSpan={21} className="text-center text-slate-400 py-8">
                     Nenhum criativo encontrado
                   </TableCell>
                 </TableRow>
@@ -113,6 +114,23 @@ export const CreativesTable: React.FC<CreativesTableProps> = ({
                     </TableCell>
                     <TableCell className="text-slate-300">
                       {creative.campaign_name}
+                    </TableCell>
+                    <TableCell className="text-slate-300">
+                      {creative.products && creative.products.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {creative.products.map((product, index) => (
+                            <Badge 
+                              key={index}
+                              variant="outline" 
+                              className="text-xs bg-blue-500/20 text-blue-400 border-blue-500/30"
+                            >
+                              {product}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-slate-500">-</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-slate-300">
                       {creative.start_date} - {creative.end_date}
