@@ -24,10 +24,12 @@ import { BusinessManagersTab } from "@/components/dashboard/BusinessManagersTab"
 import { KPICard } from "@/components/dashboard/KPICard";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { useAuth } from "@/hooks/useAuth";
+import { useMonthlyKPIs } from "@/hooks/useMonthlyKPIs";
 import { useLocation } from "react-router-dom";
 
 const Dashboard = () => {
   const { isAdmin } = useAuth();
+  const { kpis, loading: kpisLoading } = useMonthlyKPIs();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState(() => {
     // Set active tab based on current route
@@ -40,16 +42,6 @@ const Dashboard = () => {
     from: new Date(new Date().setDate(new Date().getDate() - 30)),
     to: new Date()
   });
-
-  // Mock KPI data - will be replaced with real data from Supabase
-  const kpis = {
-    totalSpent: 42580.50,
-    totalRevenue: 128450.75,
-    totalOrders: 456,
-    roas: 3.02,
-    conversionRate: 4.8,
-    avgOrderValue: 281.69
-  };
 
   // Update URL when tab changes
   React.useEffect(() => {
@@ -167,43 +159,43 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
             <KPICard
               title="Total Investido"
-              value={`R$ ${kpis.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              change="+12.5%"
+              value={kpisLoading ? "Carregando..." : `R$ ${kpis.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+              change={kpisLoading ? "..." : "+12.5%"}
               icon={DollarSign}
               trend="up"
             />
             <KPICard
               title="Receita Total"
-              value={`R$ ${kpis.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              change="+18.2%"
+              value={kpisLoading ? "Carregando..." : `R$ ${kpis.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+              change={kpisLoading ? "..." : "+18.2%"}
               icon={TrendingUp}
               trend="up"
             />
             <KPICard
               title="Total de Pedidos"
-              value={kpis.totalOrders.toLocaleString()}
-              change="+15.8%"
+              value={kpisLoading ? "Carregando..." : kpis.totalOrders.toLocaleString()}
+              change={kpisLoading ? "..." : "+15.8%"}
               icon={Target}
               trend="up"
             />
             <KPICard
               title="ROAS"
-              value={`${kpis.roas.toFixed(2)}x`}
-              change="+0.3x"
+              value={kpisLoading ? "Carregando..." : `${kpis.roas.toFixed(2)}x`}
+              change={kpisLoading ? "..." : "+0.3x"}
               icon={BarChart3}
               trend="up"
             />
             <KPICard
               title="Taxa de Conversão"
-              value={`${kpis.conversionRate}%`}
-              change="+0.8%"
+              value={kpisLoading ? "Carregando..." : `${kpis.conversionRate.toFixed(1)}%`}
+              change={kpisLoading ? "..." : "+0.8%"}
               icon={MousePointer}
               trend="up"
             />
             <KPICard
               title="Ticket Médio"
-              value={`R$ ${kpis.avgOrderValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              change="+5.2%"
+              value={kpisLoading ? "Carregando..." : `R$ ${kpis.avgOrderValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+              change={kpisLoading ? "..." : "+5.2%"}
               icon={DollarSign}
               trend="up"
             />
