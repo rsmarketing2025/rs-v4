@@ -556,6 +556,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_manage_users: {
+        Args: { _target_user_id?: string }
+        Returns: boolean
+      }
       format_date_br: {
         Args: { input_date: string }
         Returns: string
@@ -659,7 +663,7 @@ export type Database = {
         | "affiliate_performance"
         | "revenue_breakdown"
       user_page: "creatives" | "sales" | "affiliates" | "revenue" | "users"
-      user_role: "admin" | "user"
+      user_role: "admin" | "user" | "gestor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -821,7 +825,7 @@ export const Constants = {
         "revenue_breakdown",
       ],
       user_page: ["creatives", "sales", "affiliates", "revenue", "users"],
-      user_role: ["admin", "user"],
+      user_role: ["admin", "user", "gestor"],
     },
   },
 } as const

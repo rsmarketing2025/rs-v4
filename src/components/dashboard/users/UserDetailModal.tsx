@@ -1,14 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { X } from 'lucide-react';
+import { User, Crown, ShieldCheck, Shield } from 'lucide-react';
 import { ChartPermissions } from './ChartPermissions';
 
 interface ChartPermission {
@@ -23,27 +24,36 @@ interface UserProfile {
   email: string;
   username: string | null;
   phone: string | null;
-  role: 'admin' | 'user';
+  status: string;
+  created_at: string;
+  role: 'admin' | 'user' | 'gestor';
   pagePermissions: {
     creatives: boolean;
     sales: boolean;
     affiliates: boolean;
     revenue: boolean;
+    users: boolean;
   };
 }
 
-interface EditUserFormProps {
+interface UserDetailModalProps {
   user: UserProfile;
+  currentUserRole: string | null;
   onClose: () => void;
   onUserUpdated: () => void;
 }
 
-export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, onUserUpdated }) => {
+export const UserDetailModal: React.FC<UserDetailModalProps> = ({
+  user,
+  currentUserRole,
+  onClose,
+  onUserUpdated
+}) => {
   const [formData, setFormData] = useState({
     fullName: user.full_name,
     username: user.username || '',
-    email: user.email,
     phone: user.phone || '',
+    status: user.status,
     role: user.role,
     pagePermissions: user.pagePermissions,
     chartPermissions: [] as ChartPermission[]
@@ -51,6 +61,18 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, onUse
   const [updating, setUpdating] = useState(false);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  // Verificar se o usuário atual pode editar este usuário
+  const canEdit = () => {
+    if (currentUserRole === 'admin') return true;
+    if (currentUserRole === 'gestor' && user.role === 'user') return true;
+    return false;
+  };
+
+  // Verificar se pode alterar o papel
+  const canChangeRole = () => {
+    return currentUserRole === 'admin';
+  };
 
   useEffect(() => {
     fetchChartPermissions();
@@ -65,32 +87,24 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, onUse
 
       if (error) throw error;
 
-      // Convert to the format expected by ChartPermissions component
+      // Converter para o formato esperado
       const chartPermissions: ChartPermission[] = data?.map(permission => ({
         chartType: permission.chart_type,
         page: permission.page,
         canView: permission.can_view ?? true
       })) || [];
 
-      // Fill in missing permissions with default values - using correct chart names
+      // Preencher permissões faltantes com valores padrão
       const defaultPermissions = [
-        // Criativos
         { chartType: 'performance_overview', page: 'creatives', canView: true },
         { chartType: 'time_series', page: 'creatives', canView: true },
         { chartType: 'top_creatives', page: 'creatives', canView: true },
         { chartType: 'metrics_comparison', page: 'creatives', canView: true },
-        
-        // Vendas
         { chartType: 'sales_summary', page: 'sales', canView: true },
         { chartType: 'conversion_funnel', page: 'sales', canView: true },
         { chartType: 'time_series', page: 'sales', canView: true },
-        { chartType: 'creatives_sales', page: 'sales', canView: true },
-        
-        // Afiliados
         { chartType: 'affiliate_performance', page: 'affiliates', canView: true },
         { chartType: 'time_series', page: 'affiliates', canView: true },
-        
-        // Receita
         { chartType: 'revenue_breakdown', page: 'revenue', canView: true },
         { chartType: 'roi_analysis', page: 'revenue', canView: true },
         { chartType: 'time_series', page: 'revenue', canView: true },
@@ -116,38 +130,50 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, onUse
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canEdit()) {
+      toast({
+        title: "Sem permissão",
+        description: "Você não tem permissão para editar este usuário.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setUpdating(true);
 
     try {
-      // Update profile information
+      // Atualizar informações do perfil
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
           full_name: formData.fullName,
           username: formData.username || null,
-          phone: formData.phone || null
+          phone: formData.phone || null,
+          status: formData.status
         })
         .eq('id', user.id);
 
       if (profileError) throw profileError;
 
-      // Update user role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .update({ role: formData.role })
-        .eq('user_id', user.id);
+      // Atualizar papel do usuário (apenas se tiver permissão)
+      if (canChangeRole()) {
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .update({ role: formData.role })
+          .eq('user_id', user.id);
 
-      if (roleError) throw roleError;
+        if (roleError) throw roleError;
+      }
 
-      // Update page permissions
+      // Atualizar permissões de página
       const pagePermissions = Object.entries(formData.pagePermissions)
         .map(([page, canAccess]) => ({
           user_id: user.id,
-          page: page as 'creatives' | 'sales' | 'affiliates' | 'revenue',
+          page: page as 'creatives' | 'sales' | 'affiliates' | 'revenue' | 'users',
           can_access: canAccess
         }));
 
-      // Delete existing permissions and insert new ones
+      // Deletar permissões existentes e inserir novas
       await supabase
         .from('user_page_permissions')
         .delete()
@@ -161,15 +187,15 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, onUse
         if (permissionsError) throw permissionsError;
       }
 
-      // Update chart permissions with proper type casting
+      // Atualizar permissões de gráficos
       const chartPermissions = formData.chartPermissions.map(permission => ({
         user_id: user.id,
-        chart_type: permission.chartType as 'performance_overview' | 'time_series' | 'top_creatives' | 'metrics_comparison' | 'conversion_funnel' | 'roi_analysis' | 'sales_summary' | 'affiliate_performance' | 'revenue_breakdown',
+        chart_type: permission.chartType as any,
         page: permission.page as 'creatives' | 'sales' | 'affiliates' | 'revenue',
         can_view: permission.canView
       }));
 
-      // Delete existing chart permissions and insert new ones
+      // Deletar permissões de gráficos existentes e inserir novas
       await supabase
         .from('user_chart_permissions')
         .delete()
@@ -184,12 +210,11 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, onUse
       }
 
       toast({
-        title: "Usuário atualizado com sucesso!",
-        description: `${formData.fullName} foi atualizado no sistema.`,
+        title: "Usuário atualizado",
+        description: `${formData.fullName} foi atualizado com sucesso.`,
       });
 
       onUserUpdated();
-      onClose();
     } catch (error: any) {
       console.error('Error updating user:', error);
       toast({
@@ -223,51 +248,55 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, onUse
     }));
   };
 
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return <Crown className="w-4 h-4" />;
+      case 'gestor':
+        return <ShieldCheck className="w-4 h-4" />;
+      default:
+        return <Shield className="w-4 h-4" />;
+    }
+  };
+
   if (loading) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
-        <CardContent className="p-6">
-          <div className="text-center text-slate-400">
-            Carregando permissões do usuário...
+      <Dialog open onOpenChange={onClose}>
+        <DialogContent className="bg-slate-900 border-slate-700 max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="text-center text-slate-400 py-8">
+            Carregando detalhes do usuário...
           </div>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
     );
   }
 
   return (
-    <Card className="bg-slate-800/50 border-slate-700">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle className="text-white">Editar Usuário</CardTitle>
-          <CardDescription className="text-slate-400">
-            Atualize as informações do usuário
-          </CardDescription>
-        </div>
-        <Button 
-          variant="ghost" 
-          size="icon"
-          onClick={onClose}
-          className="text-slate-400 hover:text-white"
-        >
-          <X className="w-4 h-4" />
-        </Button>
-      </CardHeader>
-      <CardContent>
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="bg-slate-900 border-slate-700 max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-white flex items-center gap-2">
+            <User className="w-5 h-5" />
+            Detalhes do Usuário
+          </DialogTitle>
+          <DialogDescription className="text-slate-400">
+            {canEdit() ? "Visualize e edite as informações do usuário" : "Visualizar informações do usuário"}
+          </DialogDescription>
+        </DialogHeader>
+
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
+          {/* Informações Básicas */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-white">Informações Básicas</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-white">Nome Completo *</Label>
+                <Label htmlFor="fullName" className="text-white">Nome Completo</Label>
                 <Input
                   id="fullName"
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  placeholder="Digite o nome completo"
-                  required
-                  className="bg-slate-900/50 border-slate-600 text-white"
+                  disabled={!canEdit()}
+                  className="bg-slate-800/50 border-slate-600 text-white disabled:opacity-60"
                 />
               </div>
               <div className="space-y-2">
@@ -276,54 +305,87 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, onUse
                   id="username"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  placeholder="username"
-                  className="bg-slate-900/50 border-slate-600 text-white"
+                  disabled={!canEdit()}
+                  className="bg-slate-800/50 border-slate-600 text-white disabled:opacity-60"
                 />
               </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-white">Email *</Label>
+                <Label className="text-white">Email</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
+                  value={user.email}
                   disabled
-                  className="bg-slate-900/50 border-slate-600 text-slate-400"
+                  className="bg-slate-800/50 border-slate-600 text-slate-400"
                 />
                 <p className="text-xs text-slate-500">O email não pode ser alterado</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-white">Telefone/WhatsApp</Label>
+                <Label htmlFor="phone" className="text-white">Telefone</Label>
                 <Input
                   id="phone"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="(11) 99999-9999"
-                  className="bg-slate-900/50 border-slate-600 text-white"
+                  disabled={!canEdit()}
+                  className="bg-slate-800/50 border-slate-600 text-white disabled:opacity-60"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="role" className="text-white">Perfil *</Label>
-              <Select 
-                value={formData.role} 
-                onValueChange={(value: 'admin' | 'user') => setFormData({ ...formData, role: value })}
-              >
-                <SelectTrigger className="bg-slate-900/50 border-slate-600 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-slate-700">
-                  <SelectItem value="user">Usuário</SelectItem>
-                  <SelectItem value="admin">Administrador</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="status" className="text-white">Status</Label>
+                <Select 
+                  value={formData.status} 
+                  onValueChange={(value) => setFormData({ ...formData, status: value })}
+                  disabled={!canEdit()}
+                >
+                  <SelectTrigger className="bg-slate-800/50 border-slate-600 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-slate-700">
+                    <SelectItem value="active">Ativo</SelectItem>
+                    <SelectItem value="inactive">Inativo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="role" className="text-white">Papel</Label>
+                <Select 
+                  value={formData.role} 
+                  onValueChange={(value: 'admin' | 'user' | 'gestor') => setFormData({ ...formData, role: value })}
+                  disabled={!canChangeRole()}
+                >
+                  <SelectTrigger className="bg-slate-800/50 border-slate-600 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-slate-700">
+                    <SelectItem value="user">
+                      <div className="flex items-center">
+                        <Shield className="w-4 h-4 mr-2" />
+                        Usuário
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="gestor">
+                      <div className="flex items-center">
+                        <ShieldCheck className="w-4 h-4 mr-2" />
+                        Gestor
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="admin">
+                      <div className="flex items-center">
+                        <Crown className="w-4 h-4 mr-2" />
+                        Administrador
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
-          {/* Page Permissions */}
+          {/* Permissões de Página */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-white">Permissões de Acesso</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -335,44 +397,63 @@ export const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, onUse
                     onCheckedChange={(checked) => 
                       handlePagePermissionChange(page as keyof typeof formData.pagePermissions, checked as boolean)
                     }
+                    disabled={!canEdit()}
                     className="border-slate-600"
                   />
                   <Label htmlFor={page} className="text-white capitalize">
                     {page === 'creatives' ? 'Criativos' : 
                      page === 'sales' ? 'Vendas' : 
-                     page === 'affiliates' ? 'Afiliados' : 'Receita'}
+                     page === 'affiliates' ? 'Afiliados' : 
+                     page === 'revenue' ? 'Receita' : 'Usuários'}
                   </Label>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Chart Permissions */}
-          <ChartPermissions
-            chartPermissions={formData.chartPermissions}
-            onPermissionChange={handleChartPermissionChange}
-          />
+          {/* Permissões de Gráficos */}
+          {canEdit() && (
+            <ChartPermissions
+              chartPermissions={formData.chartPermissions}
+              onPermissionChange={handleChartPermissionChange}
+            />
+          )}
 
-          {/* Form Actions */}
+          {/* Informações Adicionais */}
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium text-white">Informações Adicionais</h3>
+            <div className="bg-slate-800/30 p-4 rounded-lg space-y-2">
+              <p className="text-slate-300">
+                <span className="font-medium">Criado em:</span> {new Date(user.created_at).toLocaleString('pt-BR')}
+              </p>
+              <p className="text-slate-300">
+                <span className="font-medium">ID:</span> {user.id}
+              </p>
+            </div>
+          </div>
+
+          {/* Ações */}
           <div className="flex gap-3 pt-4">
-            <Button 
-              type="submit" 
-              className="bg-blue-600 hover:bg-blue-700"
-              disabled={updating}
-            >
-              {updating ? "Atualizando..." : "Atualizar Usuário"}
-            </Button>
+            {canEdit() && (
+              <Button 
+                type="submit" 
+                className="bg-blue-600 hover:bg-blue-700"
+                disabled={updating}
+              >
+                {updating ? "Atualizando..." : "Salvar Alterações"}
+              </Button>
+            )}
             <Button 
               type="button" 
               variant="outline" 
               onClick={onClose}
               className="border-slate-600 text-slate-300 hover:bg-slate-800"
             >
-              Cancelar
+              {canEdit() ? "Cancelar" : "Fechar"}
             </Button>
           </div>
         </form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 };

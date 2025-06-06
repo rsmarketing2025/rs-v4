@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { User, Shield, ShieldCheck, X } from 'lucide-react';
+import { User, Shield, ShieldCheck, Crown, X } from 'lucide-react';
 import { ChartPermissions } from './ChartPermissions';
 
 interface ChartPermission {
@@ -24,12 +24,14 @@ interface UserFormData {
   email: string;
   phone: string;
   password: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'gestor';
+  status: 'active' | 'inactive';
   pagePermissions: {
     creatives: boolean;
     sales: boolean;
     affiliates: boolean;
     revenue: boolean;
+    users: boolean;
   };
   chartPermissions: ChartPermission[];
 }
@@ -37,9 +39,10 @@ interface UserFormData {
 interface UserFormProps {
   onClose: () => void;
   onUserCreated: () => void;
+  currentUserRole: string | null;
 }
 
-export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) => {
+export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated, currentUserRole }) => {
   const [formData, setFormData] = useState<UserFormData>({
     fullName: '',
     username: '',
@@ -47,14 +50,16 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
     phone: '',
     password: '',
     role: 'user',
+    status: 'active',
     pagePermissions: {
       creatives: true,
       sales: true,
       affiliates: true,
       revenue: true,
+      users: false,
     },
     chartPermissions: [
-      // Default chart permissions for each page
+      // Permissões padrão para gráficos
       { chartType: 'performance_overview', page: 'creatives', canView: true },
       { chartType: 'time_series', page: 'creatives', canView: true },
       { chartType: 'top_creatives', page: 'creatives', canView: true },
@@ -73,47 +78,56 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
   const { toast } = useToast();
   const { session, refreshSession } = useAuth();
 
+  // Verificar quais papéis o usuário atual pode atribuir
+  const getAvailableRoles = () => {
+    if (currentUserRole === 'admin') {
+      return ['user', 'gestor', 'admin'];
+    } else if (currentUserRole === 'gestor') {
+      return ['user'];
+    }
+    return ['user'];
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreating(true);
 
     try {
-      console.log('Submitting user creation form with data:', formData);
+      console.log('Criando usuário com dados:', formData);
 
-      // Ensure we have a valid session
+      // Verificar se temos sessão válida
       if (!session) {
         throw new Error('Você precisa estar logado para criar usuários');
       }
 
-      // Check if session is expired or about to expire (within 1 minute)
+      // Verificar se a sessão está prestes a expirar
       const now = Date.now();
       const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
       
-      if (expiresAt < now + 60000) { // Expires within 1 minute
-        console.log('Session expired or about to expire, refreshing...');
+      if (expiresAt < now + 60000) {
+        console.log('Sessão expirando, renovando...');
         try {
           await refreshSession();
-          // Get the new session after refresh
           const { data: { session: newSession } } = await supabase.auth.getSession();
           if (!newSession) {
             throw new Error('Falha ao renovar sessão. Faça login novamente.');
           }
         } catch (refreshError) {
-          console.error('Failed to refresh session:', refreshError);
+          console.error('Falha ao renovar sessão:', refreshError);
           throw new Error('Sessão expirada. Faça login novamente.');
         }
       }
 
-      // Get the current session after potential refresh
+      // Obter sessão atual
       const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError || !currentSession?.access_token) {
         throw new Error('Sessão inválida. Faça login novamente.');
       }
 
-      console.log('Using session with token:', currentSession.access_token.substring(0, 20) + '...');
+      console.log('Chamando função para criar usuário...');
 
-      // Call the Edge Function to create user
+      // Chamar a Edge Function para criar o usuário
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: { formData },
         headers: {
@@ -123,30 +137,29 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
       });
 
       if (error) {
-        console.error('Edge function error:', error);
+        console.error('Erro da Edge Function:', error);
         throw new Error(error.message || 'Erro ao chamar função de criação de usuário');
       }
 
       if (data?.error) {
-        console.error('User creation error:', data.error);
+        console.error('Erro na criação do usuário:', data.error);
         throw new Error(data.error);
       }
 
-      console.log('User created successfully:', data);
+      console.log('Usuário criado com sucesso:', data);
 
       toast({
         title: "Usuário criado com sucesso!",
-        description: `${formData.fullName} foi adicionado ao sistema.`,
+        description: `${formData.fullName} foi adicionado ao sistema com o papel ${formData.role}.`,
       });
 
       onUserCreated();
-      onClose();
     } catch (error: any) {
-      console.error('Error creating user:', error);
+      console.error('Erro ao criar usuário:', error);
       
       let errorMessage = error.message || "Ocorreu um erro ao criar o usuário.";
       
-      // Handle specific error cases
+      // Tratar casos específicos de erro
       if (errorMessage.includes('Invalid authentication') || errorMessage.includes('refresh_token_not_found')) {
         errorMessage = "Sessão expirada. Por favor, faça login novamente.";
       } else if (errorMessage.includes('Admin access required')) {
@@ -188,9 +201,12 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
     <Card className="bg-slate-800/50 border-slate-700">
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle className="text-white">Novo Usuário</CardTitle>
+          <CardTitle className="text-white flex items-center gap-2">
+            <User className="w-5 h-5" />
+            Criar Novo Usuário
+          </CardTitle>
           <CardDescription className="text-slate-400">
-            Preencha as informações para criar um novo usuário
+            Preencha as informações para criar um novo usuário no sistema
           </CardDescription>
         </div>
         <Button 
@@ -204,7 +220,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
+          {/* Informações Básicas */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-white">Informações Básicas</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -245,7 +261,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-white">Telefone/WhatsApp</Label>
+                <Label htmlFor="phone" className="text-white">Telefone</Label>
                 <Input
                   id="phone"
                   value={formData.phone}
@@ -256,7 +272,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-white">Senha *</Label>
                 <Input
@@ -270,36 +286,63 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="role" className="text-white">Perfil *</Label>
+                <Label htmlFor="role" className="text-white">Papel *</Label>
                 <Select 
                   value={formData.role} 
-                  onValueChange={(value: 'admin' | 'user') => setFormData({ ...formData, role: value })}
+                  onValueChange={(value: 'admin' | 'user' | 'gestor') => setFormData({ ...formData, role: value })}
                 >
                   <SelectTrigger className="bg-slate-900/50 border-slate-600 text-white">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-900 border-slate-700">
-                    <SelectItem value="user">
-                      <div className="flex items-center">
-                        <Shield className="w-4 h-4 mr-2" />
-                        Usuário
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="admin">
-                      <div className="flex items-center">
-                        <ShieldCheck className="w-4 h-4 mr-2" />
-                        Administrador
-                      </div>
-                    </SelectItem>
+                    {getAvailableRoles().includes('user') && (
+                      <SelectItem value="user">
+                        <div className="flex items-center">
+                          <Shield className="w-4 h-4 mr-2" />
+                          Usuário
+                        </div>
+                      </SelectItem>
+                    )}
+                    {getAvailableRoles().includes('gestor') && (
+                      <SelectItem value="gestor">
+                        <div className="flex items-center">
+                          <ShieldCheck className="w-4 h-4 mr-2" />
+                          Gestor
+                        </div>
+                      </SelectItem>
+                    )}
+                    {getAvailableRoles().includes('admin') && (
+                      <SelectItem value="admin">
+                        <div className="flex items-center">
+                          <Crown className="w-4 h-4 mr-2" />
+                          Administrador
+                        </div>
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status" className="text-white">Status *</Label>
+                <Select 
+                  value={formData.status} 
+                  onValueChange={(value: 'active' | 'inactive') => setFormData({ ...formData, status: value })}
+                >
+                  <SelectTrigger className="bg-slate-900/50 border-slate-600 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-slate-700">
+                    <SelectItem value="active">Ativo</SelectItem>
+                    <SelectItem value="inactive">Inativo</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
           </div>
 
-          {/* Page Permissions */}
+          {/* Permissões de Página */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium text-white">Permissões de Acesso</h3>
+            <h3 className="text-lg font-medium text-white">Permissões de Acesso às Páginas</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {Object.entries(formData.pagePermissions).map(([page, hasAccess]) => (
                 <div key={page} className="flex items-center space-x-2">
@@ -311,23 +354,24 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated }) =>
                     }
                     className="border-slate-600"
                   />
-                  <Label htmlFor={page} className="text-white capitalize">
+                  <Label htmlFor={page} className="text-white">
                     {page === 'creatives' ? 'Criativos' : 
                      page === 'sales' ? 'Vendas' : 
-                     page === 'affiliates' ? 'Afiliados' : 'Receita'}
+                     page === 'affiliates' ? 'Afiliados' : 
+                     page === 'revenue' ? 'Receita' : 'Usuários'}
                   </Label>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Chart Permissions */}
+          {/* Permissões de Gráficos */}
           <ChartPermissions
             chartPermissions={formData.chartPermissions}
             onPermissionChange={handleChartPermissionChange}
           />
 
-          {/* Form Actions */}
+          {/* Ações do Formulário */}
           <div className="flex gap-3 pt-4">
             <Button 
               type="submit" 

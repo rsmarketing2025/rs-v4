@@ -59,15 +59,15 @@ export const ChartPermissions: React.FC<ChartPermissionsProps> = ({
   return (
     <div className="space-y-6">
       <div>
-        <h4 className="text-md font-medium text-white mb-4">Permissões de Gráficos</h4>
+        <h4 className="text-lg font-medium text-white mb-2">Permissões de Gráficos</h4>
         <p className="text-sm text-slate-400 mb-4">
-          Controle quais gráficos o usuário pode visualizar em cada página
+          Controle quais gráficos o usuário pode visualizar em cada página do sistema
         </p>
       </div>
 
       {Object.entries(chartsByPage).map(([page, charts]) => (
         <div key={page} className="space-y-3">
-          <h5 className="text-sm font-medium text-slate-300">
+          <h5 className="text-md font-medium text-slate-300 border-b border-slate-700 pb-2">
             {pageLabels[page]}
           </h5>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-4">
@@ -85,7 +85,7 @@ export const ChartPermissions: React.FC<ChartPermissionsProps> = ({
                   htmlFor={`${page}-${chartType}`} 
                   className="text-white text-sm cursor-pointer"
                 >
-                  {chartTypeLabels[chartType]}
+                  {chartTypeLabels[chartType] || chartType}
                 </Label>
               </div>
             ))}

@@ -6,8 +6,16 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Search, User, Mail, Phone, Shield, ShieldCheck, Edit, Trash2 } from 'lucide-react';
-import { EditUserForm } from './EditUserForm';
+import { Search, User, Mail, Phone, Shield, ShieldCheck, Edit, Trash2, Crown } from 'lucide-react';
+import { UserDetailModal } from './UserDetailModal';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface UserProfile {
   id: string;
@@ -15,26 +23,33 @@ interface UserProfile {
   email: string;
   username: string | null;
   phone: string | null;
+  status: string;
   created_at: string;
-  status: string | null;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'gestor';
   pagePermissions: {
     creatives: boolean;
     sales: boolean;
     affiliates: boolean;
     revenue: boolean;
+    users: boolean;
   };
 }
 
 interface UserListProps {
   refreshTrigger: number;
+  currentUserRole: string | null;
+  onUserUpdated: () => void;
 }
 
-export const UserList: React.FC<UserListProps> = ({ refreshTrigger }) => {
+export const UserList: React.FC<UserListProps> = ({ 
+  refreshTrigger, 
+  currentUserRole,
+  onUserUpdated 
+}) => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -45,7 +60,7 @@ export const UserList: React.FC<UserListProps> = ({ refreshTrigger }) => {
     try {
       setLoading(true);
       
-      // Fetch profiles with roles
+      // Buscar perfis com roles
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select(`
@@ -54,14 +69,15 @@ export const UserList: React.FC<UserListProps> = ({ refreshTrigger }) => {
           email,
           username,
           phone,
-          created_at,
-          status
-        `);
+          status,
+          created_at
+        `)
+        .order('created_at', { ascending: false });
 
       if (profilesError) throw profilesError;
       if (!profilesData) return;
 
-      // Fetch roles for each user
+      // Buscar roles para cada usuário
       const userIds = profilesData.map(profile => profile.id);
       const { data: rolesData, error: rolesError } = await supabase
         .from('user_roles')
@@ -70,7 +86,7 @@ export const UserList: React.FC<UserListProps> = ({ refreshTrigger }) => {
 
       if (rolesError) throw rolesError;
 
-      // Fetch page permissions for each user
+      // Buscar permissões de página para cada usuário
       const { data: pagePermissionsData, error: pagePermissionsError } = await supabase
         .from('user_page_permissions')
         .select('user_id, page, can_access')
@@ -78,22 +94,23 @@ export const UserList: React.FC<UserListProps> = ({ refreshTrigger }) => {
 
       if (pagePermissionsError) throw pagePermissionsError;
 
-      // Combine all data
+      // Combinar todos os dados
       const usersWithDetails = profilesData.map(profile => {
         const userRole = rolesData?.find(role => role.user_id === profile.id);
         const userPagePermissions = pagePermissionsData?.filter(perm => perm.user_id === profile.id) || [];
         
-        // Build page permissions object with proper type safety
+        // Construir objeto de permissões de página
         const pagePermissions = {
           creatives: userPagePermissions.find(p => p.page === 'creatives')?.can_access ?? true,
           sales: userPagePermissions.find(p => p.page === 'sales')?.can_access ?? true,
           affiliates: userPagePermissions.find(p => p.page === 'affiliates')?.can_access ?? true,
           revenue: userPagePermissions.find(p => p.page === 'revenue')?.can_access ?? true,
+          users: userPagePermissions.find(p => p.page === 'users')?.can_access ?? false,
         };
 
         return {
           ...profile,
-          role: (userRole?.role as 'admin' | 'user') || 'user',
+          role: (userRole?.role as 'admin' | 'user' | 'gestor') || 'user',
           pagePermissions
         };
       });
@@ -112,18 +129,19 @@ export const UserList: React.FC<UserListProps> = ({ refreshTrigger }) => {
   };
 
   const handleDeleteUser = async (userId: string, userName: string) => {
-    if (!confirm(`Tem certeza que deseja remover o usuário ${userName}?`)) {
+    if (!confirm(`Tem certeza que deseja remover o usuário ${userName}? Esta ação não pode ser desfeita.`)) {
       return;
     }
 
     try {
+      // Deletar usuário através da API admin do Supabase
       const { error } = await supabase.auth.admin.deleteUser(userId);
       
       if (error) throw error;
 
       toast({
         title: "Usuário removido",
-        description: `${userName} foi removido do sistema.`,
+        description: `${userName} foi removido do sistema com sucesso.`,
       });
 
       fetchUsers();
@@ -137,40 +155,49 @@ export const UserList: React.FC<UserListProps> = ({ refreshTrigger }) => {
     }
   };
 
+  const getRoleBadge = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return (
+          <Badge className="bg-red-600 text-white">
+            <Crown className="w-3 h-3 mr-1" />
+            Admin
+          </Badge>
+        );
+      case 'gestor':
+        return (
+          <Badge className="bg-blue-600 text-white">
+            <ShieldCheck className="w-3 h-3 mr-1" />
+            Gestor
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="secondary" className="bg-slate-600 text-slate-200">
+            <Shield className="w-3 h-3 mr-1" />
+            Usuário
+          </Badge>
+        );
+    }
+  };
+
+  const canEditUser = (targetUser: UserProfile) => {
+    if (currentUserRole === 'admin') return true;
+    if (currentUserRole === 'gestor') {
+      return targetUser.role === 'user'; // Gestores só podem editar usuários comuns
+    }
+    return false;
+  };
+
+  const canDeleteUser = (targetUser: UserProfile) => {
+    return currentUserRole === 'admin'; // Apenas admins podem deletar
+  };
+
   const filteredUsers = users.filter(user => 
     user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase()))
   );
-
-  const getPermissionsBadges = (permissions: UserProfile['pagePermissions']) => {
-    return Object.entries(permissions)
-      .filter(([_, hasAccess]) => hasAccess)
-      .map(([page, _]) => (
-        <Badge 
-          key={page} 
-          variant="secondary" 
-          className="bg-blue-600/20 text-blue-300 text-xs"
-        >
-          {page === 'creatives' ? 'Criativos' : 
-           page === 'sales' ? 'Vendas' : 
-           page === 'affiliates' ? 'Afiliados' : 'Receita'}
-        </Badge>
-      ));
-  };
-
-  if (editingUser) {
-    return (
-      <EditUserForm
-        user={editingUser}
-        onClose={() => setEditingUser(null)}
-        onUserUpdated={() => {
-          fetchUsers();
-          setEditingUser(null);
-        }}
-      />
-    );
-  }
 
   if (loading) {
     return (
@@ -196,105 +223,110 @@ export const UserList: React.FC<UserListProps> = ({ refreshTrigger }) => {
       <div className="relative">
         <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
         <Input
-          placeholder="Buscar usuários por nome, email ou username..."
+          placeholder="Buscar por nome, email ou username..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pl-10 bg-slate-900/50 border-slate-600 text-white"
         />
       </div>
 
-      {/* Users List */}
-      <div className="grid gap-4">
-        {filteredUsers.length === 0 ? (
-          <div className="text-center text-slate-400 py-8">
-            {searchTerm ? "Nenhum usuário encontrado." : "Nenhum usuário cadastrado."}
-          </div>
-        ) : (
-          filteredUsers.map((user) => (
-            <Card key={user.id} className="bg-slate-800/50 border-slate-700">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-4">
-                    <div className="bg-slate-700 p-3 rounded-full">
-                      <User className="w-6 h-6 text-slate-300" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-white font-medium">{user.full_name}</h3>
-                      {user.username && (
-                        <p className="text-slate-400 text-sm">@{user.username}</p>
-                      )}
-                      
-                      <div className="flex items-center space-x-2 text-slate-400 text-sm mt-1">
-                        <Mail className="w-3 h-3" />
-                        <span>{user.email}</span>
-                      </div>
-                      
-                      {user.phone && (
-                        <div className="flex items-center space-x-2 text-slate-400 text-sm mt-1">
-                          <Phone className="w-3 h-3" />
-                          <span>{user.phone}</span>
+      {/* Users Table */}
+      <Card className="bg-slate-800/50 border-slate-700">
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-slate-700">
+                <TableHead className="text-slate-300">Nome</TableHead>
+                <TableHead className="text-slate-300">Email</TableHead>
+                <TableHead className="text-slate-300">Telefone</TableHead>
+                <TableHead className="text-slate-300">Papel</TableHead>
+                <TableHead className="text-slate-300">Status</TableHead>
+                <TableHead className="text-slate-300">Criado em</TableHead>
+                <TableHead className="text-slate-300 text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredUsers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-slate-400 py-8">
+                    {searchTerm ? "Nenhum usuário encontrado." : "Nenhum usuário cadastrado."}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredUsers.map((user) => (
+                  <TableRow key={user.id} className="border-slate-700 hover:bg-slate-800/30">
+                    <TableCell>
+                      <div className="flex items-center space-x-3">
+                        <div className="bg-slate-700 p-2 rounded-full">
+                          <User className="w-4 h-4 text-slate-300" />
                         </div>
-                      )}
-                      
-                      <div className="text-slate-500 text-xs mt-2">
-                        Criado em: {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                        <div>
+                          <p className="text-white font-medium">{user.full_name}</p>
+                          {user.username && (
+                            <p className="text-slate-400 text-sm">@{user.username}</p>
+                          )}
+                        </div>
                       </div>
-
-                      {/* Permissions */}
-                      <div className="flex flex-wrap gap-1 mt-3">
-                        {getPermissionsBadges(user.pagePermissions)}
+                    </TableCell>
+                    <TableCell className="text-slate-300">{user.email}</TableCell>
+                    <TableCell className="text-slate-300">{user.phone || '-'}</TableCell>
+                    <TableCell>{getRoleBadge(user.role)}</TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant={user.status === 'active' ? 'default' : 'secondary'}
+                        className={user.status === 'active' 
+                          ? 'bg-green-600 text-white' 
+                          : 'bg-slate-600 text-slate-200'
+                        }
+                      >
+                        {user.status === 'active' ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-slate-300">
+                      {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedUser(user)}
+                          className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                        >
+                          <Edit className="w-3 h-3" />
+                        </Button>
+                        {canDeleteUser(user) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteUser(user.id, user.full_name)}
+                            className="border-red-600 text-red-400 hover:bg-red-600/10"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        )}
                       </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    {/* Role Badge */}
-                    <Badge 
-                      variant={user.role === 'admin' ? 'default' : 'secondary'}
-                      className={user.role === 'admin' 
-                        ? 'bg-blue-600 text-white' 
-                        : 'bg-slate-600 text-slate-200'
-                      }
-                    >
-                      {user.role === 'admin' ? (
-                        <>
-                          <ShieldCheck className="w-3 h-3 mr-1" />
-                          Admin
-                        </>
-                      ) : (
-                        <>
-                          <Shield className="w-3 h-3 mr-1" />
-                          Usuário
-                        </>
-                      )}
-                    </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-                    {/* Action Buttons */}
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setEditingUser(user)}
-                        className="border-slate-600 text-slate-300 hover:bg-slate-800"
-                      >
-                        <Edit className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteUser(user.id, user.full_name)}
-                        className="border-red-600 text-red-400 hover:bg-red-600/10"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+      {/* User Detail Modal */}
+      {selectedUser && (
+        <UserDetailModal
+          user={selectedUser}
+          currentUserRole={currentUserRole}
+          onClose={() => setSelectedUser(null)}
+          onUserUpdated={() => {
+            onUserUpdated();
+            setSelectedUser(null);
+          }}
+        />
+      )}
     </div>
   );
 };
