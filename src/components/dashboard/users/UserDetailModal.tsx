@@ -42,7 +42,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
     email: '',
     phone: '',
     status: '',
-    role: '' as 'admin' | 'user' | 'gestor' | ''
+    role: 'user' as 'admin' | 'user' | 'gestor'
   });
   
   // Password change states
