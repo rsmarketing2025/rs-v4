@@ -242,6 +242,7 @@ export type Database = {
           sale_date: string | null
           state: string | null
           status: string
+          tags: string[] | null
           tax_value: number | null
           updated_at: string | null
         }
@@ -267,6 +268,7 @@ export type Database = {
           sale_date?: string | null
           state?: string | null
           status?: string
+          tags?: string[] | null
           tax_value?: number | null
           updated_at?: string | null
         }
@@ -292,6 +294,7 @@ export type Database = {
           sale_date?: string | null
           state?: string | null
           status?: string
+          tags?: string[] | null
           tax_value?: number | null
           updated_at?: string | null
         }

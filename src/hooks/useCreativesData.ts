@@ -26,7 +26,8 @@ interface CreativeMetrics {
   cpa: number;
   roi: number;
   status: string;
-  products: string[]; // Array of product names
+  products: string[];
+  tags: string[]; // Add tags field
 }
 
 export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
@@ -93,7 +94,8 @@ export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
             ctrs: [],
             status: campaign.status || 'active',
             sales: [],
-            products: []
+            products: [],
+            tags: []
           });
         }
 
@@ -120,6 +122,15 @@ export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
           // Add product to the products array if it exists and isn't already there
           if (sale.produto && !creative.products.includes(sale.produto)) {
             creative.products.push(sale.produto);
+          }
+
+          // Collect all unique tags from sales
+          if (sale.tags && Array.isArray(sale.tags)) {
+            sale.tags.forEach((tag: string) => {
+              if (!creative.tags.includes(tag)) {
+                creative.tags.push(tag);
+              }
+            });
           }
         }
       });
@@ -171,7 +182,8 @@ export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
           cpa: cpa,
           roi: roi,
           status: creative.status,
-          products: creative.products
+          products: creative.products,
+          tags: creative.tags
         };
       });
 
