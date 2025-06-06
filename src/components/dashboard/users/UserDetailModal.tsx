@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -269,12 +268,26 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
     setUpdatingPassword(true);
 
     try {
-      // Chamar a função administrativa do Supabase para alterar a senha
-      const { error } = await supabase.auth.admin.updateUserById(user.id, {
-        password: passwordData.newPassword
+      // Chamar a Edge Function para alterar a senha
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(`https://cnhjnfwkjakvxamefzzg.supabase.co/functions/v1/update-user-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          newPassword: passwordData.newPassword
+        }),
       });
 
-      if (error) throw error;
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao alterar senha');
+      }
 
       toast({
         title: "Senha alterada",
