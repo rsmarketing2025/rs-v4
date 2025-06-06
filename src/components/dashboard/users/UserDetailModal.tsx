@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ChartPermissions } from './ChartPermissions';
+import { Database } from "@/integrations/supabase/types";
+
+type UserPage = Database['public']['Enums']['user_page'];
+type ChartType = Database['public']['Enums']['chart_type'];
 
 interface User {
   id: string;
@@ -160,7 +163,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
           .from('user_page_permissions')
           .upsert({
             user_id: user.id,
-            page,
+            page: page as UserPage,
             can_access: canAccess
           }, {
             onConflict: 'user_id,page'
@@ -182,8 +185,8 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         // Insert new chart permissions
         const chartPermsToInsert = chartPermissions.map(perm => ({
           user_id: user.id,
-          chart_type: perm.chartType,
-          page: perm.page,
+          chart_type: perm.chartType as ChartType,
+          page: perm.page as UserPage,
           can_view: perm.canView
         }));
 
