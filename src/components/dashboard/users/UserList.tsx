@@ -319,9 +319,10 @@ export const UserList: React.FC<UserListProps> = ({
       {selectedUser && (
         <UserDetailModal
           user={selectedUser}
+          isOpen={!!selectedUser}
           currentUserRole={currentUserRole}
           onClose={() => setSelectedUser(null)}
-          onUserUpdated={() => {
+          onUpdate={() => {
             onUserUpdated();
             setSelectedUser(null);
           }}

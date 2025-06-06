@@ -17,7 +17,7 @@ interface User {
   phone?: string;
   status: string;
   created_at: string;
-  role: string;
+  role: 'admin' | 'user' | 'gestor';
 }
 
 interface UserDetailModalProps {
@@ -25,13 +25,15 @@ interface UserDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdate: () => void;
+  currentUserRole?: string | null;
 }
 
 export const UserDetailModal: React.FC<UserDetailModalProps> = ({
   user,
   isOpen,
   onClose,
-  onUpdate
+  onUpdate,
+  currentUserRole
 }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -40,7 +42,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
     email: '',
     phone: '',
     status: '',
-    role: ''
+    role: '' as 'admin' | 'user' | 'gestor' | ''
   });
   
   // Password change states
@@ -57,7 +59,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         email: user.email || '',
         phone: user.phone || '',
         status: user.status || '',
-        role: user.role || ''
+        role: user.role || 'user'
       });
     }
   }, [user]);
@@ -136,7 +138,10 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         throw new Error('No active session');
       }
 
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/update-user-password`, {
+      // Use the hardcoded Supabase URL instead of accessing protected property
+      const supabaseUrl = 'https://cnhjnfwkjakvxamefzzg.supabase.co';
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/update-user-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -163,7 +168,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
 
       setPasswordData({ newPassword: '', confirmPassword: '' });
       setShowPasswordChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating password:', error);
       toast({
         title: "Erro",
@@ -243,13 +248,13 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
             <Label htmlFor="role" className="text-right">
               Função
             </Label>
-            <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+            <Select value={formData.role} onValueChange={(value: 'admin' | 'user' | 'gestor') => setFormData({ ...formData, role: value })}>
               <SelectTrigger className="col-span-3">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="admin">Administrador</SelectItem>
-                <SelectItem value="manager">Gestor</SelectItem>
+                <SelectItem value="gestor">Gestor</SelectItem>
                 <SelectItem value="user">Usuário</SelectItem>
               </SelectContent>
             </Select>
