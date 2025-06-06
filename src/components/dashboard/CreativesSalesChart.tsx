@@ -83,7 +83,15 @@ export const CreativesSalesChart: React.FC<CreativesSalesChartProps> = ({ sales 
                   ]}
                   labelFormatter={(label, payload) => {
                     if (payload && payload[0]) {
-                      return payload[0].payload.fullName;
+                      const data = payload[0].payload;
+                      return (
+                        <div>
+                          <div className="font-medium">{data.fullName}</div>
+                          <div className="text-sm text-slate-400">
+                            Vendas: {data.count}
+                          </div>
+                        </div>
+                      );
                     }
                     return label;
                   }}

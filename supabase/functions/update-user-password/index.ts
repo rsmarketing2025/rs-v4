@@ -1,162 +1,147 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8'
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-Deno.serve(async (req) => {
+serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Parse request body
-    const { userId, newPassword } = await req.json();
-
-    if (!userId || !newPassword) {
-      return new Response(
-        JSON.stringify({ error: 'userId e newPassword são obrigatórios' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    // Validate password length
-    if (newPassword.length < 6) {
-      return new Response(
-        JSON.stringify({ error: 'A senha deve ter pelo menos 6 caracteres' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    // Create Supabase client with service role key for admin operations
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
-    );
-
-    // Get current user making the request to check permissions
-    const authHeader = req.headers.get('Authorization');
+    console.log('Starting password update function...')
+    
+    // Get the authorization header
+    const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
+      console.error('No authorization header found')
       return new Response(
-        JSON.stringify({ error: 'Token de autorização é obrigatório' }),
+        JSON.stringify({ error: 'Unauthorized' }),
         { 
           status: 401, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      );
+      )
     }
 
-    // Create client for checking current user permissions
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-        global: {
-          headers: {
-            Authorization: authHeader,
-          },
-        },
+    // Initialize Supabase client with service role
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    
+    console.log('Initializing Supabase client...')
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
       }
-    );
+    })
 
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
+    // Initialize regular client to verify current user
+    const supabaseAnon = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!)
+    
+    // Get current user from token
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user: currentUser }, error: userError } = await supabaseAnon.auth.getUser(token)
+    
+    if (userError || !currentUser) {
+      console.error('Error getting current user:', userError)
       return new Response(
-        JSON.stringify({ error: 'Usuário não autenticado' }),
+        JSON.stringify({ error: 'Invalid token' }),
         { 
           status: 401, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      );
+      )
     }
 
-    // Check user role/permissions
-    const { data: userRole } = await supabase
+    console.log('Current user ID:', currentUser.id)
+
+    // Check user permissions
+    const { data: userRole } = await supabaseAdmin
       .from('user_roles')
       .select('role')
-      .eq('user_id', user.id)
-      .single();
+      .eq('user_id', currentUser.id)
+      .single()
 
-    const { data: targetUserRole } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .single();
-
-    // Permission check: admin can change any password, gestor can change user passwords
-    const canChangePassword = 
-      userRole?.role === 'admin' || 
-      (userRole?.role === 'gestor' && targetUserRole?.role === 'user') ||
-      user.id === userId; // Users can change their own password
-
-    if (!canChangePassword) {
+    if (!userRole || !['admin', 'manager'].includes(userRole.role)) {
+      console.error('User does not have permission to update passwords')
       return new Response(
-        JSON.stringify({ error: 'Você não tem permissão para alterar a senha deste usuário' }),
+        JSON.stringify({ error: 'Insufficient permissions' }),
         { 
           status: 403, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      );
+      )
     }
 
-    // Update user password using admin client
-    const { data, error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-      password: newPassword
-    });
+    console.log('User has permission:', userRole.role)
 
-    if (error) {
-      console.error('Erro ao alterar senha:', error);
+    // Parse request body
+    const { userId, newPassword } = await req.json()
+    
+    if (!userId || !newPassword) {
+      console.error('Missing required fields:', { userId: !!userId, newPassword: !!newPassword })
       return new Response(
-        JSON.stringify({ error: error.message || 'Erro ao alterar senha' }),
+        JSON.stringify({ error: 'Missing userId or newPassword' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      );
+      )
     }
 
-    console.log('Senha alterada com sucesso para usuário:', userId);
+    if (newPassword.length < 6) {
+      console.error('Password too short')
+      return new Response(
+        JSON.stringify({ error: 'Password must be at least 6 characters long' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    console.log('Updating password for user:', userId)
+
+    // Update user password using admin client
+    const { data, error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+      password: newPassword
+    })
+
+    if (error) {
+      console.error('Error updating password:', error)
+      return new Response(
+        JSON.stringify({ error: error.message }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    console.log('Password updated successfully for user:', userId)
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Senha alterada com sucesso',
-        user: data.user 
-      }),
+      JSON.stringify({ success: true, message: 'Password updated successfully' }),
       { 
         status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
-    );
+    )
 
   } catch (error) {
-    console.error('Erro na função update-user-password:', error);
+    console.error('Unexpected error:', error)
     return new Response(
-      JSON.stringify({ error: 'Erro interno do servidor' }),
+      JSON.stringify({ error: 'Internal server error' }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
-    );
+    )
   }
-});
+})
