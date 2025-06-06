@@ -34,7 +34,7 @@ export const SalesSummaryCards: React.FC<SalesSummaryCardsProps> = ({ totalMetri
           <div className="flex items-center space-x-2">
             <ShoppingCart className="w-5 h-5 text-blue-400" />
             <div>
-              <p className="text-sm text-slate-400">Total de Pedidos</p>
+              <p className="text-sm text-slate-400">Total de Pedidos Aprovados</p>
               <p className="text-xl font-bold text-white">
                 {totalMetrics.orders.toLocaleString()}
               </p>

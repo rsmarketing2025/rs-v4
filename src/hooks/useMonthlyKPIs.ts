@@ -61,7 +61,7 @@ export const useMonthlyKPIs = () => {
       
       const completedSales = salesData?.filter(sale => sale.status === 'completed') || [];
       const totalRevenue = completedSales.reduce((acc, sale) => acc + (sale.gross_value || 0), 0);
-      const totalOrders = completedSales.length;
+      const totalOrders = completedSales.length; // Only count completed orders
       
       const roas = totalSpent > 0 ? totalRevenue / totalSpent : 0;
       const conversionRate = totalClicks > 0 ? (totalOrders / totalClicks) * 100 : 0;

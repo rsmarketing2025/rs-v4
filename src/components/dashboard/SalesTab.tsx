@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -104,7 +105,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
 
   const totalMetrics = filteredSales.reduce((acc, sale) => ({
     revenue: acc.revenue + (sale.status === 'completed' ? (sale.gross_value || 0) : 0),
-    orders: acc.orders + 1,
+    orders: acc.orders + (sale.status === 'completed' ? 1 : 0), // Only count completed orders
     refundedValue: acc.refundedValue + (sale.status === 'refunded' ? (sale.gross_value || 0) : 0),
     chargebackValue: acc.chargebackValue + (sale.status === 'chargeback' ? (sale.gross_value || 0) : 0),
   }), { revenue: 0, orders: 0, refundedValue: 0, chargebackValue: 0 });
