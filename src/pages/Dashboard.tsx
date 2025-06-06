@@ -66,7 +66,7 @@ const Dashboard = () => {
                 <SidebarTrigger className="text-white dark:text-white light:text-slate-900" />
                 <div>
                   <h1 className="text-5xl font-bold text-white dark:text-white light:text-slate-900 mb-2">
-                    Dashboard
+                    Manager
                   </h1>
                   <p className="text-slate-400 dark:text-slate-400 light:text-slate-600 text-lg">
                     Gerenciamento de usuários
@@ -103,7 +103,7 @@ const Dashboard = () => {
                 <SidebarTrigger className="text-white dark:text-white light:text-slate-900" />
                 <div>
                   <h1 className="text-5xl font-bold text-white dark:text-white light:text-slate-900 mb-2">
-                    Dashboard
+                    Manager
                   </h1>
                   <p className="text-slate-400 dark:text-slate-400 light:text-slate-600 text-lg">
                     Gerenciamento de Business Managers
@@ -138,7 +138,7 @@ const Dashboard = () => {
               <SidebarTrigger className="text-white dark:text-white light:text-slate-900" />
               <div>
                 <h1 className="text-5xl font-bold text-white dark:text-white light:text-slate-900 mb-2">
-                  Dashboard
+                  Manager
                 </h1>
                 <p className="text-slate-400 dark:text-slate-400 light:text-slate-600 text-lg">
                   Insights detalhados de Criativos e Métricas de vendas

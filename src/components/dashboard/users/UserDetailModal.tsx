@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { User, Crown, ShieldCheck, Shield } from 'lucide-react';
+import { User, Crown, ShieldCheck, Shield, Key } from 'lucide-react';
 import { ChartPermissions } from './ChartPermissions';
 
 interface ChartPermission {
@@ -58,7 +59,15 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
     pagePermissions: user.pagePermissions,
     chartPermissions: [] as ChartPermission[]
   });
+  
+  const [passwordData, setPasswordData] = useState({
+    newPassword: '',
+    confirmPassword: ''
+  });
+  
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [updatingPassword, setUpdatingPassword] = useState(false);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -227,6 +236,65 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
     }
   };
 
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!canEdit()) {
+      toast({
+        title: "Sem permissão",
+        description: "Você não tem permissão para alterar a senha deste usuário.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: "Senhas não coincidem",
+        description: "A nova senha e a confirmação devem ser iguais.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: "Senha muito curta",
+        description: "A senha deve ter pelo menos 6 caracteres.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUpdatingPassword(true);
+
+    try {
+      // Chamar a função administrativa do Supabase para alterar a senha
+      const { error } = await supabase.auth.admin.updateUserById(user.id, {
+        password: passwordData.newPassword
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Senha alterada",
+        description: "A senha do usuário foi alterada com sucesso.",
+      });
+
+      setPasswordData({ newPassword: '', confirmPassword: '' });
+      setShowPasswordSection(false);
+    } catch (error: any) {
+      console.error('Error updating password:', error);
+      toast({
+        title: "Erro ao alterar senha",
+        description: error.message || "Ocorreu um erro ao alterar a senha.",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingPassword(false);
+    }
+  };
+
   const handlePagePermissionChange = (page: keyof typeof formData.pagePermissions, checked: boolean) => {
     setFormData(prev => ({
       ...prev,
@@ -385,8 +453,69 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
             </div>
           </div>
 
+          {/* Seção de Alteração de Senha */}
+          {canEdit() && (
+            <div className="space-y-4">
+              <Separator className="bg-slate-700" />
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-white flex items-center gap-2">
+                  <Key className="w-5 h-5" />
+                  Alterar Senha
+                </h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPasswordSection(!showPasswordSection)}
+                  className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                >
+                  {showPasswordSection ? 'Cancelar' : 'Alterar Senha'}
+                </Button>
+              </div>
+              
+              {showPasswordSection && (
+                <form onSubmit={handlePasswordUpdate} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="newPassword" className="text-white">Nova Senha</Label>
+                      <Input
+                        id="newPassword"
+                        type="password"
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                        placeholder="Digite a nova senha"
+                        className="bg-slate-800/50 border-slate-600 text-white"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword" className="text-white">Confirmar Senha</Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                        placeholder="Confirme a nova senha"
+                        className="bg-slate-800/50 border-slate-600 text-white"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <Button 
+                    type="submit" 
+                    className="bg-blue-600 hover:bg-blue-700"
+                    disabled={updatingPassword}
+                  >
+                    {updatingPassword ? "Alterando..." : "Alterar Senha"}
+                  </Button>
+                </form>
+              )}
+            </div>
+          )}
+
           {/* Permissões de Página */}
           <div className="space-y-4">
+            <Separator className="bg-slate-700" />
             <h3 className="text-lg font-medium text-white">Permissões de Acesso</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {Object.entries(formData.pagePermissions).map(([page, hasAccess]) => (
@@ -413,14 +542,18 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
 
           {/* Permissões de Gráficos */}
           {canEdit() && (
-            <ChartPermissions
-              chartPermissions={formData.chartPermissions}
-              onPermissionChange={handleChartPermissionChange}
-            />
+            <>
+              <Separator className="bg-slate-700" />
+              <ChartPermissions
+                chartPermissions={formData.chartPermissions}
+                onPermissionChange={handleChartPermissionChange}
+              />
+            </>
           )}
 
           {/* Informações Adicionais */}
           <div className="space-y-2">
+            <Separator className="bg-slate-700" />
             <h3 className="text-lg font-medium text-white">Informações Adicionais</h3>
             <div className="bg-slate-800/30 p-4 rounded-lg space-y-2">
               <p className="text-slate-300">
