@@ -15,12 +15,14 @@ import { Button } from "@/components/ui/button";
 import { BarChart3, Users, LogOut, Settings } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const menuItems = [
   {
     title: "Performance",
     url: "/dashboard",
     icon: BarChart3,
+    requiredPage: "creatives" as const,
   },
   {
     title: "Business Managers",
@@ -32,17 +34,47 @@ const menuItems = [
     title: "Usuários",
     url: "/users",
     icon: Users,
-    requireAdmin: true,
+    requiredPage: "users" as const,
   },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
   const { user, isAdmin, signOut } = useAuth();
+  const { hasPageAccess, loading: permissionsLoading } = usePermissions();
 
-  const filteredMenuItems = menuItems.filter(item => 
-    !item.requireAdmin || isAdmin
-  );
+  const filteredMenuItems = menuItems.filter(item => {
+    // Check admin requirement first
+    if (item.requireAdmin && !isAdmin) {
+      return false;
+    }
+    
+    // Check page permission
+    if (item.requiredPage && !hasPageAccess(item.requiredPage)) {
+      return false;
+    }
+    
+    return true;
+  });
+
+  if (permissionsLoading) {
+    return (
+      <Sidebar className="bg-blue-950 border-blue-800">
+        <SidebarHeader className="p-6 bg-blue-900 flex items-center justify-center">
+          <img 
+            src="https://recuperacaoexponencial.com.br/wp-content/uploads/2025/06/ChatGPT-Image-31-de-mai.-de-2025-23_39_35.png" 
+            alt="Logo da Empresa" 
+            className="h-32 w-auto max-w-[70%] object-contain"
+          />
+        </SidebarHeader>
+        <SidebarContent className="bg-blue-950">
+          <div className="p-4 text-blue-200 text-center">
+            Carregando permissões...
+          </div>
+        </SidebarContent>
+      </Sidebar>
+    );
+  }
 
   return (
     <Sidebar className="bg-blue-950 border-blue-800">

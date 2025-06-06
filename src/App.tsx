@@ -34,11 +34,18 @@ const App = () => (
                         <AppSidebar />
                         <Routes>
                           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                          <Route path="/dashboard" element={<Dashboard />} />
+                          <Route 
+                            path="/dashboard" 
+                            element={
+                              <ProtectedRoute requiredPage="creatives">
+                                <Dashboard />
+                              </ProtectedRoute>
+                            }
+                          />
                           <Route 
                             path="/users" 
                             element={
-                              <ProtectedRoute requireAdmin={true}>
+                              <ProtectedRoute requiredPage="users">
                                 <Dashboard />
                               </ProtectedRoute>
                             } 
