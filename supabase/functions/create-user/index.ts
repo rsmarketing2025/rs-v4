@@ -72,25 +72,32 @@ serve(async (req) => {
 
     console.log('Admin verified:', user.id)
 
-    // Parse request body properly
-    let requestBody;
+    // Parse request body - Fixed parsing logic
+    let formData;
     try {
       const bodyText = await req.text();
-      console.log('Request body text:', bodyText);
+      console.log('Raw request body:', bodyText);
       
-      if (!bodyText) {
+      if (!bodyText || bodyText.trim() === '') {
         throw new Error('Request body is empty');
       }
       
-      requestBody = JSON.parse(bodyText);
+      const requestBody = JSON.parse(bodyText);
       console.log('Parsed request body:', requestBody);
+      
+      // Extract formData from the request
+      formData = requestBody.formData || requestBody;
+      
+      if (!formData) {
+        throw new Error('No formData found in request');
+      }
+      
+      console.log('Form data extracted:', formData);
     } catch (parseError) {
       console.error('Error parsing request body:', parseError);
-      throw new Error('Invalid JSON in request body');
+      throw new Error(`Invalid JSON in request body: ${parseError.message}`);
     }
 
-    const { formData } = requestBody;
-    
     console.log('Creating user with data:', {
       email: formData.email,
       fullName: formData.fullName,
@@ -134,7 +141,6 @@ serve(async (req) => {
 
     if (profileError) {
       console.error('Error updating profile:', profileError)
-      // Don't throw here as user was created successfully
       console.warn('Profile update failed but user was created')
     }
 
@@ -146,16 +152,15 @@ serve(async (req) => {
 
     if (roleUpdateError) {
       console.error('Error updating role:', roleUpdateError)
-      // Don't throw here as user was created successfully
       console.warn('Role update failed but user was created')
     }
 
     // Set page permissions
-    const pagePermissions = Object.entries(formData.pagePermissions)
+    const pagePermissions = Object.entries(formData.pagePermissions || {})
       .filter(([_, canAccess]) => canAccess)
       .map(([page, canAccess]) => ({
         user_id: userData.user.id,
-        page: page as 'creatives' | 'sales' | 'affiliates' | 'revenue',
+        page: page as 'creatives' | 'sales' | 'affiliates' | 'revenue' | 'users',
         can_access: canAccess
       }))
 
@@ -177,11 +182,11 @@ serve(async (req) => {
     }
 
     // Set chart permissions
-    const chartPermissions = formData.chartPermissions
+    const chartPermissions = (formData.chartPermissions || [])
       .filter((permission: any) => permission.canView)
       .map((permission: any) => ({
         user_id: userData.user.id,
-        chart_type: permission.chartType as 'performance_overview' | 'time_series' | 'top_creatives' | 'metrics_comparison' | 'conversion_funnel' | 'roi_analysis' | 'sales_summary' | 'affiliate_performance' | 'revenue_breakdown',
+        chart_type: permission.chartType as 'performance_overview' | 'time_series' | 'top_creatives' | 'metrics_comparison' | 'conversion_funnel' | 'roi_analysis' | 'sales_summary' | 'affiliate_performance' | 'revenue_breakdown' | 'creatives_sales',
         page: permission.page as 'creatives' | 'sales' | 'affiliates' | 'revenue',
         can_view: permission.canView
       }))

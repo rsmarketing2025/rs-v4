@@ -127,22 +127,33 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated, curr
 
       console.log('Chamando função para criar usuário...');
 
+      // Preparar dados para envio - estrutura corrigida
+      const requestData = {
+        formData: formData
+      };
+
+      console.log('Dados preparados para envio:', requestData);
+
       // Chamar a Edge Function para criar o usuário
-      const { data, error } = await supabase.functions.invoke('create-user', {
-        body: { formData },
+      const response = await fetch(`https://cnhjnfwkjakvxamefzzg.supabase.co/functions/v1/create-user`, {
+        method: 'POST',
         headers: {
-          Authorization: `Bearer ${currentSession.access_token}`,
+          'Authorization': `Bearer ${currentSession.access_token}`,
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify(requestData),
       });
 
-      if (error) {
-        console.error('Erro da Edge Function:', error);
-        throw new Error(error.message || 'Erro ao chamar função de criação de usuário');
+      console.log('Response status:', response.status);
+      
+      const data = await response.json();
+      console.log('Response data:', data);
+
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
-      if (data?.error) {
-        console.error('Erro na criação do usuário:', data.error);
+      if (data.error) {
         throw new Error(data.error);
       }
 
