@@ -95,21 +95,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             checkAdminStatus(session.user.id);
           }, 0);
 
-          // Show welcome message and redirect on successful login
-          if (event === 'SIGNED_IN') {
-            setTimeout(() => {
-              toast({
-                title: "Bem-vindo!",
-                description: "Login realizado com sucesso.",
-              });
-              
-              // Redirect to dashboard if currently on auth page
-              if (window.location.pathname === '/auth') {
-                window.location.href = '/dashboard';
-              }
-            }, 500);
-          }
-
           // Set up token refresh timer (refresh 5 minutes before expiry)
           if (session.expires_at) {
             const expiresIn = session.expires_at * 1000 - Date.now();
@@ -182,6 +167,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       email,
       password,
     });
+    
+    // Show welcome message only on successful login from auth page
+    if (!error && window.location.pathname === '/auth') {
+      setTimeout(() => {
+        toast({
+          title: "Bem-vindo!",
+          description: "Login realizado com sucesso.",
+        });
+        
+        // Redirect to dashboard
+        window.location.href = '/dashboard';
+      }, 500);
+    }
+    
     return { error };
   };
 
