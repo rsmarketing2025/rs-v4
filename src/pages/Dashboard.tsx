@@ -24,11 +24,13 @@ import { BusinessManagersTab } from "@/components/dashboard/BusinessManagersTab"
 import { KPICard } from "@/components/dashboard/KPICard";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useMonthlyKPIs } from "@/hooks/useMonthlyKPIs";
 import { useLocation } from "react-router-dom";
 
 const Dashboard = () => {
   const { isAdmin } = useAuth();
+  const { hasPageAccess, loading: permissionsLoading } = usePermissions();
   const { kpis, loading: kpisLoading } = useMonthlyKPIs();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState(() => {
@@ -55,7 +57,7 @@ const Dashboard = () => {
   }, [activeTab]);
 
   // Show users page when on /users route
-  if (location.pathname === '/users' && isAdmin) {
+  if (location.pathname === '/users' && isAdmin && hasPageAccess('users')) {
     return (
       <SidebarInset>
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 light:from-slate-50 light:via-slate-100 light:to-slate-50">
@@ -92,7 +94,7 @@ const Dashboard = () => {
   }
 
   // Show business managers page when on /business-managers route
-  if (location.pathname === '/business-managers' && isAdmin) {
+  if (location.pathname === '/business-managers' && isAdmin && hasPageAccess('businessManagers')) {
     return (
       <SidebarInset>
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 light:from-slate-50 light:via-slate-100 light:to-slate-50">
@@ -127,6 +129,44 @@ const Dashboard = () => {
       </SidebarInset>
     );
   }
+
+  // Redirect to access denied if user doesn't have permission
+  if (!permissionsLoading && !hasPageAccess('creatives')) {
+    return (
+      <SidebarInset>
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
+          <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm p-8 text-center">
+            <h2 className="text-2xl font-bold text-white mb-4">Acesso Negado</h2>
+            <p className="text-slate-400">Você não tem permissão para acessar esta página.</p>
+          </Card>
+        </div>
+      </SidebarInset>
+    );
+  }
+
+  if (permissionsLoading) {
+    return (
+      <SidebarInset>
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
+          <div className="text-white text-lg">Carregando permissões...</div>
+        </div>
+      </SidebarInset>
+    );
+  }
+
+  // Determine available tabs based on permissions
+  const availableTabs = [
+    { id: 'creatives', label: 'Criativos', icon: Eye, hasAccess: hasPageAccess('creatives') },
+    { id: 'sales', label: 'Vendas', icon: DollarSign, hasAccess: hasPageAccess('sales') },
+    { id: 'affiliates', label: 'Afiliados', icon: Users, hasAccess: hasPageAccess('affiliates') },
+  ].filter(tab => tab.hasAccess);
+
+  // Set default tab to first available tab
+  React.useEffect(() => {
+    if (availableTabs.length > 0 && !availableTabs.find(tab => tab.id === activeTab)) {
+      setActiveTab(availableTabs[0].id);
+    }
+  }, [availableTabs, activeTab]);
 
   return (
     <SidebarInset>
@@ -205,34 +245,34 @@ const Dashboard = () => {
           <Card className="bg-slate-900/50 dark:bg-slate-900/50 light:bg-white border-slate-800 dark:border-slate-800 light:border-slate-200 backdrop-blur-sm">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <CardHeader className="pb-4">
-                <TabsList className="grid w-full grid-cols-3 bg-slate-800/50 dark:bg-slate-800/50 light:bg-slate-100">
-                  <TabsTrigger value="creatives" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
-                    <Eye className="w-4 h-4 mr-2" />
-                    Criativos
-                  </TabsTrigger>
-                  <TabsTrigger value="sales" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
-                    <DollarSign className="w-4 h-4 mr-2" />
-                    Vendas
-                  </TabsTrigger>
-                  <TabsTrigger value="affiliates" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
-                    <Users className="w-4 h-4 mr-2" />
-                    Afiliados
-                  </TabsTrigger>
+                <TabsList className={`grid w-full grid-cols-${availableTabs.length} bg-slate-800/50 dark:bg-slate-800/50 light:bg-slate-100`}>
+                  {availableTabs.map((tab) => (
+                    <TabsTrigger key={tab.id} value={tab.id} className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
+                      <tab.icon className="w-4 h-4 mr-2" />
+                      {tab.label}
+                    </TabsTrigger>
+                  ))}
                 </TabsList>
               </CardHeader>
 
               <CardContent className="p-6">
-                <TabsContent value="creatives" className="mt-0">
-                  <CreativesTab dateRange={dateRange} />
-                </TabsContent>
+                {hasPageAccess('creatives') && (
+                  <TabsContent value="creatives" className="mt-0">
+                    <CreativesTab dateRange={dateRange} />
+                  </TabsContent>
+                )}
                 
-                <TabsContent value="sales" className="mt-0">
-                  <SalesTab dateRange={dateRange} />
-                </TabsContent>
+                {hasPageAccess('sales') && (
+                  <TabsContent value="sales" className="mt-0">
+                    <SalesTab dateRange={dateRange} />
+                  </TabsContent>
+                )}
                 
-                <TabsContent value="affiliates" className="mt-0">
-                  <AffiliatesTab dateRange={dateRange} />
-                </TabsContent>
+                {hasPageAccess('affiliates') && (
+                  <TabsContent value="affiliates" className="mt-0">
+                    <AffiliatesTab dateRange={dateRange} />
+                  </TabsContent>
+                )}
               </CardContent>
             </Tabs>
           </Card>

@@ -5,6 +5,7 @@ import { TimeSeriesChart } from "./creatives/TimeSeriesChart";
 import { CreativesFilters } from "./creatives/CreativesFilters";
 import { CreativesSummaryCards } from "./creatives/CreativesSummaryCards";
 import { CreativesTable } from "./creatives/CreativesTable";
+import { ProtectedComponent } from "@/components/auth/ProtectedComponent";
 import { useCreativesData } from "@/hooks/useCreativesData";
 
 interface CreativesTabProps {
@@ -91,17 +92,32 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
 
   return (
     <div className="space-y-8">
-      <CreativesSummaryCards 
-        totalMetrics={totalMetrics}
-        avgROI={avgROI}
-      />
+      <ProtectedComponent 
+        chart={{ page: 'creatives', type: 'summary_cards' }}
+        fallback={<div className="text-slate-400 text-center py-4">Resumo não disponível</div>}
+      >
+        <CreativesSummaryCards 
+          totalMetrics={totalMetrics}
+          avgROI={avgROI}
+        />
+      </ProtectedComponent>
 
-      <MetricsOverviewCharts creatives={filteredCreatives} />
+      <ProtectedComponent 
+        chart={{ page: 'creatives', type: 'performance_overview' }}
+        fallback={<div className="text-slate-400 text-center py-4">Gráficos de overview não disponíveis</div>}
+      >
+        <MetricsOverviewCharts creatives={filteredCreatives} />
+      </ProtectedComponent>
 
-      <TimeSeriesChart 
-        creatives={filteredCreatives}
-        dateRange={dateRange}
-      />
+      <ProtectedComponent 
+        chart={{ page: 'creatives', type: 'time_series' }}
+        fallback={<div className="text-slate-400 text-center py-4">Gráfico de série temporal não disponível</div>}
+      >
+        <TimeSeriesChart 
+          creatives={filteredCreatives}
+          dateRange={dateRange}
+        />
+      </ProtectedComponent>
 
       <CreativesFilters 
         searchTerm={searchTerm}
