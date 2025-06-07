@@ -8,6 +8,7 @@ import { SalesSummaryCards } from "./sales/SalesSummaryCards";
 import { StateSalesChart } from "./sales/StateSalesChart";
 import { SalesFilters } from "./sales/SalesFilters";
 import { SalesTable } from "./sales/SalesTable";
+import { ProtectedChart } from "@/components/auth/ProtectedChart";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -197,10 +198,22 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
 
   return (
     <div className="space-y-6">
-      <SalesSummaryCards totalMetrics={totalMetrics} />
-      <StateSalesChart sales={sales} />
-      <SalesChart sales={filteredSales} />
-      <CreativesSalesChart sales={filteredSales} />
+      <ProtectedChart chartType="sales_summary" page="sales">
+        <SalesSummaryCards totalMetrics={totalMetrics} />
+      </ProtectedChart>
+      
+      <ProtectedChart chartType="time_series" page="sales">
+        <StateSalesChart sales={sales} />
+      </ProtectedChart>
+      
+      <ProtectedChart chartType="time_series" page="sales">
+        <SalesChart sales={filteredSales} />
+      </ProtectedChart>
+      
+      <ProtectedChart chartType="conversion_funnel" page="sales">
+        <CreativesSalesChart sales={filteredSales} />
+      </ProtectedChart>
+      
       <SalesFilters
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}

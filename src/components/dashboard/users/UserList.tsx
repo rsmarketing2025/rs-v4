@@ -134,10 +134,18 @@ export const UserList: React.FC<UserListProps> = ({
     }
 
     try {
-      // Deletar usuário através da API admin do Supabase
-      const { error } = await supabase.auth.admin.deleteUser(userId);
-      
-      if (error) throw error;
+      // Usar a Edge Function para deletar o usuário
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       toast({
         title: "Usuário removido",
