@@ -29,10 +29,12 @@ import { useMonthlyKPIs } from "@/hooks/useMonthlyKPIs";
 import { useLocation } from "react-router-dom";
 
 const Dashboard = () => {
+  // ALL HOOKS MUST BE CALLED AT THE TOP - NO CONDITIONAL HOOKS
   const { isAdmin } = useAuth();
   const { hasPageAccess, loading: permissionsLoading } = usePermissions();
   const { kpis, loading: kpisLoading } = useMonthlyKPIs();
   const location = useLocation();
+  
   const [activeTab, setActiveTab] = useState(() => {
     // Set active tab based on current route
     if (location.pathname === '/users') return "users";
@@ -55,6 +57,31 @@ const Dashboard = () => {
       window.history.pushState({}, '', '/dashboard');
     }
   }, [activeTab]);
+
+  // Determine available tabs based on permissions
+  const availableTabs = [
+    { id: 'creatives', label: 'Criativos', icon: Eye, hasAccess: hasPageAccess('creatives') },
+    { id: 'sales', label: 'Vendas', icon: DollarSign, hasAccess: hasPageAccess('sales') },
+    { id: 'affiliates', label: 'Afiliados', icon: Users, hasAccess: hasPageAccess('affiliates') },
+  ].filter(tab => tab.hasAccess);
+
+  // Set default tab to first available tab
+  React.useEffect(() => {
+    if (availableTabs.length > 0 && !availableTabs.find(tab => tab.id === activeTab)) {
+      setActiveTab(availableTabs[0].id);
+    }
+  }, [availableTabs, activeTab]);
+
+  // NOW HANDLE CONDITIONAL RENDERING AFTER ALL HOOKS
+  if (permissionsLoading) {
+    return (
+      <SidebarInset>
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
+          <div className="text-white text-lg">Carregando permissões...</div>
+        </div>
+      </SidebarInset>
+    );
+  }
 
   // Show users page when on /users route
   if (location.pathname === '/users' && isAdmin && hasPageAccess('users')) {
@@ -131,7 +158,7 @@ const Dashboard = () => {
   }
 
   // Redirect to access denied if user doesn't have permission
-  if (!permissionsLoading && !hasPageAccess('creatives')) {
+  if (!hasPageAccess('creatives')) {
     return (
       <SidebarInset>
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
@@ -143,30 +170,6 @@ const Dashboard = () => {
       </SidebarInset>
     );
   }
-
-  if (permissionsLoading) {
-    return (
-      <SidebarInset>
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
-          <div className="text-white text-lg">Carregando permissões...</div>
-        </div>
-      </SidebarInset>
-    );
-  }
-
-  // Determine available tabs based on permissions
-  const availableTabs = [
-    { id: 'creatives', label: 'Criativos', icon: Eye, hasAccess: hasPageAccess('creatives') },
-    { id: 'sales', label: 'Vendas', icon: DollarSign, hasAccess: hasPageAccess('sales') },
-    { id: 'affiliates', label: 'Afiliados', icon: Users, hasAccess: hasPageAccess('affiliates') },
-  ].filter(tab => tab.hasAccess);
-
-  // Set default tab to first available tab
-  React.useEffect(() => {
-    if (availableTabs.length > 0 && !availableTabs.find(tab => tab.id === activeTab)) {
-      setActiveTab(availableTabs[0].id);
-    }
-  }, [availableTabs, activeTab]);
 
   return (
     <SidebarInset>
