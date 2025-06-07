@@ -144,7 +144,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   };
 
   const exportToCSV = () => {
-    const displayedSales = filteredSales.slice(0, 20);
+    // Export ALL filtered sales, not just the first 20
     const headers = ['Pedido', 'Data', 'Cliente', 'Criativo', 'Status', 'Pagamento', 'Valor Bruto', 'País', 'Estado', 'Afiliado'];
     
     const getStatusLabel = (status: string) => {
@@ -167,7 +167,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
 
     const csvData = [
       headers.join(','),
-      ...displayedSales.map(sale => [
+      ...filteredSales.map(sale => [
         `"${sale.order_id}"`,
         sale.sale_date ? format(new Date(sale.sale_date), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : '-',
         `"${sale.customer_name}"`,
@@ -185,7 +185,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', 'vendas_regionais.csv');
+    link.setAttribute('download', `vendas_regionais_${filteredSales.length}_registros.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
