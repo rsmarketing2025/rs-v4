@@ -15,49 +15,34 @@ import { Button } from "@/components/ui/button";
 import { BarChart3, Users, LogOut, Settings } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { usePermissions } from "@/hooks/usePermissions";
 
-const allMenuItems = [
+const menuItems = [
   {
     title: "Performance",
     url: "/dashboard",
     icon: BarChart3,
-    page: null, // Sempre visível
   },
   {
     title: "Business Managers",
     url: "/business-managers",
     icon: Settings,
     requireAdmin: true,
-    page: null, // Controlado por requireAdmin
   },
   {
     title: "Usuários",
     url: "/users",
     icon: Users,
-    page: "users" as const,
+    requireAdmin: true,
   },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
   const { user, isAdmin, signOut } = useAuth();
-  const { hasPageAccess, loading } = usePermissions();
 
-  // Filtrar itens do menu baseado nas permissões
-  const filteredMenuItems = allMenuItems.filter(item => {
-    // Se tem requireAdmin, verificar se é admin
-    if (item.requireAdmin && !isAdmin) {
-      return false;
-    }
-    
-    // Se tem page definida, verificar permissão da página
-    if (item.page && !loading && !hasPageAccess(item.page)) {
-      return false;
-    }
-    
-    return true;
-  });
+  const filteredMenuItems = menuItems.filter(item => 
+    !item.requireAdmin || isAdmin
+  );
 
   return (
     <Sidebar className="bg-blue-950 border-blue-800">
@@ -73,26 +58,20 @@ export function AppSidebar() {
           <SidebarGroupLabel className="text-blue-200">Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {loading ? (
-                <SidebarMenuItem>
-                  <div className="text-blue-200 p-2">Carregando menu...</div>
+              {filteredMenuItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton 
+                    asChild
+                    isActive={location.pathname === item.url}
+                    className="text-blue-100 hover:text-white hover:bg-blue-800 data-[state=active]:bg-blue-700 data-[state=active]:text-white"
+                  >
+                    <a href={item.url}>
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </a>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
-              ) : (
-                filteredMenuItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton 
-                      asChild
-                      isActive={location.pathname === item.url}
-                      className="text-blue-100 hover:text-white hover:bg-blue-800 data-[state=active]:bg-blue-700 data-[state=active]:text-white"
-                    >
-                      <a href={item.url}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))
-              )}
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

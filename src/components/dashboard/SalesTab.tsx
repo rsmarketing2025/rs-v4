@@ -8,7 +8,6 @@ import { SalesSummaryCards } from "./sales/SalesSummaryCards";
 import { StateSalesChart } from "./sales/StateSalesChart";
 import { SalesFilters } from "./sales/SalesFilters";
 import { SalesTable } from "./sales/SalesTable";
-import { ProtectedChart } from "@/components/auth/ProtectedChart";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -145,7 +144,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   };
 
   const exportToCSV = () => {
-    // Export ALL filtered sales, not just the first 20
+    const displayedSales = filteredSales.slice(0, 20);
     const headers = ['Pedido', 'Data', 'Cliente', 'Criativo', 'Status', 'Pagamento', 'Valor Bruto', 'País', 'Estado', 'Afiliado'];
     
     const getStatusLabel = (status: string) => {
@@ -168,7 +167,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
 
     const csvData = [
       headers.join(','),
-      ...filteredSales.map(sale => [
+      ...displayedSales.map(sale => [
         `"${sale.order_id}"`,
         sale.sale_date ? format(new Date(sale.sale_date), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : '-',
         `"${sale.customer_name}"`,
@@ -186,7 +185,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `vendas_regionais_${filteredSales.length}_registros.csv`);
+    link.setAttribute('download', 'vendas_regionais.csv');
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -198,22 +197,10 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
 
   return (
     <div className="space-y-6">
-      <ProtectedChart chartType="sales_summary" page="sales">
-        <SalesSummaryCards totalMetrics={totalMetrics} />
-      </ProtectedChart>
-      
-      <ProtectedChart chartType="time_series" page="sales">
-        <StateSalesChart sales={sales} />
-      </ProtectedChart>
-      
-      <ProtectedChart chartType="time_series" page="sales">
-        <SalesChart sales={filteredSales} />
-      </ProtectedChart>
-      
-      <ProtectedChart chartType="conversion_funnel" page="sales">
-        <CreativesSalesChart sales={filteredSales} />
-      </ProtectedChart>
-      
+      <SalesSummaryCards totalMetrics={totalMetrics} />
+      <StateSalesChart sales={sales} />
+      <SalesChart sales={filteredSales} />
+      <CreativesSalesChart sales={filteredSales} />
       <SalesFilters
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}

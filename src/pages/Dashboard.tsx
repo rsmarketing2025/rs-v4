@@ -1,46 +1,128 @@
 
 import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
-import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { 
+  TrendingUp, 
+  DollarSign, 
+  Users, 
+  Eye, 
+  MousePointer, 
+  Target,
+  BarChart3,
+  Settings
+} from "lucide-react";
 import { CreativesTab } from "@/components/dashboard/CreativesTab";
 import { SalesTab } from "@/components/dashboard/SalesTab";
 import { AffiliatesTab } from "@/components/dashboard/AffiliatesTab";
-import { SubscriptionsTab } from "@/components/dashboard/SubscriptionsTab";
-import { BusinessManagersTab } from "@/components/dashboard/BusinessManagersTab";
 import { UsersTab } from "@/components/dashboard/UsersTab";
-import { ProtectedPage } from "@/components/auth/ProtectedPage";
+import { BusinessManagersTab } from "@/components/dashboard/BusinessManagersTab";
+import { KPICard } from "@/components/dashboard/KPICard";
+import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { useAuth } from "@/hooks/useAuth";
-import { usePermissions } from "@/hooks/usePermissions";
+import { useMonthlyKPIs } from "@/hooks/useMonthlyKPIs";
 import { useLocation } from "react-router-dom";
-import { addDays } from "date-fns";
 
 const Dashboard = () => {
-  const location = useLocation();
   const { isAdmin } = useAuth();
-  const { hasPageAccess, loading } = usePermissions();
+  const { kpis, loading: kpisLoading } = useMonthlyKPIs();
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(() => {
+    // Set active tab based on current route
+    if (location.pathname === '/users') return "users";
+    if (location.pathname === '/business-managers') return "business-managers";
+    return "creatives";
+  });
   
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: addDays(new Date(), -30),
-    to: new Date(),
+  const [dateRange, setDateRange] = useState({
+    from: new Date(new Date().setDate(new Date().getDate() - 30)),
+    to: new Date()
   });
 
-  // Determinar qual tab mostrar baseado na rota
-  const getActiveTab = () => {
-    if (location.pathname === "/users") return "users";
-    if (location.pathname === "/business-managers") return "business-managers";
-    return "performance";
-  };
+  // Update URL when tab changes
+  React.useEffect(() => {
+    if (activeTab === "users") {
+      window.history.pushState({}, '', '/users');
+    } else if (activeTab === "business-managers") {
+      window.history.pushState({}, '', '/business-managers');
+    } else {
+      window.history.pushState({}, '', '/dashboard');
+    }
+  }, [activeTab]);
 
-  const activeTab = getActiveTab();
-
-  // Mostrar loading se ainda estiver carregando permissões
-  if (loading) {
+  // Show users page when on /users route
+  if (location.pathname === '/users' && isAdmin) {
     return (
       <SidebarInset>
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
-          <div className="text-white text-lg">Carregando dashboard...</div>
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 light:from-slate-50 light:via-slate-100 light:to-slate-50">
+          <div className="container mx-auto p-6">
+            {/* Header */}
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
+              <div className="flex items-center gap-4">
+                <SidebarTrigger className="text-white dark:text-white light:text-slate-900" />
+                <div>
+                  <h1 className="text-5xl font-bold text-white dark:text-white light:text-slate-900 mb-2">
+                    Manager
+                  </h1>
+                  <p className="text-slate-400 dark:text-slate-400 light:text-slate-600 text-lg">
+                    Gerenciamento de usuários
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <ThemeToggle />
+              </div>
+            </div>
+
+            {/* Users Content */}
+            <Card className="bg-slate-900/50 dark:bg-slate-900/50 light:bg-white border-slate-800 dark:border-slate-800 light:border-slate-200 backdrop-blur-sm">
+              <CardContent className="p-6">
+                <UsersTab />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </SidebarInset>
+    );
+  }
+
+  // Show business managers page when on /business-managers route
+  if (location.pathname === '/business-managers' && isAdmin) {
+    return (
+      <SidebarInset>
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 light:from-slate-50 light:via-slate-100 light:to-slate-50">
+          <div className="container mx-auto p-6">
+            {/* Header */}
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
+              <div className="flex items-center gap-4">
+                <SidebarTrigger className="text-white dark:text-white light:text-slate-900" />
+                <div>
+                  <h1 className="text-5xl font-bold text-white dark:text-white light:text-slate-900 mb-2">
+                    Manager
+                  </h1>
+                  <p className="text-slate-400 dark:text-slate-400 light:text-slate-600 text-lg">
+                    Gerenciamento de Business Managers
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <ThemeToggle />
+              </div>
+            </div>
+
+            {/* Business Managers Content */}
+            <Card className="bg-slate-900/50 dark:bg-slate-900/50 light:bg-white border-slate-800 dark:border-slate-800 light:border-slate-200 backdrop-blur-sm">
+              <CardContent className="p-6">
+                <BusinessManagersTab />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </SidebarInset>
     );
@@ -48,131 +130,113 @@ const Dashboard = () => {
 
   return (
     <SidebarInset>
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b border-slate-700 bg-slate-900/50 px-4">
-        <SidebarTrigger className="-ml-1 text-slate-400 hover:text-white" />
-        <Separator orientation="vertical" className="mr-2 h-4 bg-slate-600" />
-        <h1 className="text-xl font-semibold text-white">Dashboard</h1>
-      </header>
-      
-      <div className="flex flex-1 flex-col gap-4 p-4 pt-6 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-        <Tabs value={activeTab} className="w-full">
-          <div className="flex justify-between items-center mb-6">
-            <TabsList className="bg-slate-800 border-slate-700">
-              <TabsTrigger 
-                value="performance" 
-                className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-300"
-              >
-                Performance
-              </TabsTrigger>
-              {isAdmin && (
-                <TabsTrigger 
-                  value="business-managers" 
-                  className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-300"
-                >
-                  Business Managers
-                </TabsTrigger>
-              )}
-              {hasPageAccess('users') && (
-                <TabsTrigger 
-                  value="users" 
-                  className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-300"
-                >
-                  Usuários
-                </TabsTrigger>
-              )}
-            </TabsList>
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 light:from-slate-50 light:via-slate-100 light:to-slate-50">
+        <div className="container mx-auto p-6">
+          {/* Header */}
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger className="text-white dark:text-white light:text-slate-900" />
+              <div>
+                <h1 className="text-5xl font-bold text-white dark:text-white light:text-slate-900 mb-2">
+                  Manager
+                </h1>
+                <p className="text-slate-400 dark:text-slate-400 light:text-slate-600 text-lg">
+                  Insights detalhados de Criativos e Métricas de vendas
+                </p>
+              </div>
+            </div>
             
-            {activeTab === "performance" && (
-              <DateRangePicker
-                dateRange={dateRange}
-                onDateRangeChange={setDateRange}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <DateRangePicker 
+                dateRange={dateRange} 
+                onDateRangeChange={setDateRange} 
               />
-            )}
+              <ThemeToggle />
+            </div>
           </div>
 
-          <TabsContent value="performance" className="space-y-6">
-            <Tabs defaultValue="creatives" className="w-full">
-              <TabsList className="bg-slate-800 border-slate-700">
-                {hasPageAccess('creatives') && (
-                  <TabsTrigger 
-                    value="creatives" 
-                    className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-300"
-                  >
+          {/* KPI Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+            <KPICard
+              title="Total Investido"
+              value={kpisLoading ? "Carregando..." : `R$ ${kpis.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+              change={kpisLoading ? "..." : "+12.5%"}
+              icon={DollarSign}
+              trend="up"
+            />
+            <KPICard
+              title="Receita Total"
+              value={kpisLoading ? "Carregando..." : `R$ ${kpis.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+              change={kpisLoading ? "..." : "+18.2%"}
+              icon={TrendingUp}
+              trend="up"
+            />
+            <KPICard
+              title="Total de Pedidos"
+              value={kpisLoading ? "Carregando..." : kpis.totalOrders.toLocaleString()}
+              change={kpisLoading ? "..." : "+15.8%"}
+              icon={Target}
+              trend="up"
+            />
+            <KPICard
+              title="ROAS"
+              value={kpisLoading ? "Carregando..." : `${kpis.roas.toFixed(2)}x`}
+              change={kpisLoading ? "..." : "+0.3x"}
+              icon={BarChart3}
+              trend="up"
+            />
+            <KPICard
+              title="Taxa de Conversão"
+              value={kpisLoading ? "Carregando..." : `${kpis.conversionRate.toFixed(1)}%`}
+              change={kpisLoading ? "..." : "+0.8%"}
+              icon={MousePointer}
+              trend="up"
+            />
+            <KPICard
+              title="Ticket Médio"
+              value={kpisLoading ? "Carregando..." : `R$ ${kpis.avgOrderValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+              change={kpisLoading ? "..." : "+5.2%"}
+              icon={DollarSign}
+              trend="up"
+            />
+          </div>
+
+          {/* Main Content Tabs */}
+          <Card className="bg-slate-900/50 dark:bg-slate-900/50 light:bg-white border-slate-800 dark:border-slate-800 light:border-slate-200 backdrop-blur-sm">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <CardHeader className="pb-4">
+                <TabsList className="grid w-full grid-cols-3 bg-slate-800/50 dark:bg-slate-800/50 light:bg-slate-100">
+                  <TabsTrigger value="creatives" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
+                    <Eye className="w-4 h-4 mr-2" />
                     Criativos
                   </TabsTrigger>
-                )}
-                {hasPageAccess('sales') && (
-                  <TabsTrigger 
-                    value="sales" 
-                    className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-300"
-                  >
+                  <TabsTrigger value="sales" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
+                    <DollarSign className="w-4 h-4 mr-2" />
                     Vendas
                   </TabsTrigger>
-                )}
-                {hasPageAccess('affiliates') && (
-                  <TabsTrigger 
-                    value="affiliates" 
-                    className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-300"
-                  >
+                  <TabsTrigger value="affiliates" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
+                    <Users className="w-4 h-4 mr-2" />
                     Afiliados
                   </TabsTrigger>
-                )}
-                {hasPageAccess('revenue') && (
-                  <TabsTrigger 
-                    value="subscriptions" 
-                    className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-300"
-                  >
-                    Receita
-                  </TabsTrigger>
-                )}
-              </TabsList>
+                </TabsList>
+              </CardHeader>
 
-              {hasPageAccess('creatives') && (
-                <TabsContent value="creatives">
-                  <ProtectedPage page="creatives">
-                    <CreativesTab dateRange={dateRange} />
-                  </ProtectedPage>
+              <CardContent className="p-6">
+                <TabsContent value="creatives" className="mt-0">
+                  <CreativesTab dateRange={dateRange} />
                 </TabsContent>
-              )}
-
-              {hasPageAccess('sales') && (
-                <TabsContent value="sales">
-                  <ProtectedPage page="sales">
-                    <SalesTab dateRange={dateRange} />
-                  </ProtectedPage>
+                
+                <TabsContent value="sales" className="mt-0">
+                  <SalesTab dateRange={dateRange} />
                 </TabsContent>
-              )}
-
-              {hasPageAccess('affiliates') && (
-                <TabsContent value="affiliates">
-                  <ProtectedPage page="affiliates">
-                    <AffiliatesTab dateRange={dateRange} />
-                  </ProtectedPage>
+                
+                <TabsContent value="affiliates" className="mt-0">
+                  <AffiliatesTab dateRange={dateRange} />
                 </TabsContent>
-              )}
-
-              {hasPageAccess('revenue') && (
-                <TabsContent value="subscriptions">
-                  <ProtectedPage page="revenue">
-                    <SubscriptionsTab dateRange={dateRange} />
-                  </ProtectedPage>
-                </TabsContent>
-              )}
+              </CardContent>
             </Tabs>
-          </TabsContent>
-
-          {isAdmin && (
-            <TabsContent value="business-managers">
-              <BusinessManagersTab />
-            </TabsContent>
-          )}
-
-          <TabsContent value="users">
-            <ProtectedPage page="users">
-              <UsersTab />
-            </ProtectedPage>
-          </TabsContent>
-        </Tabs>
+          </Card>
+        </div>
       </div>
     </SidebarInset>
   );
