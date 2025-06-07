@@ -28,16 +28,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   const isLoading = loading || permissionsLoading;
 
-  console.log('ProtectedRoute state:', {
-    user: !!user,
-    loading,
-    permissionsLoading,
-    isAdmin,
-    requireAdmin,
-    requiredPage,
-    hasAccess: requiredPage ? hasPageAccess(requiredPage) : 'N/A'
-  });
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
@@ -52,7 +42,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Check admin requirement
   if (requireAdmin && !isAdmin) {
-    console.log('Admin access denied for user:', user.email);
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
         <div className="text-center">
@@ -65,7 +54,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Check page-specific permission
   if (requiredPage && !hasPageAccess(requiredPage)) {
-    console.log(`Page access denied for ${requiredPage} to user:`, user.email);
     const accessiblePages = getAccessiblePages();
     const firstAccessiblePage = accessiblePages[0];
     

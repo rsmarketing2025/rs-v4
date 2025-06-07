@@ -22,7 +22,7 @@ interface ChartPermission {
 }
 
 export const usePermissions = () => {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const [pagePermissions, setPagePermissions] = useState<PagePermissions>({
     creatives: true,
     sales: true,
@@ -39,29 +39,13 @@ export const usePermissions = () => {
     } else {
       setLoading(false);
     }
-  }, [user?.id, isAdmin]);
+  }, [user?.id]);
 
   const fetchPermissions = async () => {
     if (!user?.id) return;
 
     try {
-      console.log('Fetching permissions for user:', user.id, 'isAdmin:', isAdmin);
-      
-      // If user is admin, give access to all pages including users
-      if (isAdmin) {
-        console.log('User is admin, giving full access');
-        setPagePermissions({
-          creatives: true,
-          sales: true,
-          affiliates: true,
-          revenue: true,
-          users: true,
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Fetch page permissions for non-admin users
+      // Fetch page permissions
       const { data: pagePermsData, error: pagePermsError } = await supabase
         .from('user_page_permissions')
         .select('page, can_access')
@@ -77,7 +61,6 @@ export const usePermissions = () => {
           revenue: pagePermsData.find(p => p.page === 'revenue')?.can_access ?? true,
           users: pagePermsData.find(p => p.page === 'users')?.can_access ?? false,
         };
-        console.log('Page permissions for non-admin user:', permissions);
         setPagePermissions(permissions);
       }
 
@@ -105,15 +88,7 @@ export const usePermissions = () => {
   };
 
   const hasPageAccess = (page: keyof PagePermissions): boolean => {
-    // Admin always has access to all pages
-    if (isAdmin) {
-      console.log(`Admin access granted for page: ${page}`);
-      return true;
-    }
-    
-    const hasAccess = pagePermissions[page];
-    console.log(`Page access for ${page}:`, hasAccess);
-    return hasAccess;
+    return pagePermissions[page];
   };
 
   const hasChartAccess = (chartType: string, page: string): boolean => {
@@ -122,11 +97,6 @@ export const usePermissions = () => {
   };
 
   const getAccessiblePages = (): (keyof PagePermissions)[] => {
-    // Admin has access to all pages
-    if (isAdmin) {
-      return ['creatives', 'sales', 'affiliates', 'revenue', 'users'];
-    }
-    
     return Object.keys(pagePermissions).filter(page => 
       pagePermissions[page as keyof PagePermissions]
     ) as (keyof PagePermissions)[];

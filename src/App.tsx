@@ -32,36 +32,35 @@ const App = () => (
                     <SidebarProvider>
                       <div className="min-h-screen flex w-full">
                         <AppSidebar />
-                        <main className="flex-1">
-                          <Routes>
-                            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                            <Route 
-                              path="/dashboard" 
-                              element={
-                                <ProtectedRoute requiredPage="creatives">
-                                  <Dashboard />
-                                </ProtectedRoute>
-                              }
-                            />
-                            <Route 
-                              path="/users" 
-                              element={
-                                <ProtectedRoute requiredPage="users">
-                                  <Dashboard />
-                                </ProtectedRoute>
-                              } 
-                            />
-                            <Route 
-                              path="/business-managers" 
-                              element={
-                                <ProtectedRoute requireAdmin={true}>
-                                  <Dashboard />
-                                </ProtectedRoute>
-                              } 
-                            />
-                            <Route path="*" element={<NotFound />} />
-                          </Routes>
-                        </main>
+                        <Routes>
+                          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                          <Route 
+                            path="/dashboard" 
+                            element={
+                              <ProtectedRoute requiredPage="creatives">
+                                <Dashboard />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route 
+                            path="/users" 
+                            element={
+                              <ProtectedRoute requiredPage="users">
+                                <Dashboard />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/business-managers" 
+                            element={
+                              <ProtectedRoute requireAdmin={true}>
+                                <Dashboard />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
                       </div>
                     </SidebarProvider>
                   </ProtectedRoute>
