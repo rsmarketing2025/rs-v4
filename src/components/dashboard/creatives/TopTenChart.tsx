@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { PermissionWrapper } from "@/components/common/PermissionWrapper";
 
 interface CreativeData {
   creative_name: string;
@@ -41,7 +42,6 @@ export const TopTenChart: React.FC<TopTenChartProps> = ({
 }) => {
   const currentMetric = metricOptions.find(m => m.value === selectedMetric) || metricOptions[0];
   
-  // Filtrar criativos com valor acima de zero e pegar TOP 10
   const filteredData = creatives
     .filter(creative => (creative as any)[selectedMetric] > 0)
     .sort((a, b) => (b as any)[selectedMetric] - (a as any)[selectedMetric])
@@ -68,75 +68,77 @@ export const TopTenChart: React.FC<TopTenChartProps> = ({
   };
 
   return (
-    <Card className="bg-slate-800/30 border-slate-700">
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <CardTitle className="text-white text-xl">TOP 10 Criativos</CardTitle>
-            <CardDescription className="text-slate-400">
-              Ranking dos melhores criativos por métrica selecionada
-            </CardDescription>
+    <PermissionWrapper chartType="top_creatives" page="creatives">
+      <Card className="bg-slate-800/30 border-slate-700">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <CardTitle className="text-white text-xl">TOP 10 Criativos</CardTitle>
+              <CardDescription className="text-slate-400">
+                Ranking dos melhores criativos por métrica selecionada
+              </CardDescription>
+            </div>
+            <Select value={selectedMetric} onValueChange={onMetricChange}>
+              <SelectTrigger className="w-full sm:w-[200px] bg-slate-900/50 border-slate-600 text-white">
+                <SelectValue placeholder="Selecionar métrica" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-900 border-slate-700">
+                {metricOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <Select value={selectedMetric} onValueChange={onMetricChange}>
-            <SelectTrigger className="w-full sm:w-[200px] bg-slate-900/50 border-slate-600 text-white">
-              <SelectValue placeholder="Selecionar métrica" />
-            </SelectTrigger>
-            <SelectContent className="bg-slate-900 border-slate-700">
-              {metricOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="h-96">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={filteredData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
-              layout="horizontal"
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis 
-                type="number"
-                stroke="#9ca3af"
-                fontSize={12}
-                tickFormatter={formatValue}
-              />
-              <YAxis 
-                type="category"
-                dataKey="name"
-                stroke="#9ca3af"
-                fontSize={12}
-                width={120}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#1f2937',
-                  border: '1px solid #374151',
-                  borderRadius: '8px',
-                  color: '#fff'
-                }}
-                formatter={(value: any, name: any, props: any) => [
-                  formatValue(value),
-                  currentMetric.label
-                ]}
-                labelFormatter={(label: any, payload: any) => 
-                  payload?.[0]?.payload?.fullName || label
-                }
-              />
-              <Bar 
-                dataKey="value" 
-                fill={currentMetric.color}
-                radius={[0, 4, 4, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
+        </CardHeader>
+        <CardContent>
+          <div className="h-96">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={filteredData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                layout="horizontal"
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis 
+                  type="number"
+                  stroke="#9ca3af"
+                  fontSize={12}
+                  tickFormatter={formatValue}
+                />
+                <YAxis 
+                  type="category"
+                  dataKey="name"
+                  stroke="#9ca3af"
+                  fontSize={12}
+                  width={120}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1f2937',
+                    border: '1px solid #374151',
+                    borderRadius: '8px',
+                    color: '#fff'
+                  }}
+                  formatter={(value: any, name: any, props: any) => [
+                    formatValue(value),
+                    currentMetric.label
+                  ]}
+                  labelFormatter={(label: any, payload: any) => 
+                    payload?.[0]?.payload?.fullName || label
+                  }
+                />
+                <Bar 
+                  dataKey="value" 
+                  fill={currentMetric.color}
+                  radius={[0, 4, 4, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+    </PermissionWrapper>
   );
 };
