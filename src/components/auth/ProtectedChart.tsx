@@ -18,17 +18,13 @@ export const ProtectedChart: React.FC<ProtectedChartProps> = ({
   const { hasChartAccess, loading } = usePermissions();
 
   if (loading) {
-    return (
-      <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 flex items-center justify-center">
-        <div className="text-slate-400">Carregando...</div>
-      </div>
-    );
+    return <>{children}</>;
   }
 
   if (!hasChartAccess(chartType, page)) {
     return (
       fallback || (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 flex items-center justify-center">
+        <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 flex items-center justify-center min-h-[200px]">
           <div className="text-center">
             <div className="text-slate-400 text-sm">
               Você não tem permissão para visualizar este gráfico.

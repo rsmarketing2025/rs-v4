@@ -6,7 +6,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Download, Repeat } from "lucide-react";
 import { useCreativesData } from "@/hooks/useCreativesData";
-import { ProtectedChart } from "@/components/auth/ProtectedChart";
 
 interface SubscriptionsTabProps {
   dateRange: { from: Date; to: Date };
@@ -77,79 +76,77 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
   return (
     <div className="space-y-8">
       {/* Summary Cards */}
-      <ProtectedChart chartType="revenue_breakdown" page="revenue">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <Card className="bg-slate-800/30 border-slate-700">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Repeat className="w-5 h-5 text-purple-400" />
-                <div>
-                  <p className="text-sm text-slate-400">Total Assinaturas</p>
-                  <p className="text-xl font-bold text-white">
-                    {subscriptionMetrics.totalSales.toLocaleString()}
-                  </p>
-                </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <Card className="bg-slate-800/30 border-slate-700">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Repeat className="w-5 h-5 text-purple-400" />
+              <div>
+                <p className="text-sm text-slate-400">Total Assinaturas</p>
+                <p className="text-xl font-bold text-white">
+                  {subscriptionMetrics.totalSales.toLocaleString()}
+                </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className="bg-slate-800/30 border-slate-700">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-5 h-5 bg-blue-400 rounded" />
-                <div>
-                  <p className="text-sm text-slate-400">Valor Investido</p>
-                  <p className="text-xl font-bold text-white">
-                    R$ {subscriptionMetrics.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
+        <Card className="bg-slate-800/30 border-slate-700">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-5 h-5 bg-blue-400 rounded" />
+              <div>
+                <p className="text-sm text-slate-400">Valor Investido</p>
+                <p className="text-xl font-bold text-white">
+                  R$ {subscriptionMetrics.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className="bg-slate-800/30 border-slate-700">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-5 h-5 bg-green-400 rounded" />
-                <div>
-                  <p className="text-sm text-slate-400">Receita Total</p>
-                  <p className="text-xl font-bold text-white">
-                    R$ {subscriptionMetrics.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
+        <Card className="bg-slate-800/30 border-slate-700">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-5 h-5 bg-green-400 rounded" />
+              <div>
+                <p className="text-sm text-slate-400">Receita Total</p>
+                <p className="text-xl font-bold text-white">
+                  R$ {subscriptionMetrics.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className="bg-slate-800/30 border-slate-700">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-5 h-5 bg-orange-400 rounded" />
-                <div>
-                  <p className="text-sm text-slate-400">Lucro Total</p>
-                  <p className={`text-xl font-bold ${subscriptionMetrics.totalProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    R$ {subscriptionMetrics.totalProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
+        <Card className="bg-slate-800/30 border-slate-700">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-5 h-5 bg-orange-400 rounded" />
+              <div>
+                <p className="text-sm text-slate-400">Lucro Total</p>
+                <p className={`text-xl font-bold ${subscriptionMetrics.totalProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  R$ {subscriptionMetrics.totalProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className="bg-slate-800/30 border-slate-700">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-5 h-5 bg-yellow-400 rounded" />
-                <div>
-                  <p className="text-sm text-slate-400">ROI Médio</p>
-                  <p className="text-xl font-bold text-white">
-                    {subscriptionMetrics.avgROI.toFixed(2)}x
-                  </p>
-                </div>
+        <Card className="bg-slate-800/30 border-slate-700">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-5 h-5 bg-yellow-400 rounded" />
+              <div>
+                <p className="text-sm text-slate-400">ROI Médio</p>
+                <p className="text-xl font-bold text-white">
+                  {subscriptionMetrics.avgROI.toFixed(2)}x
+                </p>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </ProtectedChart>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Subscriptions Table */}
       <Card className="bg-slate-800/30 border-slate-700">

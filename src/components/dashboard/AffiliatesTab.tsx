@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +9,6 @@ import { Search, Users, DollarSign, Percent, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AffiliateChart } from "./AffiliateChart";
-import { ProtectedChart } from "@/components/auth/ProtectedChart";
 
 interface AffiliateData {
   affiliate_id: string;
@@ -196,9 +196,7 @@ export const AffiliatesTab: React.FC<AffiliatesTabProps> = ({ dateRange }) => {
       </div>
 
       {/* Chart */}
-      <ProtectedChart chartType="affiliate_performance" page="affiliates">
-        <AffiliateChart affiliates={filteredAffiliates} />
-      </ProtectedChart>
+      <AffiliateChart affiliates={filteredAffiliates} />
 
       {/* Search */}
       <Card className="bg-slate-800/30 border-slate-700">
