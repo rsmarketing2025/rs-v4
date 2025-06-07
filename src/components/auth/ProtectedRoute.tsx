@@ -1,22 +1,18 @@
 
 import React, { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { usePermissions } from '@/hooks/usePermissions';
 import { Navigate, useNavigate } from 'react-router-dom';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
-  requiredPage?: 'creatives' | 'sales' | 'affiliates' | 'revenue' | 'users';
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
-  requireAdmin = false,
-  requiredPage
+  requireAdmin = false 
 }) => {
   const { user, loading, isAdmin } = useAuth();
-  const { hasPageAccess, loading: permissionsLoading, getAccessiblePages } = usePermissions();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,9 +22,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
   }, [user, navigate]);
 
-  const isLoading = loading || permissionsLoading;
-
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
         <div className="text-white text-lg">Carregando...</div>
@@ -40,35 +34,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/auth" replace />;
   }
 
-  // Check admin requirement
   if (requireAdmin && !isAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-white text-lg mb-4">Acesso negado</div>
-          <div className="text-slate-400">Você precisa ser administrador para acessar esta página.</div>
-        </div>
-      </div>
-    );
-  }
-
-  // Check page-specific permission
-  if (requiredPage && !hasPageAccess(requiredPage)) {
-    const accessiblePages = getAccessiblePages();
-    const firstAccessiblePage = accessiblePages[0];
-    
-    // If user has access to other pages, redirect to the first accessible one
-    if (firstAccessiblePage && firstAccessiblePage !== 'users') {
-      const redirectPath = firstAccessiblePage === 'creatives' ? '/dashboard' : `/${firstAccessiblePage}`;
-      return <Navigate to={redirectPath} replace />;
-    }
-    
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-white text-lg mb-4">Acesso negado</div>
-          <div className="text-slate-400">Você não tem permissão para acessar esta página.</div>
-        </div>
+        <div className="text-white text-lg">Acesso negado. Você precisa ser administrador.</div>
       </div>
     );
   }
