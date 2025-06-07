@@ -78,16 +78,16 @@ export function AppSidebar() {
 
   if (permissionsLoading) {
     return (
-      <Sidebar className="border-r border-sidebar-border bg-sidebar">
-        <SidebarHeader className="p-6 bg-sidebar-accent flex items-center justify-center border-b border-sidebar-border">
+      <Sidebar className="border-r bg-slate-900">
+        <SidebarHeader className="p-6 bg-blue-600 flex items-center justify-center border-b">
           <img 
             src="https://recuperacaoexponencial.com.br/wp-content/uploads/2025/06/ChatGPT-Image-31-de-mai.-de-2025-23_39_35.png" 
             alt="Logo da Empresa" 
             className="h-32 w-auto max-w-[70%] object-contain"
           />
         </SidebarHeader>
-        <SidebarContent className="bg-sidebar">
-          <div className="p-4 text-sidebar-foreground/70 text-center">
+        <SidebarContent className="bg-slate-900">
+          <div className="p-4 text-white/70 text-center">
             Carregando permissões...
           </div>
         </SidebarContent>
@@ -96,17 +96,17 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar className="border-r border-sidebar-border bg-sidebar">
-      <SidebarHeader className="p-6 bg-sidebar-accent flex items-center justify-center border-b border-sidebar-border">
+    <Sidebar className="border-r bg-slate-900">
+      <SidebarHeader className="p-6 bg-blue-600 flex items-center justify-center border-b">
         <img 
           src="https://recuperacaoexponencial.com.br/wp-content/uploads/2025/06/ChatGPT-Image-31-de-mai.-de-2025-23_39_35.png" 
           alt="Logo da Empresa" 
           className="h-32 w-auto max-w-[70%] object-contain"
         />
       </SidebarHeader>
-      <SidebarContent className="bg-sidebar">
+      <SidebarContent className="bg-slate-900">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/70">Menu</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-white/70 px-4 py-2">Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {filteredMenuItems.map((item) => (
@@ -114,11 +114,11 @@ export function AppSidebar() {
                   <SidebarMenuButton 
                     asChild
                     isActive={location.pathname === item.url}
-                    className="text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent data-[state=active]:bg-sidebar-accent data-[state=active]:text-sidebar-accent-foreground"
+                    className="text-white hover:text-white hover:bg-blue-600/20 data-[state=active]:bg-blue-600 data-[state=active]:text-white mx-2 rounded-lg"
                   >
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
+                    <a href={item.url} className="flex items-center gap-3 px-3 py-2">
+                      <item.icon className="h-5 w-5" />
+                      <span className="text-sm font-medium">{item.title}</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -127,15 +127,15 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-4 bg-sidebar-accent border-t border-sidebar-border">
-        <div className="text-sm text-sidebar-foreground/70 mb-2">
+      <SidebarFooter className="p-4 bg-blue-600 border-t">
+        <div className="text-sm text-white/90 mb-2 px-2">
           {user?.email}
         </div>
         <Button
           onClick={signOut}
           variant="outline"
           size="sm"
-          className="w-full border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent"
+          className="w-full border-white/20 text-white hover:bg-white/10 hover:text-white"
         >
           <LogOut className="w-4 h-4 mr-2" />
           Sair
