@@ -43,19 +43,38 @@ export function AppSidebar() {
   const { user, isAdmin, signOut } = useAuth();
   const { hasPageAccess, loading: permissionsLoading } = usePermissions();
 
+  console.log('AppSidebar state:', {
+    user: user?.email,
+    isAdmin,
+    permissionsLoading,
+    currentPath: location.pathname
+  });
+
   const filteredMenuItems = menuItems.filter(item => {
+    console.log('Checking menu item:', item.title);
+    
     // Check admin requirement first
-    if (item.requireAdmin && !isAdmin) {
-      return false;
+    if (item.requireAdmin) {
+      console.log(`Item ${item.title} requires admin. User is admin:`, isAdmin);
+      if (!isAdmin) {
+        return false;
+      }
     }
     
     // Check page permission
-    if (item.requiredPage && !hasPageAccess(item.requiredPage)) {
-      return false;
+    if (item.requiredPage) {
+      const hasAccess = hasPageAccess(item.requiredPage);
+      console.log(`Item ${item.title} requires page ${item.requiredPage}. Has access:`, hasAccess);
+      if (!hasAccess) {
+        return false;
+      }
     }
     
+    console.log(`Item ${item.title} is accessible`);
     return true;
   });
+
+  console.log('Filtered menu items:', filteredMenuItems.map(item => item.title));
 
   if (permissionsLoading) {
     return (
