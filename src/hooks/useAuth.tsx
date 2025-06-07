@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,7 +9,6 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isAdmin: boolean;
-  isGestor: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -20,7 +20,6 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   loading: true,
   isAdmin: false,
-  isGestor: false,
   signIn: async () => ({ error: null }),
   signUp: async () => ({ error: null }),
   signOut: async () => {},
@@ -44,24 +43,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isGestor, setIsGestor] = useState(false);
   const { toast } = useToast();
 
-  const checkUserRole = async (userId: string) => {
+  const checkAdminStatus = async (userId: string) => {
     try {
       const { data } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
+        .eq('role', 'admin')
         .single();
       
-      const userRole = data?.role;
-      setIsAdmin(userRole === 'admin');
-      setIsGestor(userRole === 'gestor');
+      setIsAdmin(!!data);
     } catch (error) {
-      console.log('Error checking user role:', error);
+      console.log('Error checking admin status:', error);
       setIsAdmin(false);
-      setIsGestor(false);
     }
   };
 
@@ -94,9 +90,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Check user role after setting session
+          // Check admin status after setting session
           setTimeout(() => {
-            checkUserRole(session.user.id);
+            checkAdminStatus(session.user.id);
           }, 0);
 
           // Set up token refresh timer (refresh 5 minutes before expiry)
@@ -114,7 +110,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           }
         } else {
           setIsAdmin(false);
-          setIsGestor(false);
           if (refreshTimer) {
             clearTimeout(refreshTimer);
           }
@@ -147,7 +142,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setSession(session);
           setUser(session?.user ?? null);
           if (session?.user) {
-            checkUserRole(session.user.id);
+            checkAdminStatus(session.user.id);
           }
           setLoading(false);
         }
@@ -214,7 +209,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     session,
     loading,
     isAdmin,
-    isGestor,
     signIn,
     signUp,
     signOut,

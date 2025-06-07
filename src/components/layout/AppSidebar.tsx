@@ -15,64 +15,34 @@ import { Button } from "@/components/ui/button";
 import { BarChart3, Users, LogOut, Settings } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { usePermissions } from "@/hooks/usePermissions";
 
 const menuItems = [
   {
     title: "Performance",
     url: "/dashboard",
     icon: BarChart3,
-    permissionKey: "creatives" as const,
   },
   {
     title: "Business Managers",
     url: "/business-managers",
     icon: Settings,
     requireAdmin: true,
-    permissionKey: "businessManagers" as const,
   },
   {
     title: "Usuários",
     url: "/users",
     icon: Users,
     requireAdmin: true,
-    permissionKey: "users" as const,
   },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
   const { user, isAdmin, signOut } = useAuth();
-  const { hasPageAccess, loading: permissionsLoading } = usePermissions();
 
-  if (permissionsLoading) {
-    return (
-      <Sidebar className="bg-blue-950 border-blue-800">
-        <SidebarHeader className="p-6 bg-blue-900 flex items-center justify-center">
-          <img 
-            src="https://recuperacaoexponencial.com.br/wp-content/uploads/2025/06/ChatGPT-Image-31-de-mai.-de-2025-23_39_35.png" 
-            alt="Logo da Empresa" 
-            className="h-32 w-auto max-w-[70%] object-contain"
-          />
-        </SidebarHeader>
-        <SidebarContent className="bg-blue-950">
-          <div className="text-center text-blue-200 py-8">
-            Carregando...
-          </div>
-        </SidebarContent>
-      </Sidebar>
-    );
-  }
-
-  const filteredMenuItems = menuItems.filter(item => {
-    // Verificar se requer admin e se o usuário é admin
-    if (item.requireAdmin && !isAdmin) {
-      return false;
-    }
-    
-    // Verificar permissão específica da página
-    return hasPageAccess(item.permissionKey);
-  });
+  const filteredMenuItems = menuItems.filter(item => 
+    !item.requireAdmin || isAdmin
+  );
 
   return (
     <Sidebar className="bg-blue-950 border-blue-800">
