@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -92,15 +93,22 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
 
   const fetchUserPermissions = async (userId: string) => {
     try {
+      console.log('Fetching permissions for user:', userId);
+      
       // Fetch page permissions
       const { data: pagePermsData, error: pagePermsError } = await supabase
         .from('user_page_permissions')
         .select('page, can_access')
         .eq('user_id', userId);
 
-      if (pagePermsError) throw pagePermsError;
+      if (pagePermsError) {
+        console.error('Error fetching page permissions:', pagePermsError);
+        throw pagePermsError;
+      }
 
-      if (pagePermsData) {
+      console.log('Page permissions data:', pagePermsData);
+
+      if (pagePermsData && pagePermsData.length > 0) {
         const permissions = {
           creatives: pagePermsData.find(p => p.page === 'creatives')?.can_access ?? true,
           sales: pagePermsData.find(p => p.page === 'sales')?.can_access ?? true,
@@ -108,7 +116,18 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
           revenue: pagePermsData.find(p => p.page === 'revenue')?.can_access ?? true,
           users: pagePermsData.find(p => p.page === 'users')?.can_access ?? false,
         };
+        console.log('Setting page permissions:', permissions);
         setPagePermissions(permissions);
+      } else {
+        // Set default permissions if none exist
+        console.log('No existing page permissions found, using defaults');
+        setPagePermissions({
+          creatives: true,
+          sales: true,
+          affiliates: true,
+          revenue: true,
+          users: false,
+        });
       }
 
       // Fetch chart permissions
@@ -117,18 +136,47 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         .select('chart_type, page, can_view')
         .eq('user_id', userId);
 
-      if (chartPermsError) throw chartPermsError;
+      if (chartPermsError) {
+        console.error('Error fetching chart permissions:', chartPermsError);
+        throw chartPermsError;
+      }
 
-      if (chartPermsData) {
+      console.log('Chart permissions data:', chartPermsData);
+
+      if (chartPermsData && chartPermsData.length > 0) {
         const chartPerms = chartPermsData.map(p => ({
           chartType: p.chart_type,
           page: p.page,
-          canView: p.can_view
+          canView: p.can_view ?? true
         }));
+        console.log('Setting chart permissions:', chartPerms);
         setChartPermissions(chartPerms);
+      } else {
+        // Set default chart permissions if none exist
+        console.log('No existing chart permissions found, using defaults');
+        const defaultChartPerms: ChartPermission[] = [
+          { chartType: 'performance_overview', page: 'creatives', canView: true },
+          { chartType: 'time_series', page: 'creatives', canView: true },
+          { chartType: 'top_creatives', page: 'creatives', canView: true },
+          { chartType: 'metrics_comparison', page: 'creatives', canView: true },
+          { chartType: 'sales_summary', page: 'sales', canView: true },
+          { chartType: 'conversion_funnel', page: 'sales', canView: true },
+          { chartType: 'time_series', page: 'sales', canView: true },
+          { chartType: 'affiliate_performance', page: 'affiliates', canView: true },
+          { chartType: 'time_series', page: 'affiliates', canView: true },
+          { chartType: 'revenue_breakdown', page: 'revenue', canView: true },
+          { chartType: 'roi_analysis', page: 'revenue', canView: true },
+          { chartType: 'time_series', page: 'revenue', canView: true }
+        ];
+        setChartPermissions(defaultChartPerms);
       }
     } catch (error) {
       console.error('Error fetching user permissions:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar as permissões do usuário.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -137,6 +185,8 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
 
     setIsLoading(true);
     try {
+      console.log('Updating user:', user.id);
+      
       // Update profile
       const { error: profileError } = await supabase
         .from('profiles')
@@ -147,7 +197,10 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         })
         .eq('id', user.id);
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Error updating profile:', profileError);
+        throw profileError;
+      }
 
       // Update role
       const { error: roleError } = await supabase
@@ -155,34 +208,57 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         .update({ role: formData.role })
         .eq('user_id', user.id);
 
-      if (roleError) throw roleError;
-
-      // Update page permissions
-      for (const [page, canAccess] of Object.entries(pagePermissions)) {
-        const { error: pagePermError } = await supabase
-          .from('user_page_permissions')
-          .upsert({
-            user_id: user.id,
-            page: page as UserPage,
-            can_access: canAccess
-          }, {
-            onConflict: 'user_id,page'
-          });
-
-        if (pagePermError) throw pagePermError;
+      if (roleError) {
+        console.error('Error updating role:', roleError);
+        throw roleError;
       }
 
-      // Update chart permissions
+      console.log('Updating page permissions:', pagePermissions);
+      
+      // Delete existing page permissions first
+      const { error: deletePageError } = await supabase
+        .from('user_page_permissions')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (deletePageError) {
+        console.error('Error deleting existing page permissions:', deletePageError);
+        throw deletePageError;
+      }
+
+      // Insert new page permissions
+      const pagePermissionsToInsert = Object.entries(pagePermissions).map(([page, canAccess]) => ({
+        user_id: user.id,
+        page: page as UserPage,
+        can_access: canAccess
+      }));
+
+      console.log('Inserting page permissions:', pagePermissionsToInsert);
+
+      const { error: pagePermError } = await supabase
+        .from('user_page_permissions')
+        .insert(pagePermissionsToInsert);
+
+      if (pagePermError) {
+        console.error('Error inserting page permissions:', pagePermError);
+        throw pagePermError;
+      }
+
+      console.log('Updating chart permissions:', chartPermissions);
+      
+      // Delete existing chart permissions first
+      const { error: deleteChartError } = await supabase
+        .from('user_chart_permissions')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (deleteChartError) {
+        console.error('Error deleting existing chart permissions:', deleteChartError);
+        throw deleteChartError;
+      }
+
+      // Insert new chart permissions
       if (chartPermissions.length > 0) {
-        // Delete existing chart permissions
-        const { error: deleteError } = await supabase
-          .from('user_chart_permissions')
-          .delete()
-          .eq('user_id', user.id);
-
-        if (deleteError) throw deleteError;
-
-        // Insert new chart permissions
         const chartPermsToInsert = chartPermissions.map(perm => ({
           user_id: user.id,
           chart_type: perm.chartType as ChartType,
@@ -190,11 +266,16 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
           can_view: perm.canView
         }));
 
+        console.log('Inserting chart permissions:', chartPermsToInsert);
+
         const { error: chartPermError } = await supabase
           .from('user_chart_permissions')
           .insert(chartPermsToInsert);
 
-        if (chartPermError) throw chartPermError;
+        if (chartPermError) {
+          console.error('Error inserting chart permissions:', chartPermError);
+          throw chartPermError;
+        }
       }
 
       toast({
@@ -246,7 +327,6 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         throw new Error('No active session');
       }
 
-      // Use the hardcoded Supabase URL instead of accessing protected property
       const supabaseUrl = 'https://cnhjnfwkjakvxamefzzg.supabase.co';
       
       const response = await fetch(`${supabaseUrl}/functions/v1/update-user-password`, {
@@ -289,6 +369,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
   };
 
   const handlePagePermissionChange = (page: string, checked: boolean) => {
+    console.log(`Changing page permission for ${page} to ${checked}`);
     setPagePermissions(prev => ({
       ...prev,
       [page]: checked
@@ -296,6 +377,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
   };
 
   const handleChartPermissionChange = (chartType: string, page: string, canView: boolean) => {
+    console.log(`Changing chart permission for ${chartType} on ${page} to ${canView}`);
     setChartPermissions(prev => {
       const existingIndex = prev.findIndex(p => p.chartType === chartType && p.page === page);
       

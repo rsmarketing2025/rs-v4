@@ -28,7 +28,6 @@ export const ChartPermissions: React.FC<ChartPermissionsProps> = ({
     // Vendas
     'sales_summary': 'Resumo de Vendas',
     'conversion_funnel': 'Funil de Conversão',
-    'creatives_sales': 'Vendas por Criativo',
     
     // Afiliados
     'affiliate_performance': 'Top Afiliados - Receita',
@@ -47,13 +46,14 @@ export const ChartPermissions: React.FC<ChartPermissionsProps> = ({
 
   const chartsByPage = {
     'creatives': ['performance_overview', 'time_series', 'top_creatives', 'metrics_comparison'],
-    'sales': ['sales_summary', 'conversion_funnel', 'time_series', 'creatives_sales'],
+    'sales': ['sales_summary', 'conversion_funnel', 'time_series'],
     'affiliates': ['affiliate_performance', 'time_series'],
     'revenue': ['revenue_breakdown', 'roi_analysis', 'time_series']
   };
 
   const getPermission = (chartType: string, page: string) => {
-    return chartPermissions.find(p => p.chartType === chartType && p.page === page)?.canView ?? true;
+    const permission = chartPermissions.find(p => p.chartType === chartType && p.page === page);
+    return permission ? permission.canView : true; // Default to true if no permission found
   };
 
   return (
