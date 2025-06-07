@@ -5,6 +5,7 @@ import { TimeSeriesChart } from "./creatives/TimeSeriesChart";
 import { CreativesFilters } from "./creatives/CreativesFilters";
 import { CreativesSummaryCards } from "./creatives/CreativesSummaryCards";
 import { CreativesTable } from "./creatives/CreativesTable";
+import { ProtectedChart } from "@/components/auth/ProtectedChart";
 import { useCreativesData } from "@/hooks/useCreativesData";
 
 interface CreativesTabProps {
@@ -96,12 +97,16 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
         avgROI={avgROI}
       />
 
-      <MetricsOverviewCharts creatives={filteredCreatives} />
+      <ProtectedChart chartType="performance_overview" page="creatives">
+        <MetricsOverviewCharts creatives={filteredCreatives} />
+      </ProtectedChart>
 
-      <TimeSeriesChart 
-        creatives={filteredCreatives}
-        dateRange={dateRange}
-      />
+      <ProtectedChart chartType="time_series" page="creatives">
+        <TimeSeriesChart 
+          creatives={filteredCreatives}
+          dateRange={dateRange}
+        />
+      </ProtectedChart>
 
       <CreativesFilters 
         searchTerm={searchTerm}
