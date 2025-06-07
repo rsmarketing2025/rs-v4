@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Search, User, Mail, Phone, Shield, ShieldCheck, Edit, Trash2, Crown } from 'lucide-react';
 import { UserDetailModal } from './UserDetailModal';
+import { DeleteUserDialog } from './DeleteUserDialog';
 import {
   Table,
   TableBody,
@@ -50,6 +51,8 @@ export const UserList: React.FC<UserListProps> = ({
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [userToDelete, setUserToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [deletingUser, setDeletingUser] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -128,22 +131,28 @@ export const UserList: React.FC<UserListProps> = ({
     }
   };
 
-  const handleDeleteUser = async (userId: string, userName: string) => {
-    if (!confirm(`Tem certeza que deseja remover o usuário ${userName}? Esta ação não pode ser desfeita.`)) {
-      return;
-    }
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
 
     try {
-      // Deletar usuário através da API admin do Supabase
-      const { error } = await supabase.auth.admin.deleteUser(userId);
-      
-      if (error) throw error;
+      setDeletingUser(true);
+
+      // Chamar a Edge Function para deletar o usuário
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId: userToDelete.id }
+      });
+
+      if (error) {
+        throw error;
+      }
 
       toast({
         title: "Usuário removido",
-        description: `${userName} foi removido do sistema com sucesso.`,
+        description: `${userToDelete.name} foi removido do sistema com sucesso.`,
       });
 
+      // Fechar o dialog e recarregar a lista
+      setUserToDelete(null);
       fetchUsers();
     } catch (error: any) {
       console.error('Error deleting user:', error);
@@ -152,6 +161,8 @@ export const UserList: React.FC<UserListProps> = ({
         description: error.message || "Ocorreu um erro ao remover o usuário.",
         variant: "destructive",
       });
+    } finally {
+      setDeletingUser(false);
     }
   };
 
@@ -299,7 +310,7 @@ export const UserList: React.FC<UserListProps> = ({
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleDeleteUser(user.id, user.full_name)}
+                            onClick={() => setUserToDelete({ id: user.id, name: user.full_name })}
                             className="border-red-600 text-red-400 hover:bg-red-600/10"
                           >
                             <Trash2 className="w-3 h-3" />
@@ -328,6 +339,15 @@ export const UserList: React.FC<UserListProps> = ({
           }}
         />
       )}
+
+      {/* Delete User Dialog */}
+      <DeleteUserDialog
+        isOpen={!!userToDelete}
+        onClose={() => setUserToDelete(null)}
+        onConfirm={handleDeleteUser}
+        userName={userToDelete?.name || ''}
+        loading={deletingUser}
+      />
     </div>
   );
 };
