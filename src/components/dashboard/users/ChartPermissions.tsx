@@ -20,35 +20,30 @@ export const ChartPermissions: React.FC<ChartPermissionsProps> = ({
 }) => {
   const chartTypeLabels: Record<string, string> = {
     // Criativos
-    'performance_overview': 'Resumo de Performance dos Criativos',
+    'summary_cards': 'Cards de Resumo',
+    'metrics_overview': 'Panorama de Métricas',
     'time_series': 'Performance ao Longo do Tempo',
     'top_creatives': 'Top 10 Criativos',
-    'metrics_comparison': 'Comparação de Métricas',
     
     // Vendas
-    'sales_summary': 'Resumo de Vendas',
-    'conversion_funnel': 'Funil de Conversão',
+    'sales_chart': 'Gráfico de Vendas',
+    'creatives_sales_chart': 'Vendas por Criativos',
+    'state_sales_chart': 'Vendas por Estado',
     
     // Afiliados
-    'affiliate_performance': 'Top Afiliados - Receita',
-    
-    // Receita
-    'revenue_breakdown': 'Detalhamento de Receita',
-    'roi_analysis': 'Análise de ROI'
+    'affiliate_chart': 'Top Afiliados - Receita'
   };
 
   const pageLabels: Record<string, string> = {
     'creatives': 'Criativos',
     'sales': 'Vendas',
-    'affiliates': 'Afiliados',
-    'revenue': 'Receita'
+    'affiliates': 'Afiliados'
   };
 
   const chartsByPage = {
-    'creatives': ['performance_overview', 'time_series', 'top_creatives', 'metrics_comparison'],
-    'sales': ['sales_summary', 'conversion_funnel', 'time_series'],
-    'affiliates': ['affiliate_performance', 'time_series'],
-    'revenue': ['revenue_breakdown', 'roi_analysis', 'time_series']
+    'creatives': ['summary_cards', 'metrics_overview', 'time_series', 'top_creatives'],
+    'sales': ['summary_cards', 'sales_chart', 'creatives_sales_chart', 'state_sales_chart'],
+    'affiliates': ['summary_cards', 'affiliate_chart']
   };
 
   const getPermission = (chartType: string, page: string) => {

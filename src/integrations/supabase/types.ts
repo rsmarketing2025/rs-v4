@@ -662,6 +662,12 @@ export type Database = {
         | "sales_summary"
         | "affiliate_performance"
         | "revenue_breakdown"
+        | "summary_cards"
+        | "metrics_overview"
+        | "sales_chart"
+        | "creatives_sales_chart"
+        | "state_sales_chart"
+        | "affiliate_chart"
       user_page: "creatives" | "sales" | "affiliates" | "revenue" | "users"
       user_role: "admin" | "user" | "gestor"
     }
@@ -823,6 +829,12 @@ export const Constants = {
         "sales_summary",
         "affiliate_performance",
         "revenue_breakdown",
+        "summary_cards",
+        "metrics_overview",
+        "sales_chart",
+        "creatives_sales_chart",
+        "state_sales_chart",
+        "affiliate_chart",
       ],
       user_page: ["creatives", "sales", "affiliates", "revenue", "users"],
       user_role: ["admin", "user", "gestor"],

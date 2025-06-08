@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { CreativesSelector } from "./CreativesSelector";
+import { PermissionWrapper } from "@/components/common/PermissionWrapper";
 
 interface CreativeData {
   creative_name: string;
@@ -159,108 +159,109 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ creatives, dat
   const chartHeight = Math.max(500, Math.min(800, 500 + (selectedCreatives.length * 12)));
 
   return (
-    <Card className="bg-slate-800/30 border-slate-700">
-      <CardHeader>
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-          <div>
-            <CardTitle className="text-white text-xl">Evolução Temporal - Criativos</CardTitle>
-            <CardTitle className="text-slate-400 text-sm font-normal">
-              Acompanhe a evolução da métrica selecionada ao longo do período
-            </CardTitle>
+    <PermissionWrapper chartType="time_series" page="creatives">
+      <Card className="bg-slate-800/30 border-slate-700">
+        <CardHeader>
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div>
+              <CardTitle className="text-white text-xl">Evolução Temporal - Criativos</CardTitle>
+              <CardTitle className="text-slate-400 text-sm font-normal">
+                Acompanhe a evolução da métrica selecionada ao longo do período
+              </CardTitle>
+            </div>
+            <Select value={selectedMetric} onValueChange={setSelectedMetric}>
+              <SelectTrigger className="w-full lg:w-[200px] bg-slate-900/50 border-slate-600 text-white">
+                <SelectValue placeholder="Selecionar métrica" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-900 border-slate-700">
+                {metricOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <Select value={selectedMetric} onValueChange={setSelectedMetric}>
-            <SelectTrigger className="w-full lg:w-[200px] bg-slate-900/50 border-slate-600 text-white">
-              <SelectValue placeholder="Selecionar métrica" />
-            </SelectTrigger>
-            <SelectContent className="bg-slate-900 border-slate-700">
-              {metricOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        {/* Creatives Selector */}
-        <div className="mt-4">
-          <CreativesSelector
-            relevantCreatives={relevantCreatives}
-            selectedCreatives={selectedCreatives}
-            onCreativeToggle={handleCreativeToggle}
-            currentMetric={currentMetric}
-            colors={COLORS}
-          />
-        </div>
-      </CardHeader>
-      
-      <CardContent>
-        <div style={{ height: chartHeight }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={timeSeriesData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis 
-                dataKey="date"
-                stroke="#9ca3af"
-                fontSize={12}
-                angle={-45}
-                textAnchor="end"
-                height={100}
-              />
-              <YAxis 
-                stroke="#9ca3af"
-                fontSize={12}
-                tickFormatter={formatValue}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#1f2937',
-                  border: '1px solid #374151',
-                  borderRadius: '8px',
-                  color: '#fff'
-                }}
-                formatter={(value: any, name: string) => [
-                  formatTooltipValue(value),
-                  name
-                ]}
-                labelFormatter={(label) => `Data: ${label}`}
-              />
-              <Legend 
-                wrapperStyle={{ color: '#9ca3af' }}
-                iconType="line"
-              />
-              {creativesToShow.map((creative, index) => {
-                const creativeName = creative.creative_name.length > 20 
-                  ? creative.creative_name.substring(0, 20) + '...' 
-                  : creative.creative_name;
-                
-                return (
-                  <Line 
-                    key={creative.creative_name}
-                    type="monotone" 
-                    dataKey={creativeName}
-                    stroke={COLORS[index % COLORS.length]}
-                    strokeWidth={2}
-                    dot={{ fill: COLORS[index % COLORS.length], r: 3 }}
-                    connectNulls={false}
-                  />
-                );
-              })}
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-        
-        {selectedCreatives.length === 0 && (
-          <div className="flex items-center justify-center h-64">
-            <p className="text-slate-400 text-center">
-              Selecione pelo menos um criativo para visualizar o gráfico.
-            </p>
+          
+          <div className="mt-4">
+            <CreativesSelector
+              relevantCreatives={relevantCreatives}
+              selectedCreatives={selectedCreatives}
+              onCreativeToggle={handleCreativeToggle}
+              currentMetric={currentMetric}
+              colors={COLORS}
+            />
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardHeader>
+        
+        <CardContent>
+          <div style={{ height: chartHeight }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={timeSeriesData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis 
+                  dataKey="date"
+                  stroke="#9ca3af"
+                  fontSize={12}
+                  angle={-45}
+                  textAnchor="end"
+                  height={100}
+                />
+                <YAxis 
+                  stroke="#9ca3af"
+                  fontSize={12}
+                  tickFormatter={formatValue}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1f2937',
+                    border: '1px solid #374151',
+                    borderRadius: '8px',
+                    color: '#fff'
+                  }}
+                  formatter={(value: any, name: string) => [
+                    formatTooltipValue(value),
+                    name
+                  ]}
+                  labelFormatter={(label) => `Data: ${label}`}
+                />
+                <Legend 
+                  wrapperStyle={{ color: '#9ca3af' }}
+                  iconType="line"
+                />
+                {creativesToShow.map((creative, index) => {
+                  const creativeName = creative.creative_name.length > 20 
+                    ? creative.creative_name.substring(0, 20) + '...' 
+                    : creative.creative_name;
+                  
+                  return (
+                    <Line 
+                      key={creative.creative_name}
+                      type="monotone" 
+                      dataKey={creativeName}
+                      stroke={COLORS[index % COLORS.length]}
+                      strokeWidth={2}
+                      dot={{ fill: COLORS[index % COLORS.length], r: 3 }}
+                      connectNulls={false}
+                    />
+                  );
+                })}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          
+          {selectedCreatives.length === 0 && (
+            <div className="flex items-center justify-center h-64">
+              <p className="text-slate-400 text-center">
+                Selecione pelo menos um criativo para visualizar o gráfico.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </PermissionWrapper>
   );
 };

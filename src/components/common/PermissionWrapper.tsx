@@ -23,12 +23,12 @@ export const PermissionWrapper: React.FC<PermissionWrapperProps> = ({
     return null;
   }
 
-  // Verificar permissão de página
+  // Verificar permissão de página primeiro
   if (requirePage && !canAccessPage(requirePage)) {
     return <>{fallback}</>;
   }
 
-  // Verificar permissão de gráfico
+  // Verificar permissão específica de gráfico se especificado
   if (chartType && page && !canViewChart(chartType, page)) {
     return <>{fallback}</>;
   }
