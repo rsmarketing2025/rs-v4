@@ -14,11 +14,13 @@ import {
   MousePointer, 
   Target,
   BarChart3,
-  Settings
+  Settings,
+  Calendar
 } from "lucide-react";
 import { CreativesTab } from "@/components/dashboard/CreativesTab";
 import { SalesTab } from "@/components/dashboard/SalesTab";
 import { AffiliatesTab } from "@/components/dashboard/AffiliatesTab";
+import { SubscriptionsTab } from "@/components/dashboard/SubscriptionsTab";
 import { UsersTab } from "@/components/dashboard/UsersTab";
 import { BusinessManagersTab } from "@/components/dashboard/BusinessManagersTab";
 import { KPICard } from "@/components/dashboard/KPICard";
@@ -210,7 +212,7 @@ const Dashboard = () => {
           <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <CardHeader className="pb-4">
-                <TabsList className="grid w-full grid-cols-3 bg-slate-800/50">
+                <TabsList className="grid w-full grid-cols-4 bg-slate-800/50">
                   <PermissionWrapper requirePage="creatives" fallback={null}>
                     <TabsTrigger value="creatives" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
                       <Eye className="w-4 h-4 mr-2" />
@@ -227,6 +229,12 @@ const Dashboard = () => {
                     <TabsTrigger value="affiliates" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
                       <Users className="w-4 h-4 mr-2" />
                       Afiliados
+                    </TabsTrigger>
+                  </PermissionWrapper>
+                  <PermissionWrapper requirePage="subscriptions" fallback={null}>
+                    <TabsTrigger value="subscriptions" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Assinaturas
                     </TabsTrigger>
                   </PermissionWrapper>
                 </TabsList>
@@ -248,6 +256,12 @@ const Dashboard = () => {
                 <PermissionWrapper requirePage="affiliates">
                   <TabsContent value="affiliates" className="mt-0">
                     <AffiliatesTab dateRange={dateRange} />
+                  </TabsContent>
+                </PermissionWrapper>
+
+                <PermissionWrapper requirePage="subscriptions">
+                  <TabsContent value="subscriptions" className="mt-0">
+                    <SubscriptionsTab dateRange={dateRange} />
                   </TabsContent>
                 </PermissionWrapper>
               </CardContent>

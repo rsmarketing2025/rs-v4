@@ -420,6 +420,78 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_events: {
+        Row: {
+          ad_id: string | null
+          billing_cycle: number | null
+          campaign_name: string | null
+          country: string | null
+          created_at: string
+          creative_name: string | null
+          customer_email: string | null
+          customer_id: string
+          customer_name: string | null
+          event_date: string
+          event_type: Database["public"]["Enums"]["subscription_event_type"]
+          id: string
+          metadata: Json | null
+          payment_method: string | null
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          state: string | null
+          updated_at: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          value: number
+        }
+        Insert: {
+          ad_id?: string | null
+          billing_cycle?: number | null
+          campaign_name?: string | null
+          country?: string | null
+          created_at?: string
+          creative_name?: string | null
+          customer_email?: string | null
+          customer_id: string
+          customer_name?: string | null
+          event_date?: string
+          event_type: Database["public"]["Enums"]["subscription_event_type"]
+          id?: string
+          metadata?: Json | null
+          payment_method?: string | null
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          state?: string | null
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          value?: number
+        }
+        Update: {
+          ad_id?: string | null
+          billing_cycle?: number | null
+          campaign_name?: string | null
+          country?: string | null
+          created_at?: string
+          creative_name?: string | null
+          customer_email?: string | null
+          customer_id?: string
+          customer_name?: string | null
+          event_date?: string
+          event_type?: Database["public"]["Enums"]["subscription_event_type"]
+          id?: string
+          metadata?: Json | null
+          payment_method?: string | null
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          state?: string | null
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          value?: number
+        }
+        Relationships: []
+      }
       user_chart_permissions: {
         Row: {
           can_view: boolean | null
@@ -668,7 +740,16 @@ export type Database = {
         | "creatives_sales_chart"
         | "state_sales_chart"
         | "affiliate_chart"
-      user_page: "creatives" | "sales" | "affiliates" | "revenue" | "users"
+      subscription_event_type: "subscription" | "cancellation"
+      subscription_plan: "basic" | "premium" | "enterprise"
+      subscription_status: "active" | "cancelled" | "expired"
+      user_page:
+        | "creatives"
+        | "sales"
+        | "affiliates"
+        | "revenue"
+        | "users"
+        | "subscriptions"
       user_role: "admin" | "user" | "gestor"
     }
     CompositeTypes: {
@@ -836,7 +917,17 @@ export const Constants = {
         "state_sales_chart",
         "affiliate_chart",
       ],
-      user_page: ["creatives", "sales", "affiliates", "revenue", "users"],
+      subscription_event_type: ["subscription", "cancellation"],
+      subscription_plan: ["basic", "premium", "enterprise"],
+      subscription_status: ["active", "cancelled", "expired"],
+      user_page: [
+        "creatives",
+        "sales",
+        "affiliates",
+        "revenue",
+        "users",
+        "subscriptions",
+      ],
       user_role: ["admin", "user", "gestor"],
     },
   },
