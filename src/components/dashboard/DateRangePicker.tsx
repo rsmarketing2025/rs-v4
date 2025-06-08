@@ -38,8 +38,8 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
     {
       label: "Esta semana",
       range: {
-        from: startOfWeek(new Date(), { locale: ptBR }),
-        to: endOfWeek(new Date(), { locale: ptBR })
+        from: startOfWeek(new Date(), { locale: ptBR, weekStartsOn: 1 }),
+        to: endOfWeek(new Date(), { locale: ptBR, weekStartsOn: 1 })
       }
     },
     {
