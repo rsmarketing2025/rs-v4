@@ -10,11 +10,9 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { ChartPermissions } from './ChartPermissions';
 import { Database } from "@/integrations/supabase/types";
 
 type UserPage = Database['public']['Enums']['user_page'];
-type ChartType = Database['public']['Enums']['chart_type'];
 
 interface User {
   id: string;
@@ -24,12 +22,6 @@ interface User {
   status: string;
   created_at: string;
   role: 'admin' | 'user' | 'gestor';
-}
-
-interface ChartPermission {
-  chartType: string;
-  page: string;
-  canView: boolean;
 }
 
 interface UserDetailModalProps {
@@ -65,9 +57,6 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
     revenue: true,
     users: false,
   });
-
-  // Chart permissions state
-  const [chartPermissions, setChartPermissions] = useState<ChartPermission[]>([]);
   
   // Password change states
   const [showPasswordChange, setShowPasswordChange] = useState(false);
@@ -128,47 +117,6 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
           revenue: true,
           users: false,
         });
-      }
-
-      // Fetch chart permissions
-      const { data: chartPermsData, error: chartPermsError } = await supabase
-        .from('user_chart_permissions')
-        .select('chart_type, page, can_view')
-        .eq('user_id', userId);
-
-      if (chartPermsError) {
-        console.error('Error fetching chart permissions:', chartPermsError);
-        throw chartPermsError;
-      }
-
-      console.log('Chart permissions data:', chartPermsData);
-
-      if (chartPermsData && chartPermsData.length > 0) {
-        const chartPerms = chartPermsData.map(p => ({
-          chartType: p.chart_type,
-          page: p.page,
-          canView: p.can_view ?? true
-        }));
-        console.log('Setting chart permissions:', chartPerms);
-        setChartPermissions(chartPerms);
-      } else {
-        // Set default chart permissions if none exist
-        console.log('No existing chart permissions found, using defaults');
-        const defaultChartPerms: ChartPermission[] = [
-          { chartType: 'performance_overview', page: 'creatives', canView: true },
-          { chartType: 'time_series', page: 'creatives', canView: true },
-          { chartType: 'top_creatives', page: 'creatives', canView: true },
-          { chartType: 'metrics_comparison', page: 'creatives', canView: true },
-          { chartType: 'sales_summary', page: 'sales', canView: true },
-          { chartType: 'conversion_funnel', page: 'sales', canView: true },
-          { chartType: 'time_series', page: 'sales', canView: true },
-          { chartType: 'affiliate_performance', page: 'affiliates', canView: true },
-          { chartType: 'time_series', page: 'affiliates', canView: true },
-          { chartType: 'revenue_breakdown', page: 'revenue', canView: true },
-          { chartType: 'roi_analysis', page: 'revenue', canView: true },
-          { chartType: 'time_series', page: 'revenue', canView: true }
-        ];
-        setChartPermissions(defaultChartPerms);
       }
     } catch (error) {
       console.error('Error fetching user permissions:', error);
@@ -242,40 +190,6 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
       if (pagePermError) {
         console.error('Error inserting page permissions:', pagePermError);
         throw pagePermError;
-      }
-
-      console.log('Updating chart permissions:', chartPermissions);
-      
-      // Delete existing chart permissions first
-      const { error: deleteChartError } = await supabase
-        .from('user_chart_permissions')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (deleteChartError) {
-        console.error('Error deleting existing chart permissions:', deleteChartError);
-        throw deleteChartError;
-      }
-
-      // Insert new chart permissions
-      if (chartPermissions.length > 0) {
-        const chartPermsToInsert = chartPermissions.map(perm => ({
-          user_id: user.id,
-          chart_type: perm.chartType as ChartType,
-          page: perm.page as UserPage,
-          can_view: perm.canView
-        }));
-
-        console.log('Inserting chart permissions:', chartPermsToInsert);
-
-        const { error: chartPermError } = await supabase
-          .from('user_chart_permissions')
-          .insert(chartPermsToInsert);
-
-        if (chartPermError) {
-          console.error('Error inserting chart permissions:', chartPermError);
-          throw chartPermError;
-        }
       }
 
       toast({
@@ -374,23 +288,6 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
       ...prev,
       [page]: checked
     }));
-  };
-
-  const handleChartPermissionChange = (chartType: string, page: string, canView: boolean) => {
-    console.log(`Changing chart permission for ${chartType} on ${page} to ${canView}`);
-    setChartPermissions(prev => {
-      const existingIndex = prev.findIndex(p => p.chartType === chartType && p.page === page);
-      
-      if (existingIndex >= 0) {
-        // Update existing permission
-        const updated = [...prev];
-        updated[existingIndex] = { chartType, page, canView };
-        return updated;
-      } else {
-        // Add new permission
-        return [...prev, { chartType, page, canView }];
-      }
-    });
   };
 
   if (!user) return null;
@@ -512,14 +409,6 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
               ))}
             </div>
           </div>
-
-          <Separator />
-
-          {/* Chart Permissions */}
-          <ChartPermissions
-            chartPermissions={chartPermissions}
-            onPermissionChange={handleChartPermissionChange}
-          />
 
           <Separator />
 

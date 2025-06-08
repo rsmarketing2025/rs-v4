@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -159,7 +160,7 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ creatives, dat
   const chartHeight = Math.max(500, Math.min(800, 500 + (selectedCreatives.length * 12)));
 
   return (
-    <PermissionWrapper chartType="time_series" page="creatives">
+    <PermissionWrapper requirePage="creatives">
       <Card className="bg-slate-800/30 border-slate-700">
         <CardHeader>
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">

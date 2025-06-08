@@ -24,7 +24,7 @@ export const CreativesSalesChart: React.FC<CreativesSalesChartProps> = ({ creati
   }));
 
   return (
-    <PermissionWrapper chartType="creatives_sales_chart" page="sales">
+    <PermissionWrapper requirePage="sales">
       <Card className="bg-slate-800/30 border-slate-700">
         <CardHeader>
           <CardTitle className="text-white">Vendas por Criativos</CardTitle>

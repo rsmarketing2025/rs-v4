@@ -18,7 +18,7 @@ export const AffiliatesSummaryCards: React.FC<AffiliatesSummaryCardsProps> = ({
   totalMetrics
 }) => {
   return (
-    <PermissionWrapper chartType="summary_cards" page="affiliates">
+    <PermissionWrapper requirePage="affiliates">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-slate-800/30 border-slate-700">
           <CardContent className="p-4">

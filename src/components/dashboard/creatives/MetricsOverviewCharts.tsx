@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -70,7 +71,7 @@ export const MetricsOverviewCharts: React.FC<MetricsOverviewChartsProps> = ({ cr
   };
 
   return (
-    <PermissionWrapper chartType="metrics_overview" page="creatives">
+    <PermissionWrapper requirePage="creatives">
       <div className="space-y-6">
         {/* Cards TOP 5 */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">

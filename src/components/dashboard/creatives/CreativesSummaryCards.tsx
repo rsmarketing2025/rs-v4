@@ -21,7 +21,7 @@ export const CreativesSummaryCards: React.FC<CreativesSummaryCardsProps> = ({
   avgROI
 }) => {
   return (
-    <PermissionWrapper chartType="summary_cards" page="creatives">
+    <PermissionWrapper requirePage="creatives">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card className="bg-slate-800/30 border-slate-700">
           <CardContent className="p-4">

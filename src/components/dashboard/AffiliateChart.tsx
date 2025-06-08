@@ -28,7 +28,7 @@ export const AffiliateChart: React.FC<AffiliateChartProps> = ({ affiliates }) =>
   }));
 
   return (
-    <PermissionWrapper chartType="affiliate_chart" page="affiliates">
+    <PermissionWrapper requirePage="affiliates">
       <Card className="bg-slate-800/30 border-slate-700">
         <CardHeader>
           <CardTitle className="text-white">Top Afiliados - Receita</CardTitle>

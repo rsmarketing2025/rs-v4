@@ -68,7 +68,7 @@ export const TopTenChart: React.FC<TopTenChartProps> = ({
   };
 
   return (
-    <PermissionWrapper chartType="top_creatives" page="creatives">
+    <PermissionWrapper requirePage="creatives">
       <Card className="bg-slate-800/30 border-slate-700">
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
