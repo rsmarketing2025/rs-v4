@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { startOfDay, endOfDay, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface CreativeMetrics {
   id: string;
@@ -39,6 +41,20 @@ export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
     try {
       setLoading(true);
       
+      // Format dates to Brazil timezone with proper start/end of day
+      const startDate = startOfDay(dateRange.from);
+      const endDate = endOfDay(dateRange.to);
+      
+      // Format as Brazil timezone string (YYYY-MM-DD HH:mm:ss-03:00)
+      const formatDateForBrazil = (date: Date) => {
+        return format(date, "yyyy-MM-dd HH:mm:ss'+00:00'");
+      };
+
+      const startDateStr = formatDateForBrazil(startDate);
+      const endDateStr = formatDateForBrazil(endDate);
+
+      console.log('Date filtering - Start:', startDateStr, 'End:', endDateStr);
+      
       // Buscar dados das campanhas
       let campaignQuery = supabase
         .from('creative_insights')
@@ -46,8 +62,8 @@ export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
 
       if (dateRange.from && dateRange.to) {
         campaignQuery = campaignQuery
-          .gte('date_reported', dateRange.from.toISOString())
-          .lte('date_reported', dateRange.to.toISOString());
+          .gte('date_reported', startDateStr)
+          .lte('date_reported', endDateStr);
       }
 
       const { data: campaignData, error: campaignError } = await campaignQuery;
@@ -62,8 +78,8 @@ export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
 
       if (dateRange.from && dateRange.to) {
         salesQuery = salesQuery
-          .gte('sale_date', dateRange.from.toISOString())
-          .lte('sale_date', dateRange.to.toISOString());
+          .gte('sale_date', startDateStr)
+          .lte('sale_date', endDateStr);
       }
 
       const { data: salesData, error: salesError } = await salesQuery;
@@ -71,6 +87,8 @@ export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
       if (salesError) {
         throw salesError;
       }
+
+      console.log('Fetched campaign data:', campaignData?.length, 'sales data:', salesData?.length);
 
       const creativesMap = new Map();
 

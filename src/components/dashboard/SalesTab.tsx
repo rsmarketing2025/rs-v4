@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -8,7 +7,7 @@ import { SalesSummaryCards } from "./sales/SalesSummaryCards";
 import { StateSalesChart } from "./sales/StateSalesChart";
 import { SalesFilters } from "./sales/SalesFilters";
 import { SalesTable } from "./sales/SalesTable";
-import { format } from "date-fns";
+import { format, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface Sale {
@@ -62,11 +61,25 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
         .from('creative_sales')
         .select('*');
 
-      // Apply date filter
+      // Apply date filter with proper timezone handling
       if (dateRange.from && dateRange.to) {
+        // Format dates to Brazil timezone with proper start/end of day
+        const startDate = startOfDay(dateRange.from);
+        const endDate = endOfDay(dateRange.to);
+        
+        // Format as Brazil timezone string (YYYY-MM-DD HH:mm:ss-03:00)
+        const formatDateForBrazil = (date: Date) => {
+          return format(date, "yyyy-MM-dd HH:mm:ss'+00:00'");
+        };
+
+        const startDateStr = formatDateForBrazil(startDate);
+        const endDateStr = formatDateForBrazil(endDate);
+
+        console.log('Sales date filtering - Start:', startDateStr, 'End:', endDateStr);
+
         query = query
-          .gte('sale_date', dateRange.from.toISOString())
-          .lte('sale_date', dateRange.to.toISOString());
+          .gte('sale_date', startDateStr)
+          .lte('sale_date', endDateStr);
       }
 
       const { data, error } = await query.order('sale_date', { ascending: false });
@@ -75,6 +88,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
         throw error;
       }
 
+      console.log('Fetched sales data:', data?.length);
       setSales(data || []);
     } catch (error) {
       console.error('Error fetching sales:', error);
