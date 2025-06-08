@@ -4,45 +4,39 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { PermissionWrapper } from "@/components/common/PermissionWrapper";
 
-interface StateSalesData {
-  state: string;
-  total_sales: number;
-  total_revenue: number;
+interface SalesData {
+  month: string;
+  sales: number;
+  revenue: number;
 }
 
-interface StateSalesChartProps {
-  stateData: StateSalesData[];
+interface SalesChartProps {
+  salesData: SalesData[];
 }
 
-export const StateSalesChart: React.FC<StateSalesChartProps> = ({ stateData }) => {
-  const topStates = stateData.slice(0, 10).map(state => ({
-    name: state.state,
-    sales: state.total_sales,
-    revenue: state.total_revenue,
-  }));
-
+export const SalesChart: React.FC<SalesChartProps> = ({ salesData }) => {
   return (
-    <PermissionWrapper chartType="state_sales_chart" page="sales">
+    <PermissionWrapper chartType="sales_chart" page="sales">
       <Card className="bg-slate-800/30 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white">Vendas por Estado</CardTitle>
+          <CardTitle className="text-white">Vendas Mensais</CardTitle>
           <CardDescription className="text-slate-400">
-            Top 10 estados com maior volume de vendas
+            Evolução das vendas ao longo do tempo
           </CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={topStates}>
+            <BarChart data={salesData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
               <XAxis 
-                dataKey="name" 
+                dataKey="month" 
                 stroke="#94a3b8"
                 fontSize={12}
               />
               <YAxis 
                 stroke="#94a3b8"
                 fontSize={12}
-                tickFormatter={(value) => value.toLocaleString('pt-BR')}
+                tickFormatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`}
               />
               <Tooltip 
                 contentStyle={{ 
@@ -51,13 +45,12 @@ export const StateSalesChart: React.FC<StateSalesChartProps> = ({ stateData }) =
                   borderRadius: '8px',
                   color: '#fff'
                 }}
-                formatter={(value: any, name: string) => [
-                  name === 'sales' ? value.toLocaleString('pt-BR') : `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-                  name === 'sales' ? 'Vendas' : 'Receita'
+                formatter={(value: any) => [
+                  `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+                  'Vendas'
                 ]}
               />
-              <Bar dataKey="sales" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="revenue" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="sales" fill="#3b82f6" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
