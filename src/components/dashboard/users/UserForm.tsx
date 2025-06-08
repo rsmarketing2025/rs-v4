@@ -10,13 +10,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { User, Shield, ShieldCheck, Crown, X } from 'lucide-react';
-import { ChartPermissions } from './ChartPermissions';
-
-interface ChartPermission {
-  chartType: string;
-  page: string;
-  canView: boolean;
-}
 
 interface UserFormData {
   fullName: string;
@@ -33,7 +26,6 @@ interface UserFormData {
     revenue: boolean;
     users: boolean;
   };
-  chartPermissions: ChartPermission[];
 }
 
 interface UserFormProps {
@@ -57,22 +49,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated, curr
       affiliates: true,
       revenue: true,
       users: false,
-    },
-    chartPermissions: [
-      // Permissões padrão para gráficos
-      { chartType: 'performance_overview', page: 'creatives', canView: true },
-      { chartType: 'time_series', page: 'creatives', canView: true },
-      { chartType: 'top_creatives', page: 'creatives', canView: true },
-      { chartType: 'metrics_comparison', page: 'creatives', canView: true },
-      { chartType: 'sales_summary', page: 'sales', canView: true },
-      { chartType: 'conversion_funnel', page: 'sales', canView: true },
-      { chartType: 'time_series', page: 'sales', canView: true },
-      { chartType: 'affiliate_performance', page: 'affiliates', canView: true },
-      { chartType: 'time_series', page: 'affiliates', canView: true },
-      { chartType: 'revenue_breakdown', page: 'revenue', canView: true },
-      { chartType: 'roi_analysis', page: 'revenue', canView: true },
-      { chartType: 'time_series', page: 'revenue', canView: true },
-    ]
+    }
   });
   const [creating, setCreating] = useState(false);
   const { toast } = useToast();
@@ -127,7 +104,7 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated, curr
 
       console.log('Chamando função para criar usuário...');
 
-      // Preparar dados para envio - estrutura corrigida
+      // Preparar dados para envio - estrutura corrigida (sem chartPermissions)
       const requestData = {
         formData: formData
       };
@@ -194,17 +171,6 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated, curr
         ...prev.pagePermissions,
         [page]: checked
       }
-    }));
-  };
-
-  const handleChartPermissionChange = (chartType: string, page: string, canView: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      chartPermissions: prev.chartPermissions.map(permission =>
-        permission.chartType === chartType && permission.page === page
-          ? { ...permission, canView }
-          : permission
-      )
     }));
   };
 
@@ -375,12 +341,6 @@ export const UserForm: React.FC<UserFormProps> = ({ onClose, onUserCreated, curr
               ))}
             </div>
           </div>
-
-          {/* Permissões de Gráficos */}
-          <ChartPermissions
-            chartPermissions={formData.chartPermissions}
-            onPermissionChange={handleChartPermissionChange}
-          />
 
           {/* Ações do Formulário */}
           <div className="flex gap-3 pt-4">
