@@ -121,12 +121,59 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   const uniqueCountries = [...new Set(sales.map(sale => sale.country).filter(Boolean))].sort();
   const uniqueStates = [...new Set(sales.map(sale => sale.state).filter(Boolean))].sort();
 
-  const totalMetrics = filteredSales.reduce((acc, sale) => ({
-    revenue: acc.revenue + (sale.status === 'completed' ? (sale.gross_value || 0) : 0),
-    orders: acc.orders + (sale.status === 'completed' ? 1 : 0), // Only count completed orders
-    refundedValue: acc.refundedValue + (sale.status === 'refunded' ? (sale.gross_value || 0) : 0),
-    chargebackValue: acc.chargebackValue + (sale.status === 'chargeback' ? (sale.gross_value || 0) : 0),
-  }), { revenue: 0, orders: 0, refundedValue: 0, chargebackValue: 0 });
+  // Fix totalMetrics to match TotalMetrics interface
+  const completedSales = filteredSales.filter(sale => sale.status === 'completed');
+  const totalRevenue = completedSales.reduce((acc, sale) => acc + (sale.gross_value || 0), 0);
+  const totalSales = completedSales.length;
+  const avgOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
+
+  const totalMetrics = {
+    totalSales,
+    totalRevenue,
+    avgOrderValue
+  };
+
+  // Process data for StateSalesChart
+  const stateMetrics = filteredSales.reduce((acc, sale) => {
+    const state = sale.state || 'Não informado';
+    if (!acc[state]) {
+      acc[state] = { total_sales: 0, total_revenue: 0 };
+    }
+    acc[state].total_sales += 1;
+    if (sale.status === 'completed') {
+      acc[state].total_revenue += (sale.gross_value || 0);
+    }
+    return acc;
+  }, {} as Record<string, { total_sales: number; total_revenue: number }>);
+
+  const stateData = Object.entries(stateMetrics)
+    .map(([state, metrics]) => ({
+      state,
+      total_sales: metrics.total_sales,
+      total_revenue: metrics.total_revenue
+    }))
+    .sort((a, b) => b.total_sales - a.total_sales);
+
+  // Process data for CreativesSalesChart
+  const creativesMetrics = filteredSales.reduce((acc, sale) => {
+    const creativeName = sale.creative_name || 'Não informado';
+    if (!acc[creativeName]) {
+      acc[creativeName] = { total_sales: 0, total_revenue: 0 };
+    }
+    acc[creativeName].total_sales += 1;
+    if (sale.status === 'completed') {
+      acc[creativeName].total_revenue += (sale.gross_value || 0);
+    }
+    return acc;
+  }, {} as Record<string, { total_sales: number; total_revenue: number }>);
+
+  const creativesData = Object.entries(creativesMetrics)
+    .map(([creative_name, metrics]) => ({
+      creative_name,
+      total_sales: metrics.total_sales,
+      total_revenue: metrics.total_revenue
+    }))
+    .sort((a, b) => b.total_sales - a.total_sales);
 
   // Regional metrics
   const regionalMetrics = filteredSales.reduce((acc, sale) => {
@@ -216,9 +263,9 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   return (
     <div className="space-y-6">
       <SalesSummaryCards totalMetrics={totalMetrics} />
-      <StateSalesChart sales={sales} />
+      <StateSalesChart stateData={stateData} />
       <SalesChart sales={filteredSales} dateRange={dateRange} />
-      <CreativesSalesChart sales={filteredSales} />
+      <CreativesSalesChart creativesData={creativesData} />
       <SalesFilters
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
