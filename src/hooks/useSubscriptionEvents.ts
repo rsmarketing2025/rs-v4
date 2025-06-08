@@ -1,6 +1,10 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+
+type SubscriptionPlan = Database['public']['Enums']['subscription_plan'];
+type SubscriptionEventType = Database['public']['Enums']['subscription_event_type'];
 
 export const useSubscriptionEvents = (
   dateRange: { from: Date; to: Date },
@@ -25,10 +29,10 @@ export const useSubscriptionEvents = (
           .order('event_date', { ascending: false });
 
         if (filters.plan !== 'all') {
-          query = query.eq('plan', filters.plan);
+          query = query.eq('plan', filters.plan as SubscriptionPlan);
         }
         if (filters.eventType !== 'all') {
-          query = query.eq('event_type', filters.eventType);
+          query = query.eq('event_type', filters.eventType as SubscriptionEventType);
         }
         if (filters.paymentMethod !== 'all') {
           query = query.eq('payment_method', filters.paymentMethod);

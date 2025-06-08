@@ -1,6 +1,10 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+
+type SubscriptionPlan = Database['public']['Enums']['subscription_plan'];
+type SubscriptionEventType = Database['public']['Enums']['subscription_event_type'];
 
 export const useSubscriptionChartData = (
   type: string,
@@ -22,10 +26,10 @@ export const useSubscriptionChartData = (
           .lte('event_date', dateRange.to.toISOString());
 
         if (filters.plan !== 'all') {
-          query = query.eq('plan', filters.plan);
+          query = query.eq('plan', filters.plan as SubscriptionPlan);
         }
         if (filters.eventType !== 'all') {
-          query = query.eq('event_type', filters.eventType);
+          query = query.eq('event_type', filters.eventType as SubscriptionEventType);
         }
         if (filters.paymentMethod !== 'all') {
           query = query.eq('payment_method', filters.paymentMethod);
@@ -47,11 +51,12 @@ export const useSubscriptionChartData = (
                 acc[date].cancellations++;
               }
               return acc;
-            }, {} as any);
+            }, {} as Record<string, { subscriptions: number; cancellations: number }>);
 
             const timelineData = Object.entries(groupedByDate).map(([date, values]) => ({
               date,
-              ...values
+              subscriptions: values.subscriptions,
+              cancellations: values.cancellations
             }));
 
             setData(timelineData);
@@ -62,7 +67,7 @@ export const useSubscriptionChartData = (
               .reduce((acc, event) => {
                 acc[event.plan] = (acc[event.plan] || 0) + 1;
                 return acc;
-              }, {} as any);
+              }, {} as Record<string, number>);
 
             const planData = Object.entries(planCounts).map(([name, value]) => ({
               name: name.charAt(0).toUpperCase() + name.slice(1),
@@ -78,7 +83,7 @@ export const useSubscriptionChartData = (
                 const month = new Date(event.event_date).toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' });
                 acc[month] = (acc[month] || 0) + (event.value || 0);
                 return acc;
-              }, {} as any);
+              }, {} as Record<string, number>);
 
             const mrrData = Object.entries(mrrByMonth).map(([date, mrr]) => ({
               date,
