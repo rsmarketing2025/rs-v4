@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, eachDayOfInterval, eachMonthOfInterval, startOfMonth, endOfMonth, isSameDay, startOfYear, endOfYear } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface Sale {
@@ -15,21 +14,115 @@ interface Sale {
 
 interface SalesChartProps {
   sales: Sale[];
+  dateRange?: { from: Date; to: Date };
 }
 
-export const SalesChart: React.FC<SalesChartProps> = ({ sales }) => {
-  // Prepare daily revenue data
-  const dailyRevenue = sales
-    .filter(sale => sale.status === 'completed')
-    .reduce((acc, sale) => {
-      const date = format(parseISO(sale.sale_date), 'dd/MM', { locale: ptBR });
-      acc[date] = (acc[date] || 0) + (sale.gross_value || 0);
-      return acc;
-    }, {} as Record<string, number>);
+export const SalesChart: React.FC<SalesChartProps> = ({ sales, dateRange }) => {
+  // Determine the chart period based on date range
+  const getChartPeriod = () => {
+    if (!dateRange) return 'daily';
+    
+    const daysDiff = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // If it's exactly 1 day (today or yesterday)
+    if (daysDiff <= 1) {
+      return 'single-day';
+    }
+    // If it's exactly 7 days (this week)
+    else if (daysDiff === 6 || daysDiff === 7) {
+      return 'weekly';
+    }
+    // If it's a year range (more than 300 days)
+    else if (daysDiff > 300) {
+      return 'yearly';
+    }
+    // Default to daily for other ranges
+    else {
+      return 'daily';
+    }
+  };
 
-  const revenueData = Object.entries(dailyRevenue)
-    .map(([date, revenue]) => ({ date, revenue }))
-    .sort((a, b) => a.date.localeCompare(b.date));
+  const chartPeriod = getChartPeriod();
+
+  // Prepare revenue data based on the period
+  const prepareRevenueData = () => {
+    const completedSales = sales.filter(sale => sale.status === 'completed');
+    
+    if (chartPeriod === 'single-day') {
+      // For single day, show hourly breakdown
+      const hourlyRevenue: Record<string, number> = {};
+      
+      // Initialize all hours
+      for (let hour = 0; hour < 24; hour++) {
+        const hourStr = hour.toString().padStart(2, '0') + ':00';
+        hourlyRevenue[hourStr] = 0;
+      }
+      
+      completedSales.forEach(sale => {
+        const hour = format(parseISO(sale.sale_date), 'HH:00');
+        hourlyRevenue[hour] = (hourlyRevenue[hour] || 0) + (sale.gross_value || 0);
+      });
+
+      return Object.entries(hourlyRevenue)
+        .map(([hour, revenue]) => ({ date: hour, revenue }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+    }
+    
+    else if (chartPeriod === 'weekly' && dateRange) {
+      // For weekly, show each day of the week
+      const days = eachDayOfInterval({ start: dateRange.from, end: dateRange.to });
+      
+      return days.map(day => {
+        const dayRevenue = completedSales
+          .filter(sale => isSameDay(parseISO(sale.sale_date), day))
+          .reduce((sum, sale) => sum + (sale.gross_value || 0), 0);
+        
+        return {
+          date: format(day, 'EEE dd/MM', { locale: ptBR }),
+          revenue: dayRevenue
+        };
+      });
+    }
+    
+    else if (chartPeriod === 'yearly' && dateRange) {
+      // For yearly, show each month
+      const yearStart = startOfYear(dateRange.from);
+      const yearEnd = endOfYear(dateRange.to);
+      const months = eachMonthOfInterval({ start: yearStart, end: yearEnd });
+      
+      return months.map(month => {
+        const monthStart = startOfMonth(month);
+        const monthEnd = endOfMonth(month);
+        
+        const monthRevenue = completedSales
+          .filter(sale => {
+            const saleDate = parseISO(sale.sale_date);
+            return saleDate >= monthStart && saleDate <= monthEnd;
+          })
+          .reduce((sum, sale) => sum + (sale.gross_value || 0), 0);
+        
+        return {
+          date: format(month, 'MMM', { locale: ptBR }),
+          revenue: monthRevenue
+        };
+      });
+    }
+    
+    else {
+      // Default daily view
+      const dailyRevenue = completedSales.reduce((acc, sale) => {
+        const date = format(parseISO(sale.sale_date), 'dd/MM', { locale: ptBR });
+        acc[date] = (acc[date] || 0) + (sale.gross_value || 0);
+        return acc;
+      }, {} as Record<string, number>);
+
+      return Object.entries(dailyRevenue)
+        .map(([date, revenue]) => ({ date, revenue }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+    }
+  };
+
+  const revenueData = prepareRevenueData();
 
   // Prepare sales status distribution with quantities and values
   const statusDistribution = sales.reduce((acc, sale) => {
@@ -78,13 +171,40 @@ export const SalesChart: React.FC<SalesChartProps> = ({ sales }) => {
     return null;
   };
 
+  // Get chart title based on period
+  const getChartTitle = () => {
+    switch (chartPeriod) {
+      case 'single-day':
+        return 'Receita por Hora';
+      case 'weekly':
+        return 'Receita da Semana';
+      case 'yearly':
+        return 'Receita por Mês';
+      default:
+        return 'Receita';
+    }
+  };
+
+  const getChartDescription = () => {
+    switch (chartPeriod) {
+      case 'single-day':
+        return 'Distribuição da receita ao longo do dia';
+      case 'weekly':
+        return 'Receita de cada dia da semana';
+      case 'yearly':
+        return 'Receita mensal ao longo do ano';
+      default:
+        return 'Evolução da receita ao longo do tempo';
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card className="bg-slate-800/30 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white">Receita</CardTitle>
+          <CardTitle className="text-white">{getChartTitle()}</CardTitle>
           <CardDescription className="text-slate-400">
-            Evolução da receita ao longo do tempo
+            {getChartDescription()}
           </CardDescription>
         </CardHeader>
         <CardContent>

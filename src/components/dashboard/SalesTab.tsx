@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -67,15 +68,18 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
         const startDate = startOfDay(dateRange.from);
         const endDate = endOfDay(dateRange.to);
         
-        // Format as Brazil timezone string (YYYY-MM-DD HH:mm:ss-03:00)
+        // Format as Brazil timezone string properly
         const formatDateForBrazil = (date: Date) => {
-          return format(date, "yyyy-MM-dd HH:mm:ss'+00:00'");
+          // Create a new date adjusted to Brazil timezone (-3 hours from UTC)
+          const brazilDate = new Date(date.getTime() - (3 * 60 * 60 * 1000));
+          return format(brazilDate, "yyyy-MM-dd HH:mm:ss'+00:00'");
         };
 
         const startDateStr = formatDateForBrazil(startDate);
         const endDateStr = formatDateForBrazil(endDate);
 
         console.log('Sales date filtering - Start:', startDateStr, 'End:', endDateStr);
+        console.log('Original date range - From:', dateRange.from, 'To:', dateRange.to);
 
         query = query
           .gte('sale_date', startDateStr)
@@ -213,7 +217,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
     <div className="space-y-6">
       <SalesSummaryCards totalMetrics={totalMetrics} />
       <StateSalesChart sales={sales} />
-      <SalesChart sales={filteredSales} />
+      <SalesChart sales={filteredSales} dateRange={dateRange} />
       <CreativesSalesChart sales={filteredSales} />
       <SalesFilters
         searchTerm={searchTerm}
