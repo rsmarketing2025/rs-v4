@@ -11,7 +11,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Users, LogOut, Settings } from "lucide-react";
+import { BarChart3, Users, LogOut, Settings, Bot } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -20,6 +20,11 @@ const menuItems = [
     title: "Performance",
     url: "/dashboard",
     icon: BarChart3,
+  },
+  {
+    title: "Agentes de IA",
+    url: "/ai-agents",
+    icon: Bot,
   },
   {
     title: "Business Managers",
