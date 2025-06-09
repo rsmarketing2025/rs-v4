@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -41,19 +40,13 @@ export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
     try {
       setLoading(true);
       
-      // Format dates to Brazil timezone with proper start/end of day
+      // Get the start and end of the selected days in local time
       const startDate = startOfDay(dateRange.from);
       const endDate = endOfDay(dateRange.to);
       
-      // Format as Brazil timezone string properly
-      const formatDateForBrazil = (date: Date) => {
-        // Create a new date adjusted to Brazil timezone (-3 hours from UTC)
-        const brazilDate = new Date(date.getTime() - (3 * 60 * 60 * 1000));
-        return format(brazilDate, "yyyy-MM-dd HH:mm:ss'+00:00'");
-      };
-
-      const startDateStr = formatDateForBrazil(startDate);
-      const endDateStr = formatDateForBrazil(endDate);
+      // Format dates to ISO string in local timezone
+      const startDateStr = format(startDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+      const endDateStr = format(endDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
       console.log('Date filtering - Start:', startDateStr, 'End:', endDateStr);
       console.log('Original date range - From:', dateRange.from, 'To:', dateRange.to);
