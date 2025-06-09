@@ -57,6 +57,20 @@ const Dashboard = () => {
     }
   }, [activeTab]);
 
+  // Função para obter o título da página atual
+  const getPageTitle = () => {
+    if (location.pathname === '/users') return "Usuários";
+    if (location.pathname === '/business-managers') return "Business Managers";
+    return "Performance";
+  };
+
+  // Função para obter a descrição da página atual
+  const getPageDescription = () => {
+    if (location.pathname === '/users') return "Gerenciamento de usuários";
+    if (location.pathname === '/business-managers') return "Gerenciamento de Business Managers";
+    return "Insights detalhados de Criativos e Métricas de vendas";
+  };
+
   // Verificar acesso às páginas especiais
   if (location.pathname === '/users') {
     if (!isAdmin && !canAccessPage('users')) {
@@ -80,8 +94,8 @@ const Dashboard = () => {
               <div className="flex items-center gap-4">
                 <SidebarTrigger className="text-white" />
                 <div>
-                  <h1 className="text-5xl font-bold text-white mb-2">Manager</h1>
-                  <p className="text-slate-400 text-lg">Gerenciamento de usuários</p>
+                  <h1 className="text-5xl font-bold text-white mb-2">{getPageTitle()}</h1>
+                  <p className="text-slate-400 text-lg">{getPageDescription()}</p>
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
@@ -121,8 +135,8 @@ const Dashboard = () => {
               <div className="flex items-center gap-4">
                 <SidebarTrigger className="text-white" />
                 <div>
-                  <h1 className="text-5xl font-bold text-white mb-2">Manager</h1>
-                  <p className="text-slate-400 text-lg">Gerenciamento de Business Managers</p>
+                  <h1 className="text-5xl font-bold text-white mb-2">{getPageTitle()}</h1>
+                  <p className="text-slate-400 text-lg">{getPageDescription()}</p>
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
@@ -148,10 +162,8 @@ const Dashboard = () => {
             <div className="flex items-center gap-4">
               <SidebarTrigger className="text-white" />
               <div>
-                <h1 className="text-5xl font-bold text-white mb-2">Manager</h1>
-                <p className="text-slate-400 text-lg">
-                  Insights detalhados de Criativos e Métricas de vendas
-                </p>
+                <h1 className="text-5xl font-bold text-white mb-2">{getPageTitle()}</h1>
+                <p className="text-slate-400 text-lg">{getPageDescription()}</p>
               </div>
             </div>
             
