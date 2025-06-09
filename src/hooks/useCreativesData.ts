@@ -29,7 +29,7 @@ interface CreativeMetrics {
   roi: number;
   status: string;
   products: string[];
-  tags: string[]; // Add tags field
+  tags: string[];
 }
 
 export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
@@ -162,8 +162,8 @@ export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
         const profit = grossSales - creative.amount_spent;
         const cpa = salesCount > 0 ? creative.amount_spent / salesCount : 0;
         
-        // Calcular ROI usando o valor total: receita bruta / valor gasto
-        const roi = creative.amount_spent > 0 ? grossSales / creative.amount_spent : 0;
+        // Aplicar fórmula correta de ROI: (Receita - Investimento) / Investimento
+        const roi = creative.amount_spent > 0 ? (grossSales - creative.amount_spent) / creative.amount_spent : 0;
         
         const convBodyRate = creative.views_75_percent > 0 ? (salesCount / creative.views_75_percent) * 100 : 0;
 
@@ -182,6 +182,8 @@ export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
         const avgCtr = creative.ctrs.length > 0 
           ? creative.ctrs.reduce((a: number, b: number) => a + b, 0) / creative.ctrs.length 
           : 0;
+
+        console.log(`ROI Calculation for ${creative.creative_name}: (${grossSales} - ${creative.amount_spent}) / ${creative.amount_spent} = ${roi}`);
 
         return {
           id: `creative-${index}`,

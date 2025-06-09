@@ -77,7 +77,7 @@ export const CreativesTable: React.FC<CreativesTableProps> = ({
         <CardContent>
           <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
             <Table>
-              <TableHeader>
+              <TableHeader sticky={true}>
                 <TableRow className="border-slate-700">
                   <TableHead className="text-slate-300 min-w-[150px]">Criativo</TableHead>
                   <TableHead className="text-slate-300 min-w-[120px]">Campanha</TableHead>
@@ -219,7 +219,7 @@ export const CreativesTable: React.FC<CreativesTableProps> = ({
                       <TableCell className="text-slate-300">
                         R$ {creative.cpa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </TableCell>
-                      <TableCell className={`${creative.roi >= 1 ? 'text-green-400' : 'text-orange-400'}`}>
+                      <TableCell className={`${creative.roi >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                         {creative.roi.toFixed(2)}x
                       </TableCell>
                       <TableCell>

@@ -90,7 +90,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
       <CardContent>
         <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
           <Table>
-            <TableHeader>
+            <TableHeader sticky={true}>
               <TableRow className="border-slate-700">
                 <TableHead className="text-slate-300">Pedido</TableHead>
                 <TableHead className="text-slate-300">Data</TableHead>
