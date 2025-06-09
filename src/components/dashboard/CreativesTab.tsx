@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { MetricsOverviewCharts } from "./creatives/MetricsOverviewCharts";
 import { TimeSeriesChart } from "./creatives/TimeSeriesChart";
 import { CreativesFilters } from "./creatives/CreativesFilters";
-import { CreativesSummaryCards } from "./creatives/CreativesSummaryCards";
 import { CreativesTable } from "./creatives/CreativesTable";
 import { useCreativesData } from "@/hooks/useCreativesData";
 
@@ -32,16 +31,6 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
     
     return matchesSearch && matchesStatus;
   });
-
-  const totalMetrics = filteredCreatives.reduce((acc, creative) => ({
-    spent: acc.spent + creative.amount_spent,
-    views: acc.views + creative.views_3s,
-    sales: acc.sales + creative.sales_count,
-    revenue: acc.revenue + creative.gross_sales,
-  }), { spent: 0, views: 0, sales: 0, revenue: 0 });
-
-  // Calcular ROI médio usando a fórmula correta: receita / investimento
-  const avgROI = totalMetrics.spent > 0 ? totalMetrics.revenue / totalMetrics.spent : 0;
 
   const exportToCSV = () => {
     const headers = [
@@ -91,11 +80,6 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
 
   return (
     <div className="space-y-8">
-      <CreativesSummaryCards 
-        totalMetrics={totalMetrics}
-        avgROI={avgROI}
-      />
-
       <MetricsOverviewCharts creatives={filteredCreatives} />
 
       <TimeSeriesChart 
