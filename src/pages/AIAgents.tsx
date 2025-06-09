@@ -38,7 +38,7 @@ const AIAgents = () => {
                 </p>
                 <div className="mt-8 p-4 bg-blue-950/30 border border-blue-800/30 rounded-lg">
                   <p className="text-blue-300 text-sm">
-                    🚀 Funcionalidades que virão: análise automática de criativos, otimização de budget e sugestões de targeting
+                    🚀 Funcionalidades que virão: análise de criativos, modelagem de copy, modelagem de VSL, otimização de budget, sugestões de targeting e muito mais
                   </p>
                 </div>
               </CardContent>
