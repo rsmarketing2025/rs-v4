@@ -14,22 +14,19 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
   const { creatives, loading } = useCreativesData(dateRange);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [showZeroValues, setShowZeroValues] = useState(false);
 
   const filteredCreatives = creatives.filter(creative => {
     const matchesSearch = creative.creative_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          creative.campaign_name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || creative.status === statusFilter;
     
-    if (!showZeroValues) {
-      const hasNonZeroValues = creative.amount_spent > 0 || 
-                               creative.sales_count > 0 || 
-                               creative.gross_sales > 0 ||
-                               creative.views_3s > 0;
-      return matchesSearch && matchesStatus && hasNonZeroValues;
-    }
+    // Always filter out zero values (removing the showZeroValues functionality)
+    const hasNonZeroValues = creative.amount_spent > 0 || 
+                             creative.sales_count > 0 || 
+                             creative.gross_sales > 0 ||
+                             creative.views_3s > 0;
     
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && hasNonZeroValues;
   });
 
   const exportToCSV = () => {
@@ -92,8 +89,8 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
         onSearchChange={setSearchTerm}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
-        showZeroValues={showZeroValues}
-        onShowZeroValuesChange={setShowZeroValues}
+        showZeroValues={false}
+        onShowZeroValuesChange={() => {}}
       />
 
       <CreativesTable 

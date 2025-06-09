@@ -161,7 +161,10 @@ export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
         const grossSales = creative.sales.reduce((sum: number, sale: any) => sum + (sale.gross_value || 0), 0);
         const profit = grossSales - creative.amount_spent;
         const cpa = salesCount > 0 ? creative.amount_spent / salesCount : 0;
-        const roi = creative.amount_spent > 0 ? (grossSales / creative.amount_spent) * 100 : 0;
+        
+        // Calcular ROI usando o valor total: receita bruta / valor gasto
+        const roi = creative.amount_spent > 0 ? grossSales / creative.amount_spent : 0;
+        
         const convBodyRate = creative.views_75_percent > 0 ? (salesCount / creative.views_75_percent) * 100 : 0;
 
         const avgPrHookRate = creative.pr_hook_rates.length > 0 

@@ -70,7 +70,7 @@ export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
       const totalRevenue = completedSales.reduce((acc, sale) => acc + (sale.gross_value || 0), 0);
       const totalOrders = completedSales.length; // Only count completed orders
       
-      // Calcular ROI médio: receita / investimento
+      // Calcular ROI usando o valor total: receita total / investimento total
       const avgROI = totalSpent > 0 ? totalRevenue / totalSpent : 0;
 
       setKpis({

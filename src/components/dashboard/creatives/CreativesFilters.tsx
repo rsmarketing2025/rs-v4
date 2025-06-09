@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Filter } from "lucide-react";
@@ -53,13 +52,6 @@ export const CreativesFilters: React.FC<CreativesFiltersProps> = ({
               <SelectItem value="archived">Arquivado</SelectItem>
             </SelectContent>
           </Select>
-          <Button
-            variant={showZeroValues ? "default" : "outline"}
-            onClick={() => onShowZeroValuesChange(!showZeroValues)}
-            className="whitespace-nowrap"
-          >
-            {showZeroValues ? "Ocultar Zerados" : "Mostrar Zerados"}
-          </Button>
         </div>
       </CardContent>
     </Card>
