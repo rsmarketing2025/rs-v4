@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -6,6 +7,7 @@ import { CalendarIcon } from "lucide-react";
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { DateRange } from "react-day-picker";
 
 interface DateRangePickerProps {
   dateRange: { from: Date; to: Date };
@@ -64,28 +66,44 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
     setIsOpen(false);
   };
 
-  const handleDateSelect = (selectedDate: Date | undefined) => {
-    if (!selectedDate) return;
+  const handleDateSelect = (range: DateRange | undefined) => {
+    if (!range) return;
 
     if (!tempFromDate) {
       // First click - select start date
-      setTempFromDate(selectedDate);
+      if (range.from) {
+        setTempFromDate(range.from);
+      }
     } else {
-      // Second click - select end date and complete the range
-      const fromDate = tempFromDate;
-      const toDate = selectedDate;
-      
-      // Ensure the range is in correct order
-      const finalRange = {
-        from: fromDate <= toDate ? fromDate : toDate,
-        to: fromDate <= toDate ? toDate : fromDate
-      };
-      
-      onDateRangeChange(finalRange);
-      setTempFromDate(undefined);
-      setHoverDate(undefined);
-      setIsOpen(false);
-      setShowCustom(false);
+      // Second click - complete the range
+      if (range.from && range.to) {
+        // Both dates selected, complete the range
+        const finalRange = {
+          from: range.from <= range.to ? range.from : range.to,
+          to: range.from <= range.to ? range.to : range.from
+        };
+        
+        onDateRangeChange(finalRange);
+        setTempFromDate(undefined);
+        setHoverDate(undefined);
+        setIsOpen(false);
+        setShowCustom(false);
+      } else if (range.from) {
+        // Only one date clicked, treat as end date
+        const fromDate = tempFromDate;
+        const toDate = range.from;
+        
+        const finalRange = {
+          from: fromDate <= toDate ? fromDate : toDate,
+          to: fromDate <= toDate ? toDate : fromDate
+        };
+        
+        onDateRangeChange(finalRange);
+        setTempFromDate(undefined);
+        setHoverDate(undefined);
+        setIsOpen(false);
+        setShowCustom(false);
+      }
     }
   };
 
