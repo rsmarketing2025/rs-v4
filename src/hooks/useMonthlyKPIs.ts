@@ -52,10 +52,11 @@ export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
         throw campaignError;
       }
 
-      // Buscar dados de vendas no período selecionado
+      // Buscar dados de vendas no período selecionado - apenas vendas completas
       const { data: salesData, error: salesError } = await supabase
         .from('creative_sales')
         .select('gross_value, status')
+        .eq('status', 'completed')
         .gte('sale_date', startDateStr)
         .lte('sale_date', endDateStr);
 
@@ -66,12 +67,22 @@ export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
       // Calcular métricas
       const totalSpent = campaignData?.reduce((acc, campaign) => acc + (campaign.amount_spent || 0), 0) || 0;
       
-      const completedSales = salesData?.filter(sale => sale.status === 'completed') || [];
-      const totalRevenue = completedSales.reduce((acc, sale) => acc + (sale.gross_value || 0), 0);
-      const totalOrders = completedSales.length; // Only count completed orders
+      // Usar apenas vendas completadas para o cálculo
+      const totalRevenue = salesData?.reduce((acc, sale) => acc + (sale.gross_value || 0), 0) || 0;
+      const totalOrders = salesData?.length || 0;
       
-      // Calcular ROI usando o valor total: receita total / investimento total
+      // Calcular ROI correto: se não houve investimento, ROI é 0
+      // Se houve investimento, ROI = receita total / investimento total
       const avgROI = totalSpent > 0 ? totalRevenue / totalSpent : 0;
+
+      console.log('KPI Calculation:', {
+        totalSpent,
+        totalRevenue,
+        totalOrders,
+        avgROI,
+        campaignDataLength: campaignData?.length,
+        salesDataLength: salesData?.length
+      });
 
       setKpis({
         totalSpent,
