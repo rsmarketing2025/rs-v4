@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,7 +33,6 @@ import { useLocation } from "react-router-dom";
 const Dashboard = () => {
   const { isAdmin } = useAuth();
   const { canAccessPage } = usePermissions();
-  const { kpis, loading: kpisLoading } = useMonthlyKPIs();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState(() => {
     if (location.pathname === '/users') return "users";
@@ -46,6 +44,8 @@ const Dashboard = () => {
     from: new Date(new Date().setDate(new Date().getDate() - 30)),
     to: new Date()
   });
+
+  const { kpis, loading: kpisLoading } = useMonthlyKPIs(dateRange);
 
   React.useEffect(() => {
     if (activeTab === "users") {
@@ -176,7 +176,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
             <KPICard
               title="Total Investido"
               value={kpisLoading ? "Carregando..." : `R$ ${kpis.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
@@ -199,24 +199,10 @@ const Dashboard = () => {
               trend="up"
             />
             <KPICard
-              title="ROAS"
-              value={kpisLoading ? "Carregando..." : `${kpis.roas.toFixed(2)}x`}
+              title="ROI Médio"
+              value={kpisLoading ? "Carregando..." : `${kpis.avgROI.toFixed(2)}x`}
               change={kpisLoading ? "..." : "+0.3x"}
               icon={BarChart3}
-              trend="up"
-            />
-            <KPICard
-              title="Taxa de Conversão"
-              value={kpisLoading ? "Carregando..." : `${kpis.conversionRate.toFixed(1)}%`}
-              change={kpisLoading ? "..." : "+0.8%"}
-              icon={MousePointer}
-              trend="up"
-            />
-            <KPICard
-              title="Ticket Médio"
-              value={kpisLoading ? "Carregando..." : `R$ ${kpis.avgOrderValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              change={kpisLoading ? "..." : "+5.2%"}
-              icon={DollarSign}
               trend="up"
             />
           </div>

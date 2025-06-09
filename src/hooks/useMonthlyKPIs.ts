@@ -2,24 +2,21 @@
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { startOfDay, endOfDay, format } from 'date-fns';
 
 interface MonthlyKPIs {
   totalSpent: number;
   totalRevenue: number;
   totalOrders: number;
-  roas: number;
-  conversionRate: number;
-  avgOrderValue: number;
+  avgROI: number;
 }
 
-export const useMonthlyKPIs = () => {
+export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
   const [kpis, setKpis] = useState<MonthlyKPIs>({
     totalSpent: 0,
     totalRevenue: 0,
     totalOrders: 0,
-    roas: 0,
-    conversionRate: 0,
-    avgOrderValue: 0
+    avgROI: 0
   });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -28,28 +25,39 @@ export const useMonthlyKPIs = () => {
     try {
       setLoading(true);
       
-      // Obter primeiro e último dia do mês atual
-      const now = new Date();
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      // Format dates to Brazil timezone with proper start/end of day
+      const startDate = startOfDay(dateRange.from);
+      const endDate = endOfDay(dateRange.to);
+      
+      // Format as Brazil timezone string properly
+      const formatDateForBrazil = (date: Date) => {
+        // Create a new date adjusted to Brazil timezone (-3 hours from UTC)
+        const brazilDate = new Date(date.getTime() - (3 * 60 * 60 * 1000));
+        return format(brazilDate, "yyyy-MM-dd HH:mm:ss'+00:00'");
+      };
 
-      // Buscar dados de campanhas do mês atual
+      const startDateStr = formatDateForBrazil(startDate);
+      const endDateStr = formatDateForBrazil(endDate);
+
+      console.log('Date filtering - Start:', startDateStr, 'End:', endDateStr);
+
+      // Buscar dados de campanhas no período selecionado
       const { data: campaignData, error: campaignError } = await supabase
         .from('creative_insights')
         .select('amount_spent, clicks')
-        .gte('date_reported', firstDayOfMonth.toISOString())
-        .lte('date_reported', lastDayOfMonth.toISOString());
+        .gte('date_reported', startDateStr)
+        .lte('date_reported', endDateStr);
 
       if (campaignError) {
         throw campaignError;
       }
 
-      // Buscar dados de vendas do mês atual
+      // Buscar dados de vendas no período selecionado
       const { data: salesData, error: salesError } = await supabase
         .from('creative_sales')
         .select('gross_value, status')
-        .gte('sale_date', firstDayOfMonth.toISOString())
-        .lte('sale_date', lastDayOfMonth.toISOString());
+        .gte('sale_date', startDateStr)
+        .lte('sale_date', endDateStr);
 
       if (salesError) {
         throw salesError;
@@ -57,23 +65,19 @@ export const useMonthlyKPIs = () => {
 
       // Calcular métricas
       const totalSpent = campaignData?.reduce((acc, campaign) => acc + (campaign.amount_spent || 0), 0) || 0;
-      const totalClicks = campaignData?.reduce((acc, campaign) => acc + (campaign.clicks || 0), 0) || 0;
       
       const completedSales = salesData?.filter(sale => sale.status === 'completed') || [];
       const totalRevenue = completedSales.reduce((acc, sale) => acc + (sale.gross_value || 0), 0);
       const totalOrders = completedSales.length; // Only count completed orders
       
-      const roas = totalSpent > 0 ? totalRevenue / totalSpent : 0;
-      const conversionRate = totalClicks > 0 ? (totalOrders / totalClicks) * 100 : 0;
-      const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+      // Calcular ROI médio: receita / investimento
+      const avgROI = totalSpent > 0 ? totalRevenue / totalSpent : 0;
 
       setKpis({
         totalSpent,
         totalRevenue,
         totalOrders,
-        roas,
-        conversionRate,
-        avgOrderValue
+        avgROI
       });
     } catch (error) {
       console.error('Error fetching monthly KPIs:', error);
@@ -89,7 +93,7 @@ export const useMonthlyKPIs = () => {
 
   useEffect(() => {
     fetchMonthlyKPIs();
-  }, []);
+  }, [dateRange]);
 
   return { kpis, loading, refetch: fetchMonthlyKPIs };
 };
