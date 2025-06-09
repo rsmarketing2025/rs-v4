@@ -19,6 +19,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   const [isOpen, setIsOpen] = React.useState(false);
   const [showCustom, setShowCustom] = React.useState(false);
   const [tempFromDate, setTempFromDate] = React.useState<Date | undefined>(undefined);
+  const [hoverDate, setHoverDate] = React.useState<Date | undefined>(undefined);
 
   const predefinedRanges = [
     {
@@ -82,6 +83,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
       
       onDateRangeChange(finalRange);
       setTempFromDate(undefined);
+      setHoverDate(undefined);
       setIsOpen(false);
       setShowCustom(false);
     }
@@ -89,7 +91,28 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
 
   const resetCustomSelection = () => {
     setTempFromDate(undefined);
+    setHoverDate(undefined);
     setShowCustom(false);
+  };
+
+  // Create a range object for the calendar to display
+  const getDisplayRange = () => {
+    if (!showCustom) {
+      return dateRange;
+    }
+    
+    if (tempFromDate && hoverDate) {
+      return {
+        from: tempFromDate <= hoverDate ? tempFromDate : hoverDate,
+        to: tempFromDate <= hoverDate ? hoverDate : tempFromDate
+      };
+    }
+    
+    if (tempFromDate) {
+      return { from: tempFromDate, to: tempFromDate };
+    }
+    
+    return dateRange;
   };
 
   return (
@@ -178,10 +201,20 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
             </div>
             <Calendar
               initialFocus
-              mode="single"
+              mode="range"
               defaultMonth={dateRange?.from}
-              selected={tempFromDate}
+              selected={getDisplayRange()}
               onSelect={handleDateSelect}
+              onDayMouseEnter={(date) => {
+                if (tempFromDate && date) {
+                  setHoverDate(date);
+                }
+              }}
+              onDayMouseLeave={() => {
+                if (tempFromDate) {
+                  setHoverDate(undefined);
+                }
+              }}
               numberOfMonths={2}
               className="bg-slate-900 text-white pointer-events-auto"
             />
