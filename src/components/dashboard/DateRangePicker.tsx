@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -19,6 +18,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [showCustom, setShowCustom] = React.useState(false);
+  const [tempFromDate, setTempFromDate] = React.useState<Date | undefined>(undefined);
 
   const predefinedRanges = [
     {
@@ -61,6 +61,35 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   const handlePredefinedRange = (range: { from: Date; to: Date }) => {
     onDateRangeChange(range);
     setIsOpen(false);
+  };
+
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    if (!selectedDate) return;
+
+    if (!tempFromDate) {
+      // First click - select start date
+      setTempFromDate(selectedDate);
+    } else {
+      // Second click - select end date and complete the range
+      const fromDate = tempFromDate;
+      const toDate = selectedDate;
+      
+      // Ensure the range is in correct order
+      const finalRange = {
+        from: fromDate <= toDate ? fromDate : toDate,
+        to: fromDate <= toDate ? toDate : fromDate
+      };
+      
+      onDateRangeChange(finalRange);
+      setTempFromDate(undefined);
+      setIsOpen(false);
+      setShowCustom(false);
+    }
+  };
+
+  const resetCustomSelection = () => {
+    setTempFromDate(undefined);
+    setShowCustom(false);
   };
 
   return (
@@ -112,30 +141,49 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
         ) : (
           <div className="p-4">
             <div className="flex justify-between items-center mb-4">
-              <h4 className="text-sm font-medium text-white">Período personalizado</h4>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowCustom(false)}
-                className="text-slate-400 hover:text-white"
-              >
-                Voltar
-              </Button>
+              <div>
+                <h4 className="text-sm font-medium text-white">Período personalizado</h4>
+                <p className="text-xs text-slate-400 mt-1">
+                  {!tempFromDate 
+                    ? "Clique para selecionar a data inicial" 
+                    : "Clique para selecionar a data final"
+                  }
+                </p>
+                {tempFromDate && (
+                  <p className="text-xs text-blue-400 mt-1">
+                    Início: {format(tempFromDate, "dd/MM/yyyy", { locale: ptBR })}
+                  </p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {tempFromDate && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setTempFromDate(undefined)}
+                    className="text-slate-400 hover:text-white text-xs"
+                  >
+                    Resetar
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetCustomSelection}
+                  className="text-slate-400 hover:text-white"
+                >
+                  Voltar
+                </Button>
+              </div>
             </div>
             <Calendar
               initialFocus
-              mode="range"
+              mode="single"
               defaultMonth={dateRange?.from}
-              selected={dateRange}
-              onSelect={(range: any) => {
-                if (range?.from && range?.to) {
-                  onDateRangeChange({ from: range.from, to: range.to });
-                  setIsOpen(false);
-                  setShowCustom(false);
-                }
-              }}
+              selected={tempFromDate}
+              onSelect={handleDateSelect}
               numberOfMonths={2}
-              className="bg-slate-900 text-white"
+              className="bg-slate-900 text-white pointer-events-auto"
             />
           </div>
         )}
