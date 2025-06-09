@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { MetricsOverviewCharts } from "./creatives/MetricsOverviewCharts";
 import { TimeSeriesChart } from "./creatives/TimeSeriesChart";
@@ -20,13 +19,8 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
                          creative.campaign_name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || creative.status === statusFilter;
     
-    // Always filter out zero values (removing the showZeroValues functionality)
-    const hasNonZeroValues = creative.amount_spent > 0 || 
-                             creative.sales_count > 0 || 
-                             creative.gross_sales > 0 ||
-                             creative.views_3s > 0;
-    
-    return matchesSearch && matchesStatus && hasNonZeroValues;
+    // Show all creatives based only on search and status filters
+    return matchesSearch && matchesStatus;
   });
 
   const exportToCSV = () => {
