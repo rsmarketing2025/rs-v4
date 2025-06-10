@@ -25,21 +25,16 @@ export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
     try {
       setLoading(true);
       
-      // Format dates to Brazil timezone with proper start/end of day
+      // Get the start and end of the selected days in local time
       const startDate = startOfDay(dateRange.from);
       const endDate = endOfDay(dateRange.to);
       
-      // Format as Brazil timezone string properly
-      const formatDateForBrazil = (date: Date) => {
-        // Create a new date adjusted to Brazil timezone (-3 hours from UTC)
-        const brazilDate = new Date(date.getTime() - (3 * 60 * 60 * 1000));
-        return format(brazilDate, "yyyy-MM-dd HH:mm:ss'+00:00'");
-      };
+      // Format dates to ISO string in local timezone - same as SalesTab
+      const startDateStr = format(startDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+      const endDateStr = format(endDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
-      const startDateStr = formatDateForBrazil(startDate);
-      const endDateStr = formatDateForBrazil(endDate);
-
-      console.log('Date filtering - Start:', startDateStr, 'End:', endDateStr);
+      console.log('KPI Date filtering - Start:', startDateStr, 'End:', endDateStr);
+      console.log('KPI Original date range - From:', dateRange.from, 'To:', dateRange.to);
 
       // Buscar dados de campanhas no período selecionado
       const { data: campaignData, error: campaignError } = await supabase
@@ -52,11 +47,11 @@ export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
         throw campaignError;
       }
 
-      // Buscar dados de vendas no período selecionado - apenas vendas completas
+      // Buscar dados de vendas no período selecionado - usar creative_sales como SalesTab
       const { data: salesData, error: salesError } = await supabase
         .from('creative_sales')
         .select('gross_value, status')
-        .eq('status', 'completed')
+        .eq('status', 'completed') // Apenas vendas completas
         .gte('sale_date', startDateStr)
         .lte('sale_date', endDateStr);
 
@@ -64,10 +59,12 @@ export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
         throw salesError;
       }
 
+      console.log('KPI Campaign data:', campaignData?.length, 'KPI Sales data:', salesData?.length);
+
       // Calcular métricas
       const totalSpent = campaignData?.reduce((acc, campaign) => acc + (campaign.amount_spent || 0), 0) || 0;
       
-      // Usar apenas vendas completadas para o cálculo
+      // Usar apenas vendas completadas para o cálculo - mesmo critério do SalesTab
       const totalRevenue = salesData?.reduce((acc, sale) => acc + (sale.gross_value || 0), 0) || 0;
       const totalOrders = salesData?.length || 0;
       

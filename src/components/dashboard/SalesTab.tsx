@@ -115,11 +115,20 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   const uniqueCountries = [...new Set(sales.map(sale => sale.country).filter(Boolean))].sort();
   const uniqueStates = [...new Set(sales.map(sale => sale.state).filter(Boolean))].sort();
 
-  // Fix totalMetrics to match TotalMetrics interface
-  const completedSales = filteredSales.filter(sale => sale.status === 'completed');
+  // CORREÇÃO: Calcular totalMetrics usando TODOS os sales (não filteredSales) 
+  // para que bata com os KPI cards que também usam todos os dados do período
+  const completedSales = sales.filter(sale => sale.status === 'completed');
   const totalRevenue = completedSales.reduce((acc, sale) => acc + (sale.gross_value || 0), 0);
   const totalSales = completedSales.length;
   const avgOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
+
+  console.log('SalesTab calculations:', {
+    totalSales: sales.length,
+    completedSales: completedSales.length,
+    totalRevenue,
+    avgOrderValue,
+    dateRange
+  });
 
   const totalMetrics = {
     totalSales,

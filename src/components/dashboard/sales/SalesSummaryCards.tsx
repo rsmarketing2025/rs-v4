@@ -16,6 +16,9 @@ interface SalesSummaryCardsProps {
 export const SalesSummaryCards: React.FC<SalesSummaryCardsProps> = ({
   totalMetrics
 }) => {
+  // Debug logging to track the values
+  console.log('SalesSummaryCards - totalMetrics:', totalMetrics);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <Card className="bg-slate-800/30 border-slate-700">
