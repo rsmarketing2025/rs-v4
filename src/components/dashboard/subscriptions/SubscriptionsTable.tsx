@@ -82,55 +82,57 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = ({
       </div>
 
       <div className="rounded-lg border border-slate-700 overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-slate-700 hover:bg-slate-800/50">
-              <TableHead className="text-slate-300">Cliente</TableHead>
-              <TableHead className="text-slate-300">Evento</TableHead>
-              <TableHead className="text-slate-300">Plano</TableHead>
-              <TableHead className="text-slate-300">Valor</TableHead>
-              <TableHead className="text-slate-300">Data</TableHead>
-              <TableHead className="text-slate-300">Criativo</TableHead>
-              <TableHead className="text-slate-300">Pagamento</TableHead>
-              <TableHead className="text-slate-300">Localização</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {events.map((event) => (
-              <TableRow key={event.id} className="border-slate-700 hover:bg-slate-800/30">
-                <TableCell className="text-white">
-                  <div>
-                    <div className="font-medium">{event.customer_name || 'N/A'}</div>
-                    <div className="text-sm text-slate-400">{event.customer_email}</div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {getEventTypeBadge(event.event_type)}
-                </TableCell>
-                <TableCell>
-                  {getPlanBadge(event.plan)}
-                </TableCell>
-                <TableCell className="text-white">
-                  R$ {event.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </TableCell>
-                <TableCell className="text-slate-300">
-                  {new Date(event.event_date).toLocaleDateString('pt-BR')}
-                </TableCell>
-                <TableCell className="text-slate-300">
-                  <div className="max-w-32 truncate">
-                    {event.creative_name || 'N/A'}
-                  </div>
-                </TableCell>
-                <TableCell className="text-slate-300">
-                  {event.payment_method || 'N/A'}
-                </TableCell>
-                <TableCell className="text-slate-300">
-                  {event.state ? `${event.state}, ${event.country}` : event.country || 'N/A'}
-                </TableCell>
+        <div className="max-h-[600px] overflow-y-auto">
+          <Table>
+            <TableHeader sticky={true}>
+              <TableRow className="border-slate-700 hover:bg-slate-800/50">
+                <TableHead className="text-slate-300">Cliente</TableHead>
+                <TableHead className="text-slate-300">Evento</TableHead>
+                <TableHead className="text-slate-300">Plano</TableHead>
+                <TableHead className="text-slate-300">Valor</TableHead>
+                <TableHead className="text-slate-300">Data</TableHead>
+                <TableHead className="text-slate-300">Criativo</TableHead>
+                <TableHead className="text-slate-300">Pagamento</TableHead>
+                <TableHead className="text-slate-300">Localização</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {events.map((event) => (
+                <TableRow key={event.id} className="border-slate-700 hover:bg-slate-800/30">
+                  <TableCell className="text-white">
+                    <div>
+                      <div className="font-medium">{event.customer_name || 'N/A'}</div>
+                      <div className="text-sm text-slate-400">{event.customer_email}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {getEventTypeBadge(event.event_type)}
+                  </TableCell>
+                  <TableCell>
+                    {getPlanBadge(event.plan)}
+                  </TableCell>
+                  <TableCell className="text-white">
+                    R$ {event.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </TableCell>
+                  <TableCell className="text-slate-300">
+                    {new Date(event.event_date).toLocaleDateString('pt-BR')}
+                  </TableCell>
+                  <TableCell className="text-slate-300">
+                    <div className="max-w-32 truncate">
+                      {event.creative_name || 'N/A'}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-slate-300">
+                    {event.payment_method || 'N/A'}
+                  </TableCell>
+                  <TableCell className="text-slate-300">
+                    {event.state ? `${event.state}, ${event.country}` : event.country || 'N/A'}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">

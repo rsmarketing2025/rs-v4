@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -244,85 +243,87 @@ export const UserList: React.FC<UserListProps> = ({
       {/* Users Table */}
       <Card className="bg-slate-800/50 border-slate-700">
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-slate-700">
-                <TableHead className="text-slate-300">Nome</TableHead>
-                <TableHead className="text-slate-300">Email</TableHead>
-                <TableHead className="text-slate-300">Telefone</TableHead>
-                <TableHead className="text-slate-300">Papel</TableHead>
-                <TableHead className="text-slate-300">Status</TableHead>
-                <TableHead className="text-slate-300">Criado em</TableHead>
-                <TableHead className="text-slate-300 text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center text-slate-400 py-8">
-                    {searchTerm ? "Nenhum usuário encontrado." : "Nenhum usuário cadastrado."}
-                  </TableCell>
+          <div className="max-h-[600px] overflow-y-auto">
+            <Table>
+              <TableHeader sticky={true}>
+                <TableRow className="border-slate-700">
+                  <TableHead className="text-slate-300">Nome</TableHead>
+                  <TableHead className="text-slate-300">Email</TableHead>
+                  <TableHead className="text-slate-300">Telefone</TableHead>
+                  <TableHead className="text-slate-300">Papel</TableHead>
+                  <TableHead className="text-slate-300">Status</TableHead>
+                  <TableHead className="text-slate-300">Criado em</TableHead>
+                  <TableHead className="text-slate-300 text-right">Ações</TableHead>
                 </TableRow>
-              ) : (
-                filteredUsers.map((user) => (
-                  <TableRow key={user.id} className="border-slate-700 hover:bg-slate-800/30">
-                    <TableCell>
-                      <div className="flex items-center space-x-3">
-                        <div className="bg-slate-700 p-2 rounded-full">
-                          <User className="w-4 h-4 text-slate-300" />
+              </TableHeader>
+              <TableBody>
+                {filteredUsers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-slate-400 py-8">
+                      {searchTerm ? "Nenhum usuário encontrado." : "Nenhum usuário cadastrado."}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredUsers.map((user) => (
+                    <TableRow key={user.id} className="border-slate-700 hover:bg-slate-800/30">
+                      <TableCell>
+                        <div className="flex items-center space-x-3">
+                          <div className="bg-slate-700 p-2 rounded-full">
+                            <User className="w-4 h-4 text-slate-300" />
+                          </div>
+                          <div>
+                            <p className="text-white font-medium">{user.full_name}</p>
+                            {user.username && (
+                              <p className="text-slate-400 text-sm">@{user.username}</p>
+                            )}
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-white font-medium">{user.full_name}</p>
-                          {user.username && (
-                            <p className="text-slate-400 text-sm">@{user.username}</p>
-                          )}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-slate-300">{user.email}</TableCell>
-                    <TableCell className="text-slate-300">{user.phone || '-'}</TableCell>
-                    <TableCell>{getRoleBadge(user.role)}</TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={user.status === 'active' ? 'default' : 'secondary'}
-                        className={user.status === 'active' 
-                          ? 'bg-green-600 text-white' 
-                          : 'bg-slate-600 text-slate-200'
-                        }
-                      >
-                        {user.status === 'active' ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {new Date(user.created_at).toLocaleDateString('pt-BR')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedUser(user)}
-                          className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                      </TableCell>
+                      <TableCell className="text-slate-300">{user.email}</TableCell>
+                      <TableCell className="text-slate-300">{user.phone || '-'}</TableCell>
+                      <TableCell>{getRoleBadge(user.role)}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={user.status === 'active' ? 'default' : 'secondary'}
+                          className={user.status === 'active' 
+                            ? 'bg-green-600 text-white' 
+                            : 'bg-slate-600 text-slate-200'
+                          }
                         >
-                          <Edit className="w-3 h-3" />
-                        </Button>
-                        {canDeleteUser(user) && (
+                          {user.status === 'active' ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-2">
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setUserToDelete({ id: user.id, name: user.full_name })}
-                            className="border-red-600 text-red-400 hover:bg-red-600/10"
+                            onClick={() => setSelectedUser(user)}
+                            className="border-slate-600 text-slate-300 hover:bg-slate-800"
                           >
-                            <Trash2 className="w-3 h-3" />
+                            <Edit className="w-3 h-3" />
                           </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                          {canDeleteUser(user) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setUserToDelete({ id: user.id, name: user.full_name })}
+                              className="border-red-600 text-red-400 hover:bg-red-600/10"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
