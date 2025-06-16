@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, Users, DollarSign, AlertTriangle, Target, Calendar } from "lucide-react";
+import { TrendingUp, Users, DollarSign, AlertTriangle } from "lucide-react";
 import { useSubscriptionMetrics } from "@/hooks/useSubscriptionMetrics";
 
 interface SubscriptionsSummaryCardsProps {
@@ -50,25 +50,11 @@ export const SubscriptionsSummaryCards: React.FC<SubscriptionsSummaryCardsProps>
       change: loading ? "..." : `${metrics.churnRateChange >= 0 ? '+' : ''}${metrics.churnRateChange.toFixed(1)}%`,
       icon: AlertTriangle,
       color: "text-red-400"
-    },
-    {
-      title: "LTV Médio",
-      value: loading ? "..." : `R$ ${metrics.averageLTV.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-      change: loading ? "..." : `+${metrics.ltvGrowth.toFixed(1)}%`,
-      icon: Target,
-      color: "text-purple-400"
-    },
-    {
-      title: "Retenção 30d",
-      value: loading ? "..." : `${metrics.retention30d.toFixed(1)}%`,
-      change: loading ? "..." : `+${metrics.retentionChange.toFixed(1)}%`,
-      icon: Calendar,
-      color: "text-orange-400"
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {cards.map((card, index) => (
         <Card key={index} className="bg-slate-800/30 border-slate-700">
           <CardContent className="p-4">

@@ -112,7 +112,7 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = ({
                     {getPlanBadge(event.plan)}
                   </TableCell>
                   <TableCell className="text-white">
-                    R$ {event.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    R$ {(event.value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </TableCell>
                   <TableCell className="text-slate-300">
                     {new Date(event.event_date).toLocaleDateString('pt-BR')}
