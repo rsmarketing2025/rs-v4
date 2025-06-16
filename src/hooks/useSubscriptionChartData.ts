@@ -76,12 +76,12 @@ export const useSubscriptionChartData = (
 
             setData(planData);
           } else if (type === 'mrr') {
-            // Calcular MRR por mês
+            // Calcular MRR por mês - using 'amount' instead of 'value'
             const mrrByMonth = events
               .filter(e => e.event_type === 'subscription')
               .reduce((acc, event) => {
                 const month = new Date(event.event_date).toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' });
-                acc[month] = (acc[month] || 0) + (event.value || 0);
+                acc[month] = (acc[month] || 0) + (event.amount || 0);
                 return acc;
               }, {} as Record<string, number>);
 

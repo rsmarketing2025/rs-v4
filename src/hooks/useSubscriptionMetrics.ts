@@ -1,10 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
-
-type SubscriptionPlan = Database['public']['Enums']['subscription_plan'];
-type SubscriptionEventType = Database['public']['Enums']['subscription_event_type'];
 
 interface SubscriptionMetrics {
   activeSubscriptions: number;
@@ -21,9 +17,20 @@ interface SubscriptionMetrics {
   retentionChange: number;
 }
 
+interface Filters {
+  plan: string;
+  eventType: string;
+  paymentMethod: string;
+}
+
+interface DateRange {
+  from: Date;
+  to: Date;
+}
+
 export const useSubscriptionMetrics = (
-  dateRange: { from: Date; to: Date },
-  filters: { plan: string; eventType: string; paymentMethod: string }
+  dateRange: DateRange,
+  filters: Filters
 ) => {
   const [metrics, setMetrics] = useState<SubscriptionMetrics>({
     activeSubscriptions: 0,
@@ -46,7 +53,7 @@ export const useSubscriptionMetrics = (
       try {
         setLoading(true);
 
-        // Buscar eventos de assinatura no período
+        // Build query with proper typing
         let query = supabase
           .from('subscription_events')
           .select('*')
@@ -54,10 +61,10 @@ export const useSubscriptionMetrics = (
           .lte('event_date', dateRange.to.toISOString());
 
         if (filters.plan !== 'all') {
-          query = query.eq('plan', filters.plan as SubscriptionPlan);
+          query = query.eq('plan', filters.plan);
         }
         if (filters.eventType !== 'all') {
-          query = query.eq('event_type', filters.eventType as SubscriptionEventType);
+          query = query.eq('event_type', filters.eventType);
         }
         if (filters.paymentMethod !== 'all') {
           query = query.eq('payment_method', filters.paymentMethod);
@@ -76,18 +83,17 @@ export const useSubscriptionMetrics = (
           // Estimar assinaturas ativas (simplificado)
           const activeSubscriptions = Math.max(0, newSubscriptions - totalCancellations);
           
-          // Calcular MRR
+          // Calcular MRR usando 'amount' em vez de 'value'
           const monthlyRevenue = subscriptions.reduce((sum, sub) => {
-            // Assumindo que o valor é mensal
-            return sum + (sub.value || 0);
+            return sum + (sub.amount || 0);
           }, 0);
           
           // Calcular taxa de churn
           const churnRate = activeSubscriptions > 0 ? (totalCancellations / activeSubscriptions) * 100 : 0;
           
           // LTV estimado (valor médio * 12 meses / taxa de churn mensal)
-          const avgValue = subscriptions.length > 0 ? monthlyRevenue / subscriptions.length : 0;
-          const averageLTV = churnRate > 0 ? (avgValue * 12) / (churnRate / 100) : avgValue * 12;
+          const avgAmount = subscriptions.length > 0 ? monthlyRevenue / subscriptions.length : 0;
+          const averageLTV = churnRate > 0 ? (avgAmount * 12) / (churnRate / 100) : avgAmount * 12;
           
           // Retenção simplificada (90% para exemplo)
           const retention30d = 90;
@@ -119,3 +125,4 @@ export const useSubscriptionMetrics = (
 
   return { metrics, loading };
 };
+</lov-code>
