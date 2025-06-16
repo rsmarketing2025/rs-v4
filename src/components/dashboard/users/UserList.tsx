@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,8 +23,7 @@ interface UserProfile {
   full_name: string;
   email: string;
   username: string | null;
-  phone: string | null;
-  status: string;
+  status?: string;
   created_at: string;
   role: 'admin' | 'user' | 'gestor';
   pagePermissions: {
@@ -62,7 +62,7 @@ export const UserList: React.FC<UserListProps> = ({
     try {
       setLoading(true);
       
-      // Buscar perfis com roles
+      // Buscar perfis
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select(`
@@ -70,8 +70,6 @@ export const UserList: React.FC<UserListProps> = ({
           full_name,
           email,
           username,
-          phone,
-          status,
           created_at
         `)
         .order('created_at', { ascending: false });
@@ -111,7 +109,12 @@ export const UserList: React.FC<UserListProps> = ({
         };
 
         return {
-          ...profile,
+          id: profile.id,
+          full_name: profile.full_name || '',
+          email: profile.email || '',
+          username: profile.username,
+          status: 'active', // Default status since it's not in the profiles table
+          created_at: profile.created_at,
           role: (userRole?.role as 'admin' | 'user' | 'gestor') || 'user',
           pagePermissions
         };
@@ -249,7 +252,7 @@ export const UserList: React.FC<UserListProps> = ({
                 <TableRow className="border-slate-700">
                   <TableHead className="text-slate-300">Nome</TableHead>
                   <TableHead className="text-slate-300">Email</TableHead>
-                  <TableHead className="text-slate-300">Telefone</TableHead>
+                  <TableHead className="text-slate-300">Username</TableHead>
                   <TableHead className="text-slate-300">Papel</TableHead>
                   <TableHead className="text-slate-300">Status</TableHead>
                   <TableHead className="text-slate-300">Criado em</TableHead>
@@ -273,14 +276,11 @@ export const UserList: React.FC<UserListProps> = ({
                           </div>
                           <div>
                             <p className="text-white font-medium">{user.full_name}</p>
-                            {user.username && (
-                              <p className="text-slate-400 text-sm">@{user.username}</p>
-                            )}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell className="text-slate-300">{user.email}</TableCell>
-                      <TableCell className="text-slate-300">{user.phone || '-'}</TableCell>
+                      <TableCell className="text-slate-300">{user.username || '-'}</TableCell>
                       <TableCell>{getRoleBadge(user.role)}</TableCell>
                       <TableCell>
                         <Badge 

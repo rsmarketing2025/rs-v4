@@ -18,6 +18,8 @@ interface BusinessManager {
   ad_account_id: string;
   created_at: string;
   updated_at: string;
+  app_id?: string;
+  app_secret?: string;
 }
 
 interface BusinessManagerListProps {
@@ -44,7 +46,7 @@ export const BusinessManagerList: React.FC<BusinessManagerListProps> = ({ refres
 
     try {
       const { data, error } = await supabase
-        .from('business_managers')
+        .from('business_manager_accounts')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -78,7 +80,7 @@ export const BusinessManagerList: React.FC<BusinessManagerListProps> = ({ refres
 
     try {
       const { error } = await supabase
-        .from('business_managers')
+        .from('business_manager_accounts')
         .delete()
         .eq('id', id);
 

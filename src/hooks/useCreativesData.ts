@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -133,11 +134,10 @@ export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
           const creative = creativesMap.get(key);
           creative.sales.push(sale);
           
-          // Add product to the products array if it exists and isn't already there
-          if (sale.produto && !creative.products.includes(sale.produto)) {
-            creative.products.push(sale.produto);
-          }
-
+          // Note: The database schema doesn't have a 'produto' column, 
+          // so we'll check for other relevant product fields
+          // You may need to adjust this based on your actual database schema
+          
           // Collect all unique tags from sales
           if (sale.tags && Array.isArray(sale.tags)) {
             sale.tags.forEach((tag: string) => {

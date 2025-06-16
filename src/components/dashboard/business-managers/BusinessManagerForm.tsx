@@ -126,7 +126,7 @@ export const BusinessManagerForm: React.FC<BusinessManagerFormProps> = ({
       if (editingBM) {
         // Update existing record
         const { error } = await supabase
-          .from('business_managers')
+          .from('business_manager_accounts')
           .update({
             bm_name: formattedBMName,
             access_token: formData.access_token,
@@ -152,7 +152,7 @@ export const BusinessManagerForm: React.FC<BusinessManagerFormProps> = ({
           }));
 
           const { error: insertError } = await supabase
-            .from('business_managers')
+            .from('business_manager_accounts')
             .insert(additionalAccounts);
 
           if (insertError) throw insertError;
@@ -175,7 +175,7 @@ export const BusinessManagerForm: React.FC<BusinessManagerFormProps> = ({
         }));
 
         const { error } = await supabase
-          .from('business_managers')
+          .from('business_manager_accounts')
           .insert(recordsToInsert);
 
         if (error) throw error;

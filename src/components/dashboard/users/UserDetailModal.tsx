@@ -18,8 +18,7 @@ interface User {
   id: string;
   email: string;
   full_name: string;
-  phone?: string;
-  status: string;
+  status?: string;
   created_at: string;
   role: 'admin' | 'user' | 'gestor';
 }
@@ -44,7 +43,6 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
-    phone: '',
     status: '',
     role: 'user' as 'admin' | 'user' | 'gestor'
   });
@@ -70,8 +68,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
       setFormData({
         full_name: user.full_name || '',
         email: user.email || '',
-        phone: user.phone || '',
-        status: user.status || '',
+        status: user.status || 'active',
         role: user.role || 'user'
       });
       
@@ -139,9 +136,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          full_name: formData.full_name,
-          phone: formData.phone,
-          status: formData.status
+          full_name: formData.full_name
         })
         .eq('id', user.id);
 
@@ -328,18 +323,6 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                 value={formData.email}
                 disabled
                 className="col-span-3 bg-muted"
-              />
-            </div>
-
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="phone" className="text-right">
-                Telefone
-              </Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="col-span-3"
               />
             </div>
 
