@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,6 +29,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useMonthlyKPIs } from "@/hooks/useMonthlyKPIs";
 import { useLocation } from "react-router-dom";
+import { startOfDay, endOfDay } from "date-fns";
 
 const Dashboard = () => {
   const { isAdmin } = useAuth();
@@ -41,12 +41,20 @@ const Dashboard = () => {
     return "creatives";
   });
   
-  const [dateRange, setDateRange] = useState({
-    from: new Date(new Date().setDate(new Date().getDate() - 30)),
-    to: new Date()
+  // Função para obter o período "hoje" por padrão
+  const getTodayRange = () => ({
+    from: startOfDay(new Date()),
+    to: endOfDay(new Date())
   });
+  
+  const [dateRange, setDateRange] = useState(getTodayRange);
 
   const { kpis, loading: kpisLoading } = useMonthlyKPIs(dateRange);
+
+  // Função para resetar o período para "hoje" sempre que necessário
+  const resetToToday = () => {
+    setDateRange(getTodayRange());
+  };
 
   React.useEffect(() => {
     if (activeTab === "users") {
@@ -56,7 +64,15 @@ const Dashboard = () => {
     } else {
       window.history.pushState({}, '', '/dashboard');
     }
+    
+    // Sempre que a aba mudar, resetar para "hoje"
+    resetToToday();
   }, [activeTab]);
+
+  // Resetar para "hoje" sempre que o componente for montado/atualizado
+  React.useEffect(() => {
+    resetToToday();
+  }, []);
 
   // Função para obter o título da página atual
   const getPageTitle = () => {
@@ -173,6 +189,15 @@ const Dashboard = () => {
                 dateRange={dateRange} 
                 onDateRangeChange={setDateRange} 
               />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resetToToday}
+                className="bg-slate-900/50 border-slate-700 text-slate-300 hover:bg-slate-800"
+              >
+                <Calendar className="w-4 h-4 mr-2" />
+                Hoje
+              </Button>
               <ThemeToggle />
             </div>
           </div>

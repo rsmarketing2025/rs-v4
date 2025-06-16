@@ -127,7 +127,13 @@ export const useSubscriptionMetrics = (
     };
 
     fetchMetrics();
-  }, [dateRange.from, dateRange.to, filters.plan, filters.eventType, filters.paymentMethod]);
+  }, [
+    dateRange.from.getTime(),
+    dateRange.to.getTime(),
+    filters.plan,
+    filters.eventType,
+    filters.paymentMethod
+  ]);
 
   return { metrics, loading };
 };

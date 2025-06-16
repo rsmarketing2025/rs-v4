@@ -1,219 +1,157 @@
-
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-
-interface User {
-  id: string;
-  full_name: string;
-  email: string;
-  username: string;
-  role: 'user' | 'admin' | 'business_manager';
-  permissions: {
-    creatives: boolean;
-    sales: boolean;
-    affiliates: boolean;
-    revenue: boolean;
-    users: boolean;
-    'business-managers': boolean;
-    subscriptions: boolean;
-  };
-}
-
-interface UserDetailModalProps {
-  user: User | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onUserUpdated: () => void;
-  currentUserRole?: string | null;
-  onUpdate?: () => void;
-}
+import { UserDetailModalProps, UserWithPermissions } from "./types";
 
 export const UserDetailModal: React.FC<UserDetailModalProps> = ({
   user,
   isOpen,
   onClose,
-  onUserUpdated,
-  currentUserRole,
-  onUpdate
+  onUserUpdate
 }) => {
-  const [loading, setLoading] = useState(false);
-  const [editedUser, setEditedUser] = useState<User | null>(user);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [permissions, setPermissions] = useState(() => {
+    const initialPermissions: Record<string, boolean> = {};
+    
+    if (user && user.permissions && Array.isArray(user.permissions)) {
+      user.permissions.forEach((permission: any) => {
+        if (permission && permission.page) {
+          initialPermissions[permission.page] = permission.can_access || false;
+        }
+      });
+    }
+    
+    return initialPermissions;
+  });
   const { toast } = useToast();
 
-  React.useEffect(() => {
-    setEditedUser(user);
-  }, [user]);
+  const availablePages = [
+    'creatives',
+    'sales', 
+    'affiliates',
+    'subscriptions',
+    'users',
+    'business-managers'
+  ] as const;
 
-  const handleSave = async () => {
-    if (!editedUser) return;
+  const handlePermissionChange = (page: typeof availablePages[number], canAccess: boolean) => {
+    setPermissions(prev => ({
+      ...prev,
+      [page]: canAccess
+    }));
+  };
 
-    setLoading(true);
+  const handleSavePermissions = async () => {
+    if (!user) return;
+    
+    setIsUpdating(true);
     try {
-      // Update profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          full_name: editedUser.full_name,
-          username: editedUser.username
-        })
-        .eq('id', editedUser.id);
+      // Delete existing permissions
+      await supabase
+        .from('user_page_permissions')
+        .delete()
+        .eq('user_id', user.id);
 
-      if (profileError) throw profileError;
+      // Insert new permissions
+      const permissionInserts = Object.entries(permissions).map(([page, canAccess]) => ({
+        user_id: user.id,
+        page: page as typeof availablePages[number],
+        can_access: canAccess
+      }));
 
-      // Update role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .update({ role: editedUser.role })
-        .eq('user_id', editedUser.id);
-
-      if (roleError) throw roleError;
-
-      // Update permissions - handle the 'business-managers' key properly
-      const permissionUpdates = Object.entries(editedUser.permissions).map(([page, canAccess]) => {
-        // Map 'business-managers' to the correct database value
-        const dbPageName = page === 'business-managers' ? 'business-managers' as const : page;
-        
-        return supabase
+      if (permissionInserts.length > 0) {
+        const { error } = await supabase
           .from('user_page_permissions')
-          .update({ can_access: canAccess })
-          .eq('user_id', editedUser.id)
-          .eq('page', dbPageName);
-      });
+          .insert(permissionInserts);
 
-      await Promise.all(permissionUpdates);
+        if (error) throw error;
+      }
 
       toast({
         title: "Sucesso",
-        description: "Usuário atualizado com sucesso",
+        description: "Permissões atualizadas com sucesso",
       });
 
-      onUserUpdated();
-      if (onUpdate) onUpdate();
+      onUserUpdate();
       onClose();
     } catch (error) {
-      console.error('Error updating user:', error);
+      console.error('Error updating permissions:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível atualizar o usuário",
+        description: "Erro ao atualizar permissões",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsUpdating(false);
     }
   };
 
-  if (!editedUser) return null;
+  if (!user) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-neutral-900 border-neutral-700">
         <DialogHeader>
-          <DialogTitle>Detalhes do Usuário</DialogTitle>
-          <DialogDescription>
-            Edite as informações e permissões do usuário
-          </DialogDescription>
+          <DialogTitle className="text-white text-xl">
+            Detalhes do Usuário
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="fullName">Nome Completo</Label>
-              <Input
-                id="fullName"
-                value={editedUser.full_name}
-                onChange={(e) => setEditedUser({
-                  ...editedUser,
-                  full_name: e.target.value
-                })}
+          <div>
+            <div className="flex items-center space-x-2">
+              <img
+                src={user.avatar_url || "https://avatar.iran.liara.run/public/boy"}
+                alt="Avatar"
+                className="w-8 h-8 rounded-full"
               />
+              <h2 className="text-lg font-semibold text-white">{user.full_name || "Sem nome"}</h2>
+              <Badge variant="secondary">{user.role}</Badge>
             </div>
-            <div>
-              <Label htmlFor="username">Nome de Usuário</Label>
-              <Input
-                id="username"
-                value={editedUser.username}
-                onChange={(e) => setEditedUser({
-                  ...editedUser,
-                  username: e.target.value
-                })}
-              />
-            </div>
+            <p className="text-gray-400 mt-2">{user.email}</p>
+            <p className="text-gray-400">Criado em: {new Date(user.created_at).toLocaleDateString()}</p>
           </div>
 
+          <Separator className="bg-neutral-700" />
+          
           <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              value={editedUser.email}
-              disabled
-              className="bg-gray-100"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="role">Função</Label>
-            <Select
-              value={editedUser.role}
-              onValueChange={(value: 'user' | 'admin' | 'business_manager') => 
-                setEditedUser({ ...editedUser, role: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="user">Usuário</SelectItem>
-                <SelectItem value="admin">Administrador</SelectItem>
-                <SelectItem value="business_manager">Gestor de Negócios</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label>Permissões de Página</Label>
-            <div className="grid grid-cols-2 gap-4 mt-2">
-              {Object.entries(editedUser.permissions).map(([page, hasAccess]) => (
-                <div key={page} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={page}
-                    checked={hasAccess}
-                    onCheckedChange={(checked) => {
-                      setEditedUser({
-                        ...editedUser,
-                        permissions: {
-                          ...editedUser.permissions,
-                          [page]: !!checked
-                        }
-                      });
-                    }}
-                  />
-                  <Label htmlFor={page} className="capitalize">
-                    {page === 'business-managers' ? 'Gestores de Negócio' : 
-                     page === 'creatives' ? 'Criativos' :
-                     page === 'sales' ? 'Vendas' :
-                     page === 'affiliates' ? 'Afiliados' :
-                     page === 'revenue' ? 'Receita' :
-                     page === 'users' ? 'Usuários' :
-                     page === 'subscriptions' ? 'Assinaturas' : page}
+            <h3 className="text-lg font-semibold text-white mb-4">Permissões de Páginas</h3>
+            <div className="space-y-3">
+              {availablePages.map((page) => (
+                <div key={page} className="flex items-center justify-between">
+                  <Label htmlFor={page} className="text-gray-300 capitalize">
+                    {page === 'business-managers' ? 'Business Managers' : page}
                   </Label>
+                  <Switch
+                    id={page}
+                    checked={permissions[page] || false}
+                    onCheckedChange={(checked) => handlePermissionChange(page, checked)}
+                  />
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={onClose}>
+          <div className="flex justify-end space-x-3 pt-4 border-t border-neutral-700">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="border-neutral-600 text-gray-300 hover:bg-neutral-800"
+            >
               Cancelar
             </Button>
-            <Button onClick={handleSave} disabled={loading}>
-              {loading ? "Salvando..." : "Salvar"}
+            <Button
+              onClick={handleSavePermissions}
+              disabled={isUpdating}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isUpdating ? "Salvando..." : "Salvar Permissões"}
             </Button>
           </div>
         </div>
