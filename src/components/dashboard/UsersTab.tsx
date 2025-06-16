@@ -51,7 +51,7 @@ export const UsersTab: React.FC = () => {
         {canCreateUsers && (
           <Button 
             onClick={() => setShowCreateForm(!showCreateForm)}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-neutral-900 hover:bg-neutral-800"
           >
             <Plus className="w-4 h-4 mr-2" />
             Novo Usuário

@@ -48,7 +48,7 @@ export const SalesChart: React.FC<SalesChartProps> = ({ salesData }) => {
                 'Vendas'
               ]}
             />
-            <Bar dataKey="sales" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="sales" fill="#525252" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

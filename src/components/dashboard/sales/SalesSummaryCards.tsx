@@ -38,7 +38,7 @@ export const SalesSummaryCards: React.FC<SalesSummaryCardsProps> = ({
       <Card className="bg-slate-800/30 border-slate-700">
         <CardContent className="p-4">
           <div className="flex items-center space-x-2">
-            <DollarSign className="w-5 h-5 text-blue-400" />
+            <DollarSign className="w-5 h-5 text-neutral-400" />
             <div>
               <p className="text-sm text-slate-400">Receita Total</p>
               <p className="text-xl font-bold text-white">

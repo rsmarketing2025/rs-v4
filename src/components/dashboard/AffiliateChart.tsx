@@ -65,7 +65,7 @@ export const AffiliateChart: React.FC<AffiliateChartProps> = ({ affiliates }) =>
                   'Receita'
                 ]}
               />
-              <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="revenue" fill="#525252" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>

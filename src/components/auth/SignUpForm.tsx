@@ -177,7 +177,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
 
           <Button 
             type="submit" 
-            className="w-full bg-blue-600 hover:bg-blue-700"
+            className="w-full bg-neutral-900 hover:bg-neutral-800"
             disabled={loading}
           >
             {loading ? "Criando conta..." : "Criar Conta"}
@@ -187,7 +187,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
             <button
               type="button"
               onClick={onSwitchToLogin}
-              className="text-sm text-blue-400 hover:text-blue-300 underline"
+              className="text-sm text-neutral-400 hover:text-neutral-300 underline"
             >
               Já tem uma conta? Faça login
             </button>

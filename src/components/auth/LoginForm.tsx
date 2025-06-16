@@ -109,7 +109,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
 
           <Button 
             type="submit" 
-            className="w-full bg-blue-600 hover:bg-blue-700"
+            className="w-full bg-neutral-900 hover:bg-neutral-800"
             disabled={loading}
           >
             {loading ? "Entrando..." : "Entrar"}
