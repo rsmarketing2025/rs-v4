@@ -15,31 +15,31 @@ interface SalesChartProps {
 
 export const SalesChart: React.FC<SalesChartProps> = ({ salesData }) => {
   return (
-    <Card className="bg-slate-800/30 border-slate-700">
+    <Card className="bg-neutral-800 border-neutral-700">
       <CardHeader>
         <CardTitle className="text-white">Vendas Mensais</CardTitle>
-        <CardDescription className="text-slate-400">
+        <CardDescription className="text-gray-400">
           Evolução das vendas ao longo do tempo
         </CardDescription>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={400}>
           <BarChart data={salesData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#525252" />
             <XAxis 
               dataKey="month" 
-              stroke="#94a3b8"
+              stroke="#9ca3af"
               fontSize={12}
             />
             <YAxis 
-              stroke="#94a3b8"
+              stroke="#9ca3af"
               fontSize={12}
               tickFormatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`}
             />
             <Tooltip 
               contentStyle={{ 
-                backgroundColor: '#1e293b', 
-                border: '1px solid #475569',
+                backgroundColor: '#262626', 
+                border: '1px solid #525252',
                 borderRadius: '8px',
                 color: '#fff'
               }}
@@ -48,7 +48,7 @@ export const SalesChart: React.FC<SalesChartProps> = ({ salesData }) => {
                 'Vendas'
               ]}
             />
-            <Bar dataKey="sales" fill="#525252" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="sales" fill="#737373" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

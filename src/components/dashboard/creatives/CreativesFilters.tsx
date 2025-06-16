@@ -23,7 +23,7 @@ export const CreativesFilters: React.FC<CreativesFiltersProps> = ({
   onShowZeroValuesChange
 }) => {
   return (
-    <Card className="bg-slate-800/30 border-slate-700">
+    <Card className="bg-neutral-800 border-neutral-700">
       <CardHeader>
         <CardTitle className="text-white flex items-center gap-2">
           <Filter className="w-5 h-5" />
@@ -33,19 +33,19 @@ export const CreativesFilters: React.FC<CreativesFiltersProps> = ({
       <CardContent>
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
             <Input
               placeholder="Buscar criativos ou campanhas..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-10 bg-slate-900/50 border-slate-600 text-white"
+              className="pl-10 bg-neutral-900 border-neutral-600 text-white placeholder:text-gray-500"
             />
           </div>
           <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-            <SelectTrigger className="w-full lg:w-[200px] bg-slate-900/50 border-slate-600 text-white">
+            <SelectTrigger className="w-full lg:w-[200px] bg-neutral-900 border-neutral-600 text-white">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
-            <SelectContent className="bg-slate-900 border-slate-700">
+            <SelectContent className="bg-neutral-900 border-neutral-700">
               <SelectItem value="all">Todos os Status</SelectItem>
               <SelectItem value="active">Ativo</SelectItem>
               <SelectItem value="paused">Pausado</SelectItem>

@@ -21,12 +21,12 @@ export const SalesSummaryCards: React.FC<SalesSummaryCardsProps> = ({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <Card className="bg-slate-800/30 border-slate-700">
+      <Card className="bg-neutral-800 border-neutral-700">
         <CardContent className="p-4">
           <div className="flex items-center space-x-2">
             <ShoppingCart className="w-5 h-5 text-green-400" />
             <div>
-              <p className="text-sm text-slate-400">Total de Vendas</p>
+              <p className="text-sm text-gray-400">Total de Vendas</p>
               <p className="text-xl font-bold text-white">
                 {totalMetrics.totalSales.toLocaleString()}
               </p>
@@ -35,12 +35,12 @@ export const SalesSummaryCards: React.FC<SalesSummaryCardsProps> = ({
         </CardContent>
       </Card>
 
-      <Card className="bg-slate-800/30 border-slate-700">
+      <Card className="bg-neutral-800 border-neutral-700">
         <CardContent className="p-4">
           <div className="flex items-center space-x-2">
-            <DollarSign className="w-5 h-5 text-neutral-400" />
+            <DollarSign className="w-5 h-5 text-green-400" />
             <div>
-              <p className="text-sm text-slate-400">Receita Total</p>
+              <p className="text-sm text-gray-400">Receita Total</p>
               <p className="text-xl font-bold text-white">
                 R$ {totalMetrics.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>
@@ -49,12 +49,12 @@ export const SalesSummaryCards: React.FC<SalesSummaryCardsProps> = ({
         </CardContent>
       </Card>
 
-      <Card className="bg-slate-800/30 border-slate-700">
+      <Card className="bg-neutral-800 border-neutral-700">
         <CardContent className="p-4">
           <div className="flex items-center space-x-2">
-            <TrendingUp className="w-5 h-5 text-orange-400" />
+            <TrendingUp className="w-5 h-5 text-green-400" />
             <div>
-              <p className="text-sm text-slate-400">Ticket Médio</p>
+              <p className="text-sm text-gray-400">Ticket Médio</p>
               <p className="text-xl font-bold text-white">
                 R$ {totalMetrics.avgOrderValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>

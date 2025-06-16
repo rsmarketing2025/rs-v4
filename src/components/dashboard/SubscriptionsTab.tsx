@@ -24,7 +24,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
       <div className="space-y-6">
         <div>
           <h2 className="text-2xl font-bold text-white mb-2">Análise de Assinaturas</h2>
-          <p className="text-slate-400">
+          <p className="text-gray-400">
             Métricas detalhadas de assinaturas, churn e receita recorrente
           </p>
         </div>
@@ -32,10 +32,10 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
         <SubscriptionsSummaryCards dateRange={dateRange} filters={filters} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-slate-800/30 border-slate-700">
+          <Card className="bg-neutral-800 border-neutral-700">
             <CardHeader>
               <CardTitle className="text-white">Evolução de Assinaturas</CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardDescription className="text-gray-400">
                 Novos assinantes vs cancelamentos
               </CardDescription>
             </CardHeader>
@@ -48,10 +48,10 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/30 border-slate-700">
+          <Card className="bg-neutral-800 border-neutral-700">
             <CardHeader>
               <CardTitle className="text-white">Distribuição por Plano</CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardDescription className="text-gray-400">
                 Participação de cada plano
               </CardDescription>
             </CardHeader>
@@ -64,10 +64,10 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/30 border-slate-700">
+          <Card className="bg-neutral-800 border-neutral-700">
             <CardHeader>
               <CardTitle className="text-white">MRR por Período</CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardDescription className="text-gray-400">
                 Receita recorrente mensal
               </CardDescription>
             </CardHeader>
@@ -80,10 +80,10 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/30 border-slate-700">
+          <Card className="bg-neutral-800 border-neutral-700">
             <CardHeader>
               <CardTitle className="text-white">Taxa de Churn</CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardDescription className="text-gray-400">
                 Porcentagem de cancelamentos
               </CardDescription>
             </CardHeader>

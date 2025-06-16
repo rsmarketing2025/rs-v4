@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -68,7 +69,7 @@ const Dashboard = () => {
   const getPageDescription = () => {
     if (location.pathname === '/users') return "Gerenciamento de usuários";
     if (location.pathname === '/business-managers') return "Gerenciamento de Business Managers";
-    return "Insights detalhados de Criativos e Métricas de vendas";
+    return "Visão geral dos principais indicadores de performance";
   };
 
   // Verificar acesso às páginas especiais
@@ -76,10 +77,10 @@ const Dashboard = () => {
     if (!isAdmin && !canAccessPage('users')) {
       return (
         <SidebarInset>
-          <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
+          <div className="min-h-screen bg-black flex items-center justify-center">
             <div className="text-center">
               <h1 className="text-2xl font-bold text-white mb-4">Acesso Negado</h1>
-              <p className="text-slate-400">Você não tem permissão para acessar esta página.</p>
+              <p className="text-gray-400">Você não tem permissão para acessar esta página.</p>
             </div>
           </div>
         </SidebarInset>
@@ -88,21 +89,21 @@ const Dashboard = () => {
     
     return (
       <SidebarInset>
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <div className="min-h-screen bg-black">
           <div className="container mx-auto p-6">
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
               <div className="flex items-center gap-4">
                 <SidebarTrigger className="text-white" />
                 <div>
                   <h1 className="text-5xl font-bold text-white mb-2">{getPageTitle()}</h1>
-                  <p className="text-slate-400 text-lg">{getPageDescription()}</p>
+                  <p className="text-gray-400 text-lg">{getPageDescription()}</p>
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
                 <ThemeToggle />
               </div>
             </div>
-            <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm">
+            <Card className="bg-neutral-900 border-neutral-700 backdrop-blur-sm">
               <CardContent className="p-6">
                 <UsersTab />
               </CardContent>
@@ -117,10 +118,10 @@ const Dashboard = () => {
     if (!isAdmin && !canAccessPage('business-managers')) {
       return (
         <SidebarInset>
-          <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
+          <div className="min-h-screen bg-black flex items-center justify-center">
             <div className="text-center">
               <h1 className="text-2xl font-bold text-white mb-4">Acesso Negado</h1>
-              <p className="text-slate-400">Você não tem permissão para acessar esta página.</p>
+              <p className="text-gray-400">Você não tem permissão para acessar esta página.</p>
             </div>
           </div>
         </SidebarInset>
@@ -129,21 +130,21 @@ const Dashboard = () => {
 
     return (
       <SidebarInset>
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <div className="min-h-screen bg-black">
           <div className="container mx-auto p-6">
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
               <div className="flex items-center gap-4">
                 <SidebarTrigger className="text-white" />
                 <div>
                   <h1 className="text-5xl font-bold text-white mb-2">{getPageTitle()}</h1>
-                  <p className="text-slate-400 text-lg">{getPageDescription()}</p>
+                  <p className="text-gray-400 text-lg">{getPageDescription()}</p>
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
                 <ThemeToggle />
               </div>
             </div>
-            <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm">
+            <Card className="bg-neutral-900 border-neutral-700 backdrop-blur-sm">
               <CardContent className="p-6">
                 <BusinessManagersTab />
               </CardContent>
@@ -156,14 +157,14 @@ const Dashboard = () => {
 
   return (
     <SidebarInset>
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      <div className="min-h-screen bg-black">
         <div className="container mx-auto p-6">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="text-white" />
               <div>
                 <h1 className="text-5xl font-bold text-white mb-2">{getPageTitle()}</h1>
-                <p className="text-slate-400 text-lg">{getPageDescription()}</p>
+                <p className="text-gray-400 text-lg">{getPageDescription()}</p>
               </div>
             </div>
             
@@ -207,30 +208,30 @@ const Dashboard = () => {
             />
           </div>
 
-          <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm">
+          <Card className="bg-neutral-900 border-neutral-700 backdrop-blur-sm">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <CardHeader className="pb-4">
-                <TabsList className="grid w-full grid-cols-4 bg-slate-800/50">
+                <TabsList className="grid w-full grid-cols-4 bg-neutral-800">
                   <PermissionWrapper requirePage="creatives" fallback={null}>
-                    <TabsTrigger value="creatives" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
+                    <TabsTrigger value="creatives" className="data-[state=active]:bg-neutral-700 data-[state=active]:text-white text-gray-300">
                       <Eye className="w-4 h-4 mr-2" />
                       Criativos
                     </TabsTrigger>
                   </PermissionWrapper>
                   <PermissionWrapper requirePage="sales" fallback={null}>
-                    <TabsTrigger value="sales" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
+                    <TabsTrigger value="sales" className="data-[state=active]:bg-neutral-700 data-[state=active]:text-white text-gray-300">
                       <DollarSign className="w-4 h-4 mr-2" />
                       Vendas
                     </TabsTrigger>
                   </PermissionWrapper>
                   <PermissionWrapper requirePage="affiliates" fallback={null}>
-                    <TabsTrigger value="affiliates" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
+                    <TabsTrigger value="affiliates" className="data-[state=active]:bg-neutral-700 data-[state=active]:text-white text-gray-300">
                       <Users className="w-4 h-4 mr-2" />
                       Afiliados
                     </TabsTrigger>
                   </PermissionWrapper>
                   <PermissionWrapper requirePage="subscriptions" fallback={null}>
-                    <TabsTrigger value="subscriptions" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">
+                    <TabsTrigger value="subscriptions" className="data-[state=active]:bg-neutral-700 data-[state=active]:text-white text-gray-300">
                       <Calendar className="w-4 h-4 mr-2" />
                       Assinaturas
                     </TabsTrigger>

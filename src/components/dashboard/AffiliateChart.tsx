@@ -29,34 +29,34 @@ export const AffiliateChart: React.FC<AffiliateChartProps> = ({ affiliates }) =>
 
   return (
     <PermissionWrapper requirePage="affiliates">
-      <Card className="bg-slate-800/30 border-slate-700">
+      <Card className="bg-neutral-800 border-neutral-700">
         <CardHeader>
           <CardTitle className="text-white">Top Afiliados - Receita</CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardDescription className="text-gray-400">
             Top 10 afiliados com maior receita gerada
           </CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={400}>
             <BarChart data={topAffiliates}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#525252" />
               <XAxis 
                 dataKey="name" 
-                stroke="#94a3b8"
+                stroke="#9ca3af"
                 fontSize={12}
                 angle={-45}
                 textAnchor="end"
                 height={80}
               />
               <YAxis 
-                stroke="#94a3b8"
+                stroke="#9ca3af"
                 fontSize={12}
                 tickFormatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`}
               />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: '#1e293b', 
-                  border: '1px solid #475569',
+                  backgroundColor: '#262626', 
+                  border: '1px solid #525252',
                   borderRadius: '8px',
                   color: '#fff'
                 }}
@@ -65,7 +65,7 @@ export const AffiliateChart: React.FC<AffiliateChartProps> = ({ affiliates }) =>
                   'Receita'
                 ]}
               />
-              <Bar dataKey="revenue" fill="#525252" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="revenue" fill="#737373" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>

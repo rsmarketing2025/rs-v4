@@ -20,12 +20,12 @@ export const AffiliatesSummaryCards: React.FC<AffiliatesSummaryCardsProps> = ({
   return (
     <PermissionWrapper requirePage="affiliates">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-slate-800/30 border-slate-700">
+        <Card className="bg-neutral-800 border-neutral-700">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <Users className="w-5 h-5 text-neutral-400" />
+              <Users className="w-5 h-5 text-gray-400" />
               <div>
-                <p className="text-sm text-slate-400">Total de Afiliados</p>
+                <p className="text-sm text-gray-400">Total de Afiliados</p>
                 <p className="text-xl font-bold text-white">
                   {totalMetrics.totalAffiliates.toLocaleString()}
                 </p>
@@ -34,12 +34,12 @@ export const AffiliatesSummaryCards: React.FC<AffiliatesSummaryCardsProps> = ({
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/30 border-slate-700">
+        <Card className="bg-neutral-800 border-neutral-700">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
               <DollarSign className="w-5 h-5 text-green-400" />
               <div>
-                <p className="text-sm text-slate-400">Total Comissões</p>
+                <p className="text-sm text-gray-400">Total Comissões</p>
                 <p className="text-xl font-bold text-white">
                   R$ {totalMetrics.totalCommissions.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
@@ -48,12 +48,12 @@ export const AffiliatesSummaryCards: React.FC<AffiliatesSummaryCardsProps> = ({
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/30 border-slate-700">
+        <Card className="bg-neutral-800 border-neutral-700">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <TrendingUp className="w-5 h-5 text-orange-400" />
+              <TrendingUp className="w-5 h-5 text-green-400" />
               <div>
-                <p className="text-sm text-slate-400">Comissão Média</p>
+                <p className="text-sm text-gray-400">Comissão Média</p>
                 <p className="text-xl font-bold text-white">
                   R$ {totalMetrics.avgCommissionPerAffiliate.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
