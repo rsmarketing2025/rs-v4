@@ -47,11 +47,11 @@ export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
         throw campaignError;
       }
 
-      // Buscar dados de vendas no período selecionado - usar creative_sales como SalesTab
+      // FIXED: Include both "completed" and "Unfulfilled" sales in KPIs
       const { data: salesData, error: salesError } = await supabase
         .from('creative_sales')
         .select('gross_value, status')
-        .eq('status', 'completed') // Apenas vendas completas
+        .in('status', ['completed', 'Unfulfilled']) // Include both statuses
         .gte('sale_date', startDateStr)
         .lte('sale_date', endDateStr);
 
@@ -64,7 +64,7 @@ export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
       // Calcular métricas
       const totalSpent = campaignData?.reduce((acc, campaign) => acc + (campaign.amount_spent || 0), 0) || 0;
       
-      // Usar apenas vendas completadas para o cálculo - mesmo critério do SalesTab
+      // FIXED: Use both completed and Unfulfilled sales for revenue calculation
       const totalRevenue = salesData?.reduce((acc, sale) => acc + (sale.gross_value || 0), 0) || 0;
       const totalOrders = salesData?.length || 0;
       

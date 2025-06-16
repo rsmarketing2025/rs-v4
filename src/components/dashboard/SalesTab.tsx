@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -115,16 +116,15 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   const uniqueCountries = [...new Set(sales.map(sale => sale.country).filter(Boolean))].sort();
   const uniqueStates = [...new Set(sales.map(sale => sale.state).filter(Boolean))].sort();
 
-  // CORREÇÃO: Calcular totalMetrics usando TODOS os sales (não filteredSales) 
-  // para que bata com os KPI cards que também usam todos os dados do período
-  const completedSales = sales.filter(sale => sale.status === 'completed');
-  const totalRevenue = completedSales.reduce((acc, sale) => acc + (sale.gross_value || 0), 0);
-  const totalSales = completedSales.length;
+  // FIXED: Include both "completed" and "Unfulfilled" sales in calculations
+  const validSales = sales.filter(sale => sale.status === 'completed' || sale.status === 'Unfulfilled');
+  const totalRevenue = validSales.reduce((acc, sale) => acc + (sale.gross_value || 0), 0);
+  const totalSales = validSales.length;
   const avgOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
 
   console.log('SalesTab calculations:', {
     totalSales: sales.length,
-    completedSales: completedSales.length,
+    validSales: validSales.length,
     totalRevenue,
     avgOrderValue,
     dateRange
@@ -147,7 +147,8 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
       acc[state] = { total_sales: 0, total_revenue: 0 };
     }
     acc[state].total_sales += 1;
-    if (sale.status === 'completed') {
+    // FIXED: Include both "completed" and "Unfulfilled" sales
+    if (sale.status === 'completed' || sale.status === 'Unfulfilled') {
       acc[state].total_revenue += (sale.gross_value || 0);
     }
     return acc;
@@ -168,7 +169,8 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
       acc[creativeName] = { total_sales: 0, total_revenue: 0 };
     }
     acc[creativeName].total_sales += 1;
-    if (sale.status === 'completed') {
+    // FIXED: Include both "completed" and "Unfulfilled" sales
+    if (sale.status === 'completed' || sale.status === 'Unfulfilled') {
       acc[creativeName].total_revenue += (sale.gross_value || 0);
     }
     return acc;
@@ -192,7 +194,8 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
     }
     
     acc[country].orders += 1;
-    if (sale.status === 'completed') {
+    // FIXED: Include both "completed" and "Unfulfilled" sales
+    if (sale.status === 'completed' || sale.status === 'Unfulfilled') {
       acc[country].revenue += (sale.gross_value || 0);
     }
     
@@ -200,7 +203,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
       acc[country].states[state] = { orders: 0, revenue: 0 };
     }
     acc[country].states[state].orders += 1;
-    if (sale.status === 'completed') {
+    if (sale.status === 'completed' || sale.status === 'Unfulfilled') {
       acc[country].states[state].revenue += (sale.gross_value || 0);
     }
     
@@ -224,6 +227,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
         case 'completed': return 'Concluído';
         case 'refunded': return 'Reembolsado';
         case 'chargeback': return 'Chargeback';
+        case 'Unfulfilled': return 'Não Cumprido';
         default: return status;
       }
     };

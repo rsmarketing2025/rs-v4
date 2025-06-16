@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -46,7 +47,8 @@ export const SalesChart: React.FC<SalesChartProps> = ({ sales, dateRange }) => {
 
   // Prepare revenue data based on the period
   const prepareRevenueData = () => {
-    const completedSales = sales.filter(sale => sale.status === 'completed');
+    // FIXED: Include both "completed" and "Unfulfilled" sales
+    const validSales = sales.filter(sale => sale.status === 'completed' || sale.status === 'Unfulfilled');
     
     if (chartPeriod === 'single-day') {
       // For single day, show hourly breakdown
@@ -58,7 +60,7 @@ export const SalesChart: React.FC<SalesChartProps> = ({ sales, dateRange }) => {
         hourlyRevenue[hourStr] = 0;
       }
       
-      completedSales.forEach(sale => {
+      validSales.forEach(sale => {
         const hour = format(parseISO(sale.sale_date), 'HH:00');
         hourlyRevenue[hour] = (hourlyRevenue[hour] || 0) + (sale.gross_value || 0);
       });
@@ -73,7 +75,7 @@ export const SalesChart: React.FC<SalesChartProps> = ({ sales, dateRange }) => {
       const days = eachDayOfInterval({ start: dateRange.from, end: dateRange.to });
       
       return days.map(day => {
-        const dayRevenue = completedSales
+        const dayRevenue = validSales
           .filter(sale => isSameDay(parseISO(sale.sale_date), day))
           .reduce((sum, sale) => sum + (sale.gross_value || 0), 0);
         
@@ -94,7 +96,7 @@ export const SalesChart: React.FC<SalesChartProps> = ({ sales, dateRange }) => {
         const monthStart = startOfMonth(month);
         const monthEnd = endOfMonth(month);
         
-        const monthRevenue = completedSales
+        const monthRevenue = validSales
           .filter(sale => {
             const saleDate = parseISO(sale.sale_date);
             return saleDate >= monthStart && saleDate <= monthEnd;
@@ -110,7 +112,7 @@ export const SalesChart: React.FC<SalesChartProps> = ({ sales, dateRange }) => {
     
     else {
       // Default daily view
-      const dailyRevenue = completedSales.reduce((acc, sale) => {
+      const dailyRevenue = validSales.reduce((acc, sale) => {
         const date = format(parseISO(sale.sale_date), 'dd/MM', { locale: ptBR });
         acc[date] = (acc[date] || 0) + (sale.gross_value || 0);
         return acc;
@@ -138,12 +140,13 @@ export const SalesChart: React.FC<SalesChartProps> = ({ sales, dateRange }) => {
   const statusData = Object.entries(statusDistribution).map(([status, data]) => ({
     name: status === 'completed' ? 'Concluído' : 
           status === 'refunded' ? 'Reembolsado' : 
-          status === 'chargeback' ? 'Chargeback' : status,
+          status === 'chargeback' ? 'Chargeback' :
+          status === 'Unfulfilled' ? 'Não Cumprido' : status,
     value: data.count,
     monetaryValue: data.value
   }));
 
-  const COLORS = ['#10b981', '#ef4444', '#f59e0b', '#3b82f6'];
+  const COLORS = ['#10b981', '#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6'];
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {

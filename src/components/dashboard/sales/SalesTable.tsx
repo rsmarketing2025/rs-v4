@@ -46,6 +46,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
       case 'completed': return "bg-green-500/20 text-green-400";
       case 'refunded': return "bg-red-500/20 text-red-400";
       case 'chargeback': return "bg-orange-500/20 text-orange-400";
+      case 'Unfulfilled': return "bg-yellow-500/20 text-yellow-400";
       default: return "bg-slate-500/20 text-slate-400";
     }
   };
@@ -55,6 +56,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
       case 'completed': return 'Concluído';
       case 'refunded': return 'Reembolsado';
       case 'chargeback': return 'Chargeback';
+      case 'Unfulfilled': return 'Não Cumprido';
       default: return status;
     }
   };

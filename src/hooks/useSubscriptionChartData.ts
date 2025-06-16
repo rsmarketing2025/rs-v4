@@ -13,12 +13,35 @@ interface DateRange {
   to: Date;
 }
 
+interface TimelineData {
+  date: string;
+  subscriptions: number;
+  cancellations: number;
+}
+
+interface PlanData {
+  name: string;
+  value: number;
+}
+
+interface MrrData {
+  date: string;
+  mrr: number;
+}
+
+interface ChurnData {
+  date: string;
+  churnRate: number;
+}
+
+type ChartData = TimelineData[] | PlanData[] | MrrData[] | ChurnData[];
+
 export const useSubscriptionChartData = (
   type: string,
   dateRange: DateRange,
   filters: ChartFilters
 ) => {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<ChartData>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -61,7 +84,7 @@ export const useSubscriptionChartData = (
               }
             });
 
-            const timelineData = Object.entries(groupedByDate).map(([date, values]) => ({
+            const timelineData: TimelineData[] = Object.entries(groupedByDate).map(([date, values]) => ({
               date,
               subscriptions: values.subscriptions,
               cancellations: values.cancellations
@@ -78,7 +101,7 @@ export const useSubscriptionChartData = (
                 planCounts[event.plan] = (planCounts[event.plan] || 0) + 1;
               });
 
-            const planData = Object.entries(planCounts).map(([name, value]) => ({
+            const planData: PlanData[] = Object.entries(planCounts).map(([name, value]) => ({
               name: name.charAt(0).toUpperCase() + name.slice(1),
               value
             }));
@@ -95,7 +118,7 @@ export const useSubscriptionChartData = (
                 mrrByMonth[month] = (mrrByMonth[month] || 0) + (event.amount || 0);
               });
 
-            const mrrData = Object.entries(mrrByMonth).map(([date, mrr]) => ({
+            const mrrData: MrrData[] = Object.entries(mrrByMonth).map(([date, mrr]) => ({
               date,
               mrr
             }));
@@ -103,7 +126,7 @@ export const useSubscriptionChartData = (
             setData(mrrData);
           } else if (type === 'churn-rate') {
             // Calcular taxa de churn por período
-            const churnData = [
+            const churnData: ChurnData[] = [
               { date: 'Jan', churnRate: 5.2 },
               { date: 'Fev', churnRate: 4.8 },
               { date: 'Mar', churnRate: 6.1 },
