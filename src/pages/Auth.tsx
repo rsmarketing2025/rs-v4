@@ -11,7 +11,7 @@ const Auth = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-2">
           <img 
-            src="https://recuperacaoexponencial.com.br/wp-content/uploads/2025/06/ChatGPT-Image-31-de-mai.-de-2025-23_39_35.png" 
+            src="/lovable-uploads/7d2bb631-1daa-4855-9350-e0d2e5a31475.png" 
             alt="Logo da Empresa" 
             className="h-64 w-auto mx-auto mb-2"
           />

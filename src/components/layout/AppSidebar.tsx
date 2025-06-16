@@ -1,3 +1,4 @@
+
 import {
   Sidebar,
   SidebarContent,
@@ -52,7 +53,7 @@ export function AppSidebar() {
     <Sidebar className="bg-blue-950 border-blue-800">
       <SidebarHeader className="p-6 bg-blue-900 flex items-center justify-center">
         <img 
-          src="https://recuperacaoexponencial.com.br/wp-content/uploads/2025/06/ChatGPT-Image-31-de-mai.-de-2025-23_39_35.png" 
+          src="/lovable-uploads/7d2bb631-1daa-4855-9350-e0d2e5a31475.png" 
           alt="Logo da Empresa" 
           className="h-32 w-auto max-w-[70%] object-contain"
         />
