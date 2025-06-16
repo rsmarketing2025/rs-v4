@@ -2,10 +2,21 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+interface ChartFilters {
+  plan: string;
+  eventType: string;
+  paymentMethod: string;
+}
+
+interface DateRange {
+  from: Date;
+  to: Date;
+}
+
 export const useSubscriptionChartData = (
   type: string,
-  dateRange: { from: Date; to: Date },
-  filters: { plan: string; eventType: string; paymentMethod: string }
+  dateRange: DateRange,
+  filters: ChartFilters
 ) => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +47,7 @@ export const useSubscriptionChartData = (
         if (events) {
           if (type === 'timeline') {
             // Agrupar por data
-            const groupedByDate = events.reduce((acc: any, event) => {
+            const groupedByDate = events.reduce((acc: Record<string, any>, event) => {
               const date = new Date(event.event_date).toLocaleDateString('pt-BR');
               if (!acc[date]) {
                 acc[date] = { subscriptions: 0, cancellations: 0 };
@@ -60,7 +71,7 @@ export const useSubscriptionChartData = (
             // Contar por plano
             const planCounts = events
               .filter(e => e.event_type === 'subscription')
-              .reduce((acc: any, event) => {
+              .reduce((acc: Record<string, number>, event) => {
                 acc[event.plan] = (acc[event.plan] || 0) + 1;
                 return acc;
               }, {});
@@ -75,7 +86,7 @@ export const useSubscriptionChartData = (
             // Calcular MRR por mês
             const mrrByMonth = events
               .filter(e => e.event_type === 'subscription')
-              .reduce((acc: any, event) => {
+              .reduce((acc: Record<string, number>, event) => {
                 const month = new Date(event.event_date).toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' });
                 acc[month] = (acc[month] || 0) + (event.amount || 0);
                 return acc;

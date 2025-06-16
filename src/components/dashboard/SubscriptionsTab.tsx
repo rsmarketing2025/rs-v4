@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SubscriptionsSummaryCards } from "./subscriptions/SubscriptionsSummaryCards";
@@ -34,13 +33,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
         <SubscriptionsSummaryCards dateRange={dateRange} filters={filters} />
 
         <Card className="bg-neutral-800 border-neutral-700">
-          <CardHeader>
-            <CardTitle className="text-white">Filtros</CardTitle>
-            <CardDescription className="text-gray-400">
-              Filtrar eventos por plano, tipo e método de pagamento
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <SubscriptionFilters filters={filters} onFiltersChange={setFilters} />
           </CardContent>
         </Card>
