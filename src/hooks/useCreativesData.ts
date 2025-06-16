@@ -32,7 +32,18 @@ interface CreativeMetrics {
   tags: string[];
 }
 
-export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
+interface TotalMetrics {
+  spent: number;
+  views: number;
+  sales: number;
+  revenue: number;
+}
+
+export const useCreativesData = (
+  dateRange: { from: Date; to: Date },
+  creativesFilter?: string[],
+  statusFilter?: string
+) => {
   const [creatives, setCreatives] = useState<CreativeMetrics[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -134,10 +145,6 @@ export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
           const creative = creativesMap.get(key);
           creative.sales.push(sale);
           
-          // Note: The database schema doesn't have a 'produto' column, 
-          // so we'll check for other relevant product fields
-          // You may need to adjust this based on your actual database schema
-          
           // Collect all unique tags from sales
           if (sale.tags && Array.isArray(sale.tags)) {
             sale.tags.forEach((tag: string) => {
@@ -206,7 +213,22 @@ export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
         };
       });
 
-      setCreatives(processedCreatives);
+      // Apply filters
+      let filteredCreatives = processedCreatives;
+      
+      if (creativesFilter && creativesFilter.length > 0) {
+        filteredCreatives = filteredCreatives.filter(creative => 
+          creativesFilter.includes(creative.creative_name)
+        );
+      }
+      
+      if (statusFilter && statusFilter !== 'all') {
+        filteredCreatives = filteredCreatives.filter(creative => 
+          creative.status === statusFilter
+        );
+      }
+
+      setCreatives(filteredCreatives);
     } catch (error) {
       console.error('Error fetching creatives:', error);
       toast({
@@ -221,7 +243,26 @@ export const useCreativesData = (dateRange: { from: Date; to: Date }) => {
 
   useEffect(() => {
     fetchCreatives();
-  }, [dateRange]);
+  }, [dateRange, creativesFilter, statusFilter]);
 
-  return { creatives, loading, refetch: fetchCreatives };
+  // Calculate total metrics
+  const totalMetrics: TotalMetrics = {
+    spent: creatives.reduce((sum, creative) => sum + creative.amount_spent, 0),
+    views: creatives.reduce((sum, creative) => sum + creative.views_total, 0),
+    sales: creatives.reduce((sum, creative) => sum + creative.sales_count, 0),
+    revenue: creatives.reduce((sum, creative) => sum + creative.gross_sales, 0)
+  };
+
+  // Calculate average ROI
+  const avgROI = creatives.length > 0 
+    ? creatives.reduce((sum, creative) => sum + creative.roi, 0) / creatives.length 
+    : 0;
+
+  return { 
+    creatives, 
+    loading, 
+    refetch: fetchCreatives,
+    totalMetrics,
+    avgROI
+  };
 };

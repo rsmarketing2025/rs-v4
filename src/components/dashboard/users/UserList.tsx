@@ -35,6 +35,23 @@ interface UserProfile {
   };
 }
 
+interface User {
+  id: string;
+  full_name: string;
+  email: string;
+  username: string;
+  role: 'user' | 'admin' | 'business_manager';
+  permissions: {
+    creatives: boolean;
+    sales: boolean;
+    affiliates: boolean;
+    revenue: boolean;
+    users: boolean;
+    'business-managers': boolean;
+    subscriptions: boolean;
+  };
+}
+
 interface UserListProps {
   refreshTrigger: number;
   currentUserRole: string | null;
@@ -49,7 +66,7 @@ export const UserList: React.FC<UserListProps> = ({
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userToDelete, setUserToDelete] = useState<{ id: string; name: string } | null>(null);
   const [deletingUser, setDeletingUser] = useState(false);
   const { toast } = useToast();
@@ -206,6 +223,25 @@ export const UserList: React.FC<UserListProps> = ({
     return currentUserRole === 'admin'; // Apenas admins podem deletar
   };
 
+  const convertToModalUser = (user: UserProfile): User => {
+    return {
+      id: user.id,
+      full_name: user.full_name,
+      email: user.email,
+      username: user.username || '',
+      role: user.role === 'gestor' ? 'business_manager' : user.role,
+      permissions: {
+        creatives: user.pagePermissions.creatives,
+        sales: user.pagePermissions.sales,
+        affiliates: user.pagePermissions.affiliates,
+        revenue: user.pagePermissions.revenue,
+        users: user.pagePermissions.users,
+        'business-managers': true,
+        subscriptions: true
+      }
+    };
+  };
+
   const filteredUsers = users.filter(user => 
     user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -301,7 +337,7 @@ export const UserList: React.FC<UserListProps> = ({
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setSelectedUser(user)}
+                            onClick={() => setSelectedUser(convertToModalUser(user))}
                             className="border-slate-600 text-slate-300 hover:bg-slate-800"
                           >
                             <Edit className="w-3 h-3" />
@@ -334,6 +370,7 @@ export const UserList: React.FC<UserListProps> = ({
           isOpen={!!selectedUser}
           currentUserRole={currentUserRole}
           onClose={() => setSelectedUser(null)}
+          onUserUpdated={onUserUpdated}
           onUpdate={() => {
             onUserUpdated();
             setSelectedUser(null);

@@ -24,6 +24,11 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
     avgROI 
   } = useCreativesData(dateRange, creativesFilter, statusFilter);
 
+  // Mock CSV export function
+  const handleExportCSV = () => {
+    console.log('Exporting CSV...');
+  };
+
   return (
     <div className="space-y-6">
       <CreativesSummaryCards 
@@ -47,17 +52,11 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
         dateRange={dateRange}
       />
       
-      <CreativesFilters
-        creativesFilter={creativesFilter}
-        onCreativesFilterChange={setCreativesFilter}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        creatives={creatives}
-      />
-      
       <CreativesTable 
         creatives={creatives}
         loading={loading}
+        filteredCreatives={creatives}
+        onExportCSV={handleExportCSV}
       />
     </div>
   );

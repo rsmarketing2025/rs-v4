@@ -53,13 +53,14 @@ export const useSubscriptionMetrics = (
       try {
         setLoading(true);
 
-        // Build query with proper typing
+        // Build base query
         let query = supabase
           .from('subscription_events')
           .select('*')
           .gte('event_date', dateRange.from.toISOString())
           .lte('event_date', dateRange.to.toISOString());
 
+        // Apply filters conditionally
         if (filters.plan !== 'all') {
           query = query.eq('plan', filters.plan);
         }
@@ -70,9 +71,14 @@ export const useSubscriptionMetrics = (
           query = query.eq('payment_method', filters.paymentMethod);
         }
 
-        const { data: events } = await query;
+        const { data: events, error } = await query;
 
-        if (events) {
+        if (error) {
+          console.error('Error fetching subscription events:', error);
+          return;
+        }
+
+        if (events && events.length > 0) {
           // Calcular métricas principais
           const subscriptions = events.filter(e => e.event_type === 'subscription');
           const cancellations = events.filter(e => e.event_type === 'cancellation');
@@ -121,7 +127,7 @@ export const useSubscriptionMetrics = (
     };
 
     fetchMetrics();
-  }, [dateRange, filters]);
+  }, [dateRange.from, dateRange.to, filters.plan, filters.eventType, filters.paymentMethod]);
 
   return { metrics, loading };
 };

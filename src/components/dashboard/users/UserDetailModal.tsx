@@ -31,13 +31,17 @@ interface UserDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUserUpdated: () => void;
+  currentUserRole?: string | null;
+  onUpdate?: () => void;
 }
 
 export const UserDetailModal: React.FC<UserDetailModalProps> = ({
   user,
   isOpen,
   onClose,
-  onUserUpdated
+  onUserUpdated,
+  currentUserRole,
+  onUpdate
 }) => {
   const [loading, setLoading] = useState(false);
   const [editedUser, setEditedUser] = useState<User | null>(user);
@@ -71,14 +75,17 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
 
       if (roleError) throw roleError;
 
-      // Update permissions
-      const permissionUpdates = Object.entries(editedUser.permissions).map(([page, canAccess]) => 
-        supabase
+      // Update permissions - handle the 'business-managers' key properly
+      const permissionUpdates = Object.entries(editedUser.permissions).map(([page, canAccess]) => {
+        // Map 'business-managers' to the correct database value
+        const dbPageName = page === 'business-managers' ? 'business-managers' as const : page;
+        
+        return supabase
           .from('user_page_permissions')
           .update({ can_access: canAccess })
           .eq('user_id', editedUser.id)
-          .eq('page', page)
-      );
+          .eq('page', dbPageName);
+      });
 
       await Promise.all(permissionUpdates);
 
@@ -88,6 +95,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
       });
 
       onUserUpdated();
+      if (onUpdate) onUpdate();
       onClose();
     } catch (error) {
       console.error('Error updating user:', error);
