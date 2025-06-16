@@ -1,9 +1,9 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SubscriptionsSummaryCards } from "./subscriptions/SubscriptionsSummaryCards";
 import { SubscriptionsChart } from "./subscriptions/SubscriptionsChart";
 import { SubscriptionsTable } from "./subscriptions/SubscriptionsTable";
-import { SubscriptionFilters } from "./subscriptions/SubscriptionFilters";
 import { PermissionWrapper } from "@/components/common/PermissionWrapper";
 
 interface SubscriptionsTabProps {
@@ -31,12 +31,6 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
         </div>
 
         <SubscriptionsSummaryCards dateRange={dateRange} filters={filters} />
-
-        <Card className="bg-neutral-800 border-neutral-700">
-          <CardContent className="pt-6">
-            <SubscriptionFilters filters={filters} onFiltersChange={setFilters} />
-          </CardContent>
-        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="bg-neutral-800 border-neutral-700">

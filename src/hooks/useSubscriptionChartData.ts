@@ -47,20 +47,21 @@ export const useSubscriptionChartData = (
         if (events) {
           if (type === 'timeline') {
             // Agrupar por data
-            const groupedByDate = events.reduce((acc: Record<string, any>, event) => {
+            const groupedByDate: Record<string, { subscriptions: number; cancellations: number }> = {};
+            
+            events.forEach(event => {
               const date = new Date(event.event_date).toLocaleDateString('pt-BR');
-              if (!acc[date]) {
-                acc[date] = { subscriptions: 0, cancellations: 0 };
+              if (!groupedByDate[date]) {
+                groupedByDate[date] = { subscriptions: 0, cancellations: 0 };
               }
               if (event.event_type === 'subscription') {
-                acc[date].subscriptions++;
+                groupedByDate[date].subscriptions++;
               } else if (event.event_type === 'cancellation') {
-                acc[date].cancellations++;
+                groupedByDate[date].cancellations++;
               }
-              return acc;
-            }, {});
+            });
 
-            const timelineData = Object.entries(groupedByDate).map(([date, values]: [string, any]) => ({
+            const timelineData = Object.entries(groupedByDate).map(([date, values]) => ({
               date,
               subscriptions: values.subscriptions,
               cancellations: values.cancellations
@@ -69,12 +70,13 @@ export const useSubscriptionChartData = (
             setData(timelineData);
           } else if (type === 'plan-distribution') {
             // Contar por plano
-            const planCounts = events
+            const planCounts: Record<string, number> = {};
+            
+            events
               .filter(e => e.event_type === 'subscription')
-              .reduce((acc: Record<string, number>, event) => {
-                acc[event.plan] = (acc[event.plan] || 0) + 1;
-                return acc;
-              }, {});
+              .forEach(event => {
+                planCounts[event.plan] = (planCounts[event.plan] || 0) + 1;
+              });
 
             const planData = Object.entries(planCounts).map(([name, value]) => ({
               name: name.charAt(0).toUpperCase() + name.slice(1),
@@ -84,13 +86,14 @@ export const useSubscriptionChartData = (
             setData(planData);
           } else if (type === 'mrr') {
             // Calcular MRR por mês
-            const mrrByMonth = events
+            const mrrByMonth: Record<string, number> = {};
+            
+            events
               .filter(e => e.event_type === 'subscription')
-              .reduce((acc: Record<string, number>, event) => {
+              .forEach(event => {
                 const month = new Date(event.event_date).toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' });
-                acc[month] = (acc[month] || 0) + (event.amount || 0);
-                return acc;
-              }, {});
+                mrrByMonth[month] = (mrrByMonth[month] || 0) + (event.amount || 0);
+              });
 
             const mrrData = Object.entries(mrrByMonth).map(([date, mrr]) => ({
               date,
