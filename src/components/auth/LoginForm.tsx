@@ -53,11 +53,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
   };
 
   return (
-    <Card className="w-full max-w-md bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+    <Card className="w-full max-w-md bg-black/80 border-gray-700 backdrop-blur-sm">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl text-white">Entrar</CardTitle>
-        <CardDescription className="text-slate-400">
-          Acesse sua conta para continuar
+        <CardDescription className="text-gray-400">
+          Entre com suas credenciais para acessar o dashboard
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -65,7 +65,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
           <div className="space-y-2">
             <Label htmlFor="email" className="text-white">Email</Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
                 id="email"
                 type="email"
@@ -73,7 +73,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="pl-10 bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-400"
+                className="pl-10 bg-black/50 border-gray-600 text-gray-300 placeholder:text-gray-500"
               />
             </div>
           </div>
@@ -81,7 +81,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
           <div className="space-y-2">
             <Label htmlFor="password" className="text-white">Senha</Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
@@ -89,7 +89,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="pl-10 pr-10 bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-400"
+                className="pl-10 pr-10 bg-black/50 border-gray-600 text-gray-300 placeholder:text-gray-500"
               />
               <Button
                 type="button"
@@ -99,9 +99,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? (
-                  <EyeOff className="h-4 w-4 text-slate-400" />
+                  <EyeOff className="h-4 w-4 text-gray-400" />
                 ) : (
-                  <Eye className="h-4 w-4 text-slate-400" />
+                  <Eye className="h-4 w-4 text-gray-400" />
                 )}
               </Button>
             </div>
@@ -109,7 +109,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToSignUp }) => {
 
           <Button 
             type="submit" 
-            className="w-full bg-neutral-900 hover:bg-neutral-800"
+            className="w-full bg-white text-black hover:bg-gray-200"
             disabled={loading}
           >
             {loading ? "Entrando..." : "Entrar"}

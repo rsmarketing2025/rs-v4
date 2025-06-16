@@ -76,10 +76,10 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
   };
 
   return (
-    <Card className="w-full max-w-md bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+    <Card className="w-full max-w-md bg-black/80 border-gray-700 backdrop-blur-sm">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl text-white">Criar Conta</CardTitle>
-        <CardDescription className="text-slate-400">
+        <CardDescription className="text-gray-400">
           Preencha os dados para se cadastrar
         </CardDescription>
       </CardHeader>
@@ -88,7 +88,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
           <div className="space-y-2">
             <Label htmlFor="fullName" className="text-white">Nome Completo</Label>
             <div className="relative">
-              <User className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
                 id="fullName"
                 type="text"
@@ -96,7 +96,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
-                className="pl-10 bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-400"
+                className="pl-10 bg-black/50 border-gray-600 text-gray-300 placeholder:text-gray-500"
               />
             </div>
           </div>
@@ -104,7 +104,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
           <div className="space-y-2">
             <Label htmlFor="email" className="text-white">Email</Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
                 id="email"
                 type="email"
@@ -112,7 +112,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="pl-10 bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-400"
+                className="pl-10 bg-black/50 border-gray-600 text-gray-300 placeholder:text-gray-500"
               />
             </div>
           </div>
@@ -120,7 +120,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
           <div className="space-y-2">
             <Label htmlFor="password" className="text-white">Senha</Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
@@ -128,7 +128,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="pl-10 pr-10 bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-400"
+                className="pl-10 pr-10 bg-black/50 border-gray-600 text-gray-300 placeholder:text-gray-500"
               />
               <Button
                 type="button"
@@ -138,9 +138,9 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? (
-                  <EyeOff className="h-4 w-4 text-slate-400" />
+                  <EyeOff className="h-4 w-4 text-gray-400" />
                 ) : (
-                  <Eye className="h-4 w-4 text-slate-400" />
+                  <Eye className="h-4 w-4 text-gray-400" />
                 )}
               </Button>
             </div>
@@ -149,7 +149,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
           <div className="space-y-2">
             <Label htmlFor="confirmPassword" className="text-white">Confirmar Senha</Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
                 id="confirmPassword"
                 type={showConfirmPassword ? "text" : "password"}
@@ -157,7 +157,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="pl-10 pr-10 bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-400"
+                className="pl-10 pr-10 bg-black/50 border-gray-600 text-gray-300 placeholder:text-gray-500"
               />
               <Button
                 type="button"
@@ -167,9 +167,9 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               >
                 {showConfirmPassword ? (
-                  <EyeOff className="h-4 w-4 text-slate-400" />
+                  <EyeOff className="h-4 w-4 text-gray-400" />
                 ) : (
-                  <Eye className="h-4 w-4 text-slate-400" />
+                  <Eye className="h-4 w-4 text-gray-400" />
                 )}
               </Button>
             </div>
@@ -177,7 +177,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
 
           <Button 
             type="submit" 
-            className="w-full bg-neutral-900 hover:bg-neutral-800"
+            className="w-full bg-white text-black hover:bg-gray-200"
             disabled={loading}
           >
             {loading ? "Criando conta..." : "Criar Conta"}
@@ -187,7 +187,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSwitchToLogin }) => {
             <button
               type="button"
               onClick={onSwitchToLogin}
-              className="text-sm text-neutral-400 hover:text-neutral-300 underline"
+              className="text-sm text-gray-400 hover:text-gray-300 underline"
             >
               Já tem uma conta? Faça login
             </button>
