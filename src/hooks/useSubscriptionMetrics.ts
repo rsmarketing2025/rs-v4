@@ -125,4 +125,3 @@ export const useSubscriptionMetrics = (
 
   return { metrics, loading };
 };
-</lov-code>
