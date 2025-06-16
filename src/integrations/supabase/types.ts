@@ -9,11 +9,11 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      business_managers: {
+      business_manager_accounts: {
         Row: {
           access_token: string
-          ad_account_id: string
-          ad_account_name: string
+          ad_account_id: string | null
+          ad_account_name: string | null
           app_id: string | null
           app_secret: string | null
           bm_name: string
@@ -24,8 +24,8 @@ export type Database = {
         }
         Insert: {
           access_token: string
-          ad_account_id: string
-          ad_account_name: string
+          ad_account_id?: string | null
+          ad_account_name?: string | null
           app_id?: string | null
           app_secret?: string | null
           bm_name: string
@@ -36,8 +36,8 @@ export type Database = {
         }
         Update: {
           access_token?: string
-          ad_account_id?: string
-          ad_account_name?: string
+          ad_account_id?: string | null
+          ad_account_name?: string | null
           app_id?: string | null
           app_secret?: string | null
           bm_name?: string
@@ -45,99 +45,6 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      campaigns: {
-        Row: {
-          ad_id: string
-          ad_name: string
-          adset_id: string
-          adset_name: string
-          amount_spent: number
-          bm: string
-          body_rate: number | null
-          campaign_id: string
-          campaign_name: string
-          clicks: number | null
-          cost_per_click: number | null
-          cost_per_mille: number | null
-          created_at: string
-          creative_name: string | null
-          cta_rate: number | null
-          ctr: number | null
-          date_reported: string
-          frequency: number | null
-          hook_rate: number | null
-          id: string
-          impressions: number | null
-          link_clicks: number | null
-          ph_hook_rate: number | null
-          reach: number | null
-          updated_at: string
-          views_3s: number | null
-          views_75_percent: number | null
-          views_total: number | null
-        }
-        Insert: {
-          ad_id: string
-          ad_name: string
-          adset_id: string
-          adset_name: string
-          amount_spent?: number
-          bm: string
-          body_rate?: number | null
-          campaign_id: string
-          campaign_name: string
-          clicks?: number | null
-          cost_per_click?: number | null
-          cost_per_mille?: number | null
-          created_at?: string
-          creative_name?: string | null
-          cta_rate?: number | null
-          ctr?: number | null
-          date_reported: string
-          frequency?: number | null
-          hook_rate?: number | null
-          id?: string
-          impressions?: number | null
-          link_clicks?: number | null
-          ph_hook_rate?: number | null
-          reach?: number | null
-          updated_at?: string
-          views_3s?: number | null
-          views_75_percent?: number | null
-          views_total?: number | null
-        }
-        Update: {
-          ad_id?: string
-          ad_name?: string
-          adset_id?: string
-          adset_name?: string
-          amount_spent?: number
-          bm?: string
-          body_rate?: number | null
-          campaign_id?: string
-          campaign_name?: string
-          clicks?: number | null
-          cost_per_click?: number | null
-          cost_per_mille?: number | null
-          created_at?: string
-          creative_name?: string | null
-          cta_rate?: number | null
-          ctr?: number | null
-          date_reported?: string
-          frequency?: number | null
-          hook_rate?: number | null
-          id?: string
-          impressions?: number | null
-          link_clicks?: number | null
-          ph_hook_rate?: number | null
-          reach?: number | null
-          updated_at?: string
-          views_3s?: number | null
-          views_75_percent?: number | null
-          views_total?: number | null
         }
         Relationships: []
       }
@@ -224,7 +131,8 @@ export type Database = {
           affiliate_commission: number | null
           affiliate_id: string | null
           affiliate_name: string | null
-          commission_value: number | null
+          comission_value_coprodutor: number | null
+          commission_value_produtor: number | null
           country: string | null
           created_at: string | null
           creative_name: string
@@ -238,7 +146,6 @@ export type Database = {
           net_value: number | null
           order_id: string
           payment_method: string
-          produto: string | null
           sale_date: string | null
           state: string | null
           status: string
@@ -250,7 +157,8 @@ export type Database = {
           affiliate_commission?: number | null
           affiliate_id?: string | null
           affiliate_name?: string | null
-          commission_value?: number | null
+          comission_value_coprodutor?: number | null
+          commission_value_produtor?: number | null
           country?: string | null
           created_at?: string | null
           creative_name: string
@@ -264,7 +172,6 @@ export type Database = {
           net_value?: number | null
           order_id: string
           payment_method: string
-          produto?: string | null
           sale_date?: string | null
           state?: string | null
           status?: string
@@ -276,7 +183,8 @@ export type Database = {
           affiliate_commission?: number | null
           affiliate_id?: string | null
           affiliate_name?: string | null
-          commission_value?: number | null
+          comission_value_coprodutor?: number | null
+          commission_value_produtor?: number | null
           country?: string | null
           created_at?: string | null
           creative_name?: string
@@ -290,7 +198,6 @@ export type Database = {
           net_value?: number | null
           order_id?: string
           payment_method?: string
-          produto?: string | null
           sale_date?: string | null
           state?: string | null
           status?: string
@@ -300,259 +207,146 @@ export type Database = {
         }
         Relationships: []
       }
-      profiles: {
+      product_sales: {
         Row: {
           created_at: string
-          email: string
-          full_name: string
           id: string
-          phone: string | null
-          status: string | null
+          is_subscription: boolean | null
+          order_id: string
+          product_id: string
+          product_name: string
+          sale_date: string
+          sale_value: number
           updated_at: string
-          username: string | null
         }
         Insert: {
           created_at?: string
-          email: string
-          full_name: string
-          id: string
-          phone?: string | null
-          status?: string | null
+          id?: string
+          is_subscription?: boolean | null
+          order_id: string
+          product_id: string
+          product_name: string
+          sale_date?: string
+          sale_value?: number
           updated_at?: string
-          username?: string | null
         }
         Update: {
           created_at?: string
-          email?: string
-          full_name?: string
           id?: string
-          phone?: string | null
-          status?: string | null
+          is_subscription?: boolean | null
+          order_id?: string
+          product_id?: string
+          product_name?: string
+          sale_date?: string
+          sale_value?: number
           updated_at?: string
-          username?: string | null
         }
         Relationships: []
       }
-      sales: {
+      profiles: {
         Row: {
-          ad_id: string
-          ad_name: string
-          affiliate_commission: number | null
-          cart_discount: number | null
-          commission_cartpanda: number | null
-          conversion_value: number | null
-          country: string | null
-          created_at: string
-          creative_name: string | null
-          customer_email: string | null
-          customer_name: string
-          customer_phone: string | null
-          discount_percentage: number | null
-          gross_value: number | null
+          avatar_url: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
           id: string
-          net_value_with_discounts: number | null
-          order_id: string
-          payment_method: string
-          profit_margin: number | null
-          sale_date: string
-          state: string | null
-          status: string
-          tax_value: number | null
-          total_value_with_taxes: number | null
-          updated_at: string
-          value: number
+          updated_at: string | null
+          username: string | null
         }
         Insert: {
-          ad_id: string
-          ad_name: string
-          affiliate_commission?: number | null
-          cart_discount?: number | null
-          commission_cartpanda?: number | null
-          conversion_value?: number | null
-          country?: string | null
-          created_at?: string
-          creative_name?: string | null
-          customer_email?: string | null
-          customer_name: string
-          customer_phone?: string | null
-          discount_percentage?: number | null
-          gross_value?: number | null
-          id?: string
-          net_value_with_discounts?: number | null
-          order_id: string
-          payment_method: string
-          profit_margin?: number | null
-          sale_date: string
-          state?: string | null
-          status: string
-          tax_value?: number | null
-          total_value_with_taxes?: number | null
-          updated_at?: string
-          value: number
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+          username?: string | null
         }
         Update: {
-          ad_id?: string
-          ad_name?: string
-          affiliate_commission?: number | null
-          cart_discount?: number | null
-          commission_cartpanda?: number | null
-          conversion_value?: number | null
-          country?: string | null
-          created_at?: string
-          creative_name?: string | null
-          customer_email?: string | null
-          customer_name?: string
-          customer_phone?: string | null
-          discount_percentage?: number | null
-          gross_value?: number | null
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
           id?: string
-          net_value_with_discounts?: number | null
-          order_id?: string
-          payment_method?: string
-          profit_margin?: number | null
-          sale_date?: string
-          state?: string | null
-          status?: string
-          tax_value?: number | null
-          total_value_with_taxes?: number | null
-          updated_at?: string
-          value?: number
+          updated_at?: string | null
+          username?: string | null
         }
         Relationships: []
       }
       subscription_events: {
         Row: {
-          ad_id: string | null
-          billing_cycle: number | null
-          campaign_name: string | null
-          country: string | null
+          amount: number
+          cartpanda_event_id: string | null
           created_at: string
-          creative_name: string | null
-          customer_email: string | null
+          currency: string
+          customer_email: string
           customer_id: string
           customer_name: string | null
           event_date: string
-          event_type: Database["public"]["Enums"]["subscription_event_type"]
+          event_type: string
+          frequency: string | null
           id: string
           metadata: Json | null
-          payment_method: string | null
-          plan: Database["public"]["Enums"]["subscription_plan"]
-          state: string | null
+          plan: string
+          subscription_id: string
+          subscription_number: number | null
           updated_at: string
-          utm_campaign: string | null
-          utm_medium: string | null
-          utm_source: string | null
-          value: number
         }
         Insert: {
-          ad_id?: string | null
-          billing_cycle?: number | null
-          campaign_name?: string | null
-          country?: string | null
+          amount?: number
+          cartpanda_event_id?: string | null
           created_at?: string
-          creative_name?: string | null
-          customer_email?: string | null
+          currency?: string
+          customer_email: string
           customer_id: string
           customer_name?: string | null
           event_date?: string
-          event_type: Database["public"]["Enums"]["subscription_event_type"]
+          event_type: string
+          frequency?: string | null
           id?: string
           metadata?: Json | null
-          payment_method?: string | null
-          plan: Database["public"]["Enums"]["subscription_plan"]
-          state?: string | null
+          plan: string
+          subscription_id: string
+          subscription_number?: number | null
           updated_at?: string
-          utm_campaign?: string | null
-          utm_medium?: string | null
-          utm_source?: string | null
-          value?: number
         }
         Update: {
-          ad_id?: string | null
-          billing_cycle?: number | null
-          campaign_name?: string | null
-          country?: string | null
+          amount?: number
+          cartpanda_event_id?: string | null
           created_at?: string
-          creative_name?: string | null
-          customer_email?: string | null
+          currency?: string
+          customer_email?: string
           customer_id?: string
           customer_name?: string | null
           event_date?: string
-          event_type?: Database["public"]["Enums"]["subscription_event_type"]
+          event_type?: string
+          frequency?: string | null
           id?: string
           metadata?: Json | null
-          payment_method?: string | null
-          plan?: Database["public"]["Enums"]["subscription_plan"]
-          state?: string | null
+          plan?: string
+          subscription_id?: string
+          subscription_number?: number | null
           updated_at?: string
-          utm_campaign?: string | null
-          utm_medium?: string | null
-          utm_source?: string | null
-          value?: number
         }
         Relationships: []
-      }
-      user_chart_permissions: {
-        Row: {
-          can_view: boolean | null
-          chart_type: Database["public"]["Enums"]["chart_type"]
-          created_at: string | null
-          id: string
-          page: Database["public"]["Enums"]["user_page"]
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          can_view?: boolean | null
-          chart_type?: Database["public"]["Enums"]["chart_type"]
-          created_at?: string | null
-          id?: string
-          page?: Database["public"]["Enums"]["user_page"]
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          can_view?: boolean | null
-          chart_type?: Database["public"]["Enums"]["chart_type"]
-          created_at?: string | null
-          id?: string
-          page?: Database["public"]["Enums"]["user_page"]
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_chart_permissions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       user_page_permissions: {
         Row: {
           can_access: boolean | null
-          created_at: string | null
           id: string
           page: Database["public"]["Enums"]["user_page"]
-          updated_at: string | null
           user_id: string
         }
         Insert: {
           can_access?: boolean | null
-          created_at?: string | null
           id?: string
-          page?: Database["public"]["Enums"]["user_page"]
-          updated_at?: string | null
+          page: Database["public"]["Enums"]["user_page"]
           user_id: string
         }
         Update: {
           can_access?: boolean | null
-          created_at?: string | null
           id?: string
           page?: Database["public"]["Enums"]["user_page"]
-          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -567,190 +361,95 @@ export type Database = {
       }
       user_roles: {
         Row: {
-          created_at: string
+          assigned_at: string | null
           id: string
-          role: Database["public"]["Enums"]["user_role"]
+          role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
-          created_at?: string
+          assigned_at?: string | null
           id?: string
-          role?: Database["public"]["Enums"]["user_role"]
+          role?: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
-          created_at?: string
+          assigned_at?: string | null
           id?: string
-          role?: Database["public"]["Enums"]["user_role"]
+          role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
-      creative_performance_analysis: {
-        Row: {
-          ad_id: string | null
-          adset_name: string | null
-          avg_body_rate: number | null
-          avg_cta_rate: number | null
-          avg_ctr: number | null
-          avg_hook_rate: number | null
-          avg_order_value: number | null
-          avg_ph_hook_rate: number | null
-          bm: string | null
-          campaign_name: string | null
-          chargeback_orders: number | null
-          chargeback_rate: number | null
-          click_through_rate: number | null
-          completed_orders: number | null
-          conversion_rate: number | null
-          cpa: number | null
-          creative_name: string | null
-          date_reported: string | null
-          profit: number | null
-          refunded_orders: number | null
-          roas: number | null
-          roi_percentage: number | null
-          total_cartpanda_commission: number | null
-          total_clicks: number | null
-          total_commissions: number | null
-          total_discounts: number | null
-          total_impressions: number | null
-          total_orders: number | null
-          total_revenue: number | null
-          total_spent: number | null
-          total_views_3s: number | null
-          total_views_75_percent: number | null
-          total_views_total: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
-      can_manage_users: {
-        Args: { _target_user_id?: string }
-        Returns: boolean
+      assign_admin_role: {
+        Args: { user_email: string }
+        Returns: undefined
       }
-      format_date_br: {
-        Args: { input_date: string }
-        Returns: string
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Enums"]["app_role"]
       }
-      format_timestamp_br: {
-        Args: { input_timestamp: string }
-        Returns: string
-      }
-      get_creative_performance_by_period: {
-        Args: { start_date?: string; end_date?: string }
+      get_subscription_kpis: {
+        Args: { start_date: string; end_date: string }
         Returns: {
-          ad_id: string
-          creative_name: string
-          campaign_name: string
-          adset_name: string
-          bm: string
-          date_reported: string
-          total_spent: number
-          total_views_3s: number
-          total_views_75_percent: number
-          total_views_total: number
-          total_impressions: number
-          total_clicks: number
-          avg_ph_hook_rate: number
-          avg_hook_rate: number
-          avg_body_rate: number
-          avg_cta_rate: number
-          avg_ctr: number
-          total_orders: number
-          completed_orders: number
-          chargeback_orders: number
-          refunded_orders: number
-          total_revenue: number
-          total_commissions: number
-          total_discounts: number
-          total_cartpanda_commission: number
-          avg_order_value: number
-          cpa: number
-          profit: number
-          roi_percentage: number
-          roas: number
-          conversion_rate: number
-          chargeback_rate: number
-          click_through_rate: number
+          active_subs: number
+          new_subs: number
+          mrr: number
+          churn_rate: number
+          avg_ltv: number
+          retention_30d: number
+          delta_active: number
+          delta_new: number
+          delta_mrr: number
+          delta_churn: number
+          delta_ltv: number
+          delta_retention: number
         }[]
       }
-      has_role: {
-        Args: {
-          _user_id: string
-          _role: Database["public"]["Enums"]["user_role"]
-        }
-        Returns: boolean
+      rpc_get_revenue: {
+        Args: { start_ts: string; end_ts: string }
+        Returns: number
       }
-      to_brazil_timezone: {
-        Args: { input_timestamp: string }
-        Returns: string
+      rpc_top_creatives_by_revenue: {
+        Args: { start_ts: string; end_ts: string }
+        Returns: {
+          creative: string
+          revenue: number
+        }[]
+      }
+      user_has_page_access: {
+        Args: { page_name: Database["public"]["Enums"]["user_page"] }
+        Returns: boolean
       }
     }
     Enums: {
-      chart_permission:
-        | "creative_timeline"
-        | "creative_performance_chart"
-        | "creative_summary_cards"
-        | "creative_table"
-        | "creative_top_5_revenue"
-        | "creative_top_5_roi"
-        | "creative_pie_chart"
-        | "creative_bar_chart"
-        | "sales_timeline"
-        | "sales_investment_vs_revenue"
-        | "sales_summary_cards"
-        | "sales_table"
-        | "sales_top_5_revenue"
-        | "sales_top_5_roi"
-        | "sales_pie_chart"
-        | "sales_bar_chart"
-        | "affiliate_timeline"
-        | "affiliate_performance_chart"
-        | "affiliate_summary_cards"
-        | "affiliate_table"
-        | "affiliate_top_5_revenue"
-        | "affiliate_top_5_roi"
-        | "affiliate_pie_chart"
-        | "affiliate_bar_chart"
-        | "revenue_timeline"
-        | "revenue_investment_vs_revenue"
-        | "revenue_summary_cards"
-        | "revenue_table"
-        | "revenue_top_5_revenue"
-        | "revenue_top_5_roi"
-        | "revenue_pie_chart"
-        | "revenue_bar_chart"
-      chart_type:
-        | "performance_overview"
-        | "time_series"
-        | "top_creatives"
-        | "metrics_comparison"
-        | "conversion_funnel"
-        | "roi_analysis"
-        | "sales_summary"
-        | "affiliate_performance"
-        | "revenue_breakdown"
-        | "summary_cards"
-        | "metrics_overview"
-        | "sales_chart"
-        | "creatives_sales_chart"
-        | "state_sales_chart"
-        | "affiliate_chart"
-      subscription_event_type: "subscription" | "cancellation"
+      app_role: "admin" | "user" | "business_manager"
+      subscription_event_type:
+        | "subscription"
+        | "cancellation"
+        | "upgrade"
+        | "downgrade"
       subscription_plan: "basic" | "premium" | "enterprise"
-      subscription_status: "active" | "cancelled" | "expired"
       user_page:
         | "creatives"
         | "sales"
         | "affiliates"
         | "revenue"
         | "users"
+        | "business-managers"
         | "subscriptions"
-      user_role: "admin" | "user" | "gestor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -866,69 +565,23 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      chart_permission: [
-        "creative_timeline",
-        "creative_performance_chart",
-        "creative_summary_cards",
-        "creative_table",
-        "creative_top_5_revenue",
-        "creative_top_5_roi",
-        "creative_pie_chart",
-        "creative_bar_chart",
-        "sales_timeline",
-        "sales_investment_vs_revenue",
-        "sales_summary_cards",
-        "sales_table",
-        "sales_top_5_revenue",
-        "sales_top_5_roi",
-        "sales_pie_chart",
-        "sales_bar_chart",
-        "affiliate_timeline",
-        "affiliate_performance_chart",
-        "affiliate_summary_cards",
-        "affiliate_table",
-        "affiliate_top_5_revenue",
-        "affiliate_top_5_roi",
-        "affiliate_pie_chart",
-        "affiliate_bar_chart",
-        "revenue_timeline",
-        "revenue_investment_vs_revenue",
-        "revenue_summary_cards",
-        "revenue_table",
-        "revenue_top_5_revenue",
-        "revenue_top_5_roi",
-        "revenue_pie_chart",
-        "revenue_bar_chart",
+      app_role: ["admin", "user", "business_manager"],
+      subscription_event_type: [
+        "subscription",
+        "cancellation",
+        "upgrade",
+        "downgrade",
       ],
-      chart_type: [
-        "performance_overview",
-        "time_series",
-        "top_creatives",
-        "metrics_comparison",
-        "conversion_funnel",
-        "roi_analysis",
-        "sales_summary",
-        "affiliate_performance",
-        "revenue_breakdown",
-        "summary_cards",
-        "metrics_overview",
-        "sales_chart",
-        "creatives_sales_chart",
-        "state_sales_chart",
-        "affiliate_chart",
-      ],
-      subscription_event_type: ["subscription", "cancellation"],
       subscription_plan: ["basic", "premium", "enterprise"],
-      subscription_status: ["active", "cancelled", "expired"],
       user_page: [
         "creatives",
         "sales",
         "affiliates",
         "revenue",
         "users",
+        "business-managers",
         "subscriptions",
       ],
-      user_role: ["admin", "user", "gestor"],
     },
   },
 } as const
