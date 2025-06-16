@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SubscriptionsSummaryCards } from "./subscriptions/SubscriptionsSummaryCards";
 import { SubscriptionsChart } from "./subscriptions/SubscriptionsChart";
+import { SubscriptionsTable } from "./subscriptions/SubscriptionsTable";
+import { SubscriptionFilters } from "./subscriptions/SubscriptionFilters";
 import { PermissionWrapper } from "@/components/common/PermissionWrapper";
 
 interface SubscriptionsTabProps {
@@ -13,11 +15,11 @@ interface SubscriptionsTabProps {
 }
 
 export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange }) => {
-  const filters = {
+  const [filters, setFilters] = useState({
     plan: 'all',
     eventType: 'all',
     paymentMethod: 'all'
-  };
+  });
 
   return (
     <PermissionWrapper requirePage="subscriptions">
@@ -30,6 +32,18 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
         </div>
 
         <SubscriptionsSummaryCards dateRange={dateRange} filters={filters} />
+
+        <Card className="bg-neutral-800 border-neutral-700">
+          <CardHeader>
+            <CardTitle className="text-white">Filtros</CardTitle>
+            <CardDescription className="text-gray-400">
+              Filtrar eventos por plano, tipo e método de pagamento
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SubscriptionFilters filters={filters} onFiltersChange={setFilters} />
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="bg-neutral-800 border-neutral-700">
@@ -96,6 +110,18 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
             </CardContent>
           </Card>
         </div>
+
+        <Card className="bg-neutral-800 border-neutral-700">
+          <CardHeader>
+            <CardTitle className="text-white">Eventos de Assinatura</CardTitle>
+            <CardDescription className="text-gray-400">
+              Lista detalhada de todos os eventos
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SubscriptionsTable dateRange={dateRange} filters={filters} />
+          </CardContent>
+        </Card>
       </div>
     </PermissionWrapper>
   );

@@ -84,16 +84,14 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = ({
       <div className="rounded-lg border border-slate-700 overflow-hidden">
         <div className="max-h-[600px] overflow-y-auto">
           <Table>
-            <TableHeader sticky={true}>
+            <TableHeader>
               <TableRow className="border-slate-700 hover:bg-slate-800/50">
                 <TableHead className="text-slate-300">Cliente</TableHead>
                 <TableHead className="text-slate-300">Evento</TableHead>
                 <TableHead className="text-slate-300">Plano</TableHead>
                 <TableHead className="text-slate-300">Valor</TableHead>
                 <TableHead className="text-slate-300">Data</TableHead>
-                <TableHead className="text-slate-300">Criativo</TableHead>
-                <TableHead className="text-slate-300">Pagamento</TableHead>
-                <TableHead className="text-slate-300">Localização</TableHead>
+                <TableHead className="text-slate-300">ID Assinatura</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -112,21 +110,15 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = ({
                     {getPlanBadge(event.plan)}
                   </TableCell>
                   <TableCell className="text-white">
-                    R$ {(event.value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    R$ {(event.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </TableCell>
                   <TableCell className="text-slate-300">
                     {new Date(event.event_date).toLocaleDateString('pt-BR')}
                   </TableCell>
                   <TableCell className="text-slate-300">
                     <div className="max-w-32 truncate">
-                      {event.creative_name || 'N/A'}
+                      {event.subscription_id}
                     </div>
-                  </TableCell>
-                  <TableCell className="text-slate-300">
-                    {event.payment_method || 'N/A'}
-                  </TableCell>
-                  <TableCell className="text-slate-300">
-                    {event.state ? `${event.state}, ${event.country}` : event.country || 'N/A'}
                   </TableCell>
                 </TableRow>
               ))}

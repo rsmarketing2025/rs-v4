@@ -1,10 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
-
-type SubscriptionPlan = Database['public']['Enums']['subscription_plan'];
-type SubscriptionEventType = Database['public']['Enums']['subscription_event_type'];
 
 export const useSubscriptionChartData = (
   type: string,
@@ -26,10 +22,10 @@ export const useSubscriptionChartData = (
           .lte('event_date', dateRange.to.toISOString());
 
         if (filters.plan !== 'all') {
-          query = query.eq('plan', filters.plan as SubscriptionPlan);
+          query = query.eq('plan', filters.plan);
         }
         if (filters.eventType !== 'all') {
-          query = query.eq('event_type', filters.eventType as SubscriptionEventType);
+          query = query.eq('event_type', filters.eventType);
         }
         if (filters.paymentMethod !== 'all') {
           query = query.eq('payment_method', filters.paymentMethod);
@@ -40,20 +36,20 @@ export const useSubscriptionChartData = (
         if (events) {
           if (type === 'timeline') {
             // Agrupar por data
-            const groupedByDate = events.reduce((acc, event) => {
+            const groupedByDate = events.reduce((acc: any, event) => {
               const date = new Date(event.event_date).toLocaleDateString('pt-BR');
               if (!acc[date]) {
                 acc[date] = { subscriptions: 0, cancellations: 0 };
               }
               if (event.event_type === 'subscription') {
                 acc[date].subscriptions++;
-              } else {
+              } else if (event.event_type === 'cancellation') {
                 acc[date].cancellations++;
               }
               return acc;
-            }, {} as Record<string, { subscriptions: number; cancellations: number }>);
+            }, {});
 
-            const timelineData = Object.entries(groupedByDate).map(([date, values]) => ({
+            const timelineData = Object.entries(groupedByDate).map(([date, values]: [string, any]) => ({
               date,
               subscriptions: values.subscriptions,
               cancellations: values.cancellations
@@ -64,10 +60,10 @@ export const useSubscriptionChartData = (
             // Contar por plano
             const planCounts = events
               .filter(e => e.event_type === 'subscription')
-              .reduce((acc, event) => {
+              .reduce((acc: any, event) => {
                 acc[event.plan] = (acc[event.plan] || 0) + 1;
                 return acc;
-              }, {} as Record<string, number>);
+              }, {});
 
             const planData = Object.entries(planCounts).map(([name, value]) => ({
               name: name.charAt(0).toUpperCase() + name.slice(1),
@@ -76,14 +72,14 @@ export const useSubscriptionChartData = (
 
             setData(planData);
           } else if (type === 'mrr') {
-            // Calcular MRR por mês - using 'amount' instead of 'value'
+            // Calcular MRR por mês
             const mrrByMonth = events
               .filter(e => e.event_type === 'subscription')
-              .reduce((acc, event) => {
+              .reduce((acc: any, event) => {
                 const month = new Date(event.event_date).toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' });
                 acc[month] = (acc[month] || 0) + (event.amount || 0);
                 return acc;
-              }, {} as Record<string, number>);
+              }, {});
 
             const mrrData = Object.entries(mrrByMonth).map(([date, mrr]) => ({
               date,
