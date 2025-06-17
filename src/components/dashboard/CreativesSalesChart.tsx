@@ -3,22 +3,18 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { PermissionWrapper } from "@/components/common/PermissionWrapper";
-
-interface CreativeSalesData {
-  creative_name: string;
-  total_sales: number;
-  total_revenue: number;
-}
+import { useCreativesSalesRanking } from "@/hooks/useCreativesSalesRanking";
 
 interface CreativesSalesChartProps {
-  creativesData: CreativeSalesData[];
+  dateRange: { from: Date; to: Date };
 }
 
-export const CreativesSalesChart: React.FC<CreativesSalesChartProps> = ({ creativesData }) => {
-  // Sort by revenue (total_revenue) and take top 10
-  const topCreatives = creativesData
-    .sort((a, b) => b.total_revenue - a.total_revenue)
-    .slice(0, 10)
+export const CreativesSalesChart: React.FC<CreativesSalesChartProps> = ({ dateRange }) => {
+  const { rankingData, loading } = useCreativesSalesRanking(dateRange);
+
+  // Take top 5 creatives by revenue
+  const topCreatives = rankingData
+    .slice(0, 5)
     .map(creative => ({
       name: creative.creative_name.length > 15 
         ? creative.creative_name.substring(0, 15) + '...' 
@@ -27,13 +23,33 @@ export const CreativesSalesChart: React.FC<CreativesSalesChartProps> = ({ creati
       revenue: creative.total_revenue,
     }));
 
+  if (loading) {
+    return (
+      <PermissionWrapper requirePage="sales">
+        <Card className="bg-neutral-800 border-neutral-700">
+          <CardHeader>
+            <CardTitle className="text-white">TOP 5 - Maior Receita</CardTitle>
+            <CardDescription className="text-gray-400">
+              Carregando...
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[400px] flex items-center justify-center">
+              <div className="text-gray-400">Carregando dados...</div>
+            </div>
+          </CardContent>
+        </Card>
+      </PermissionWrapper>
+    );
+  }
+
   return (
     <PermissionWrapper requirePage="sales">
       <Card className="bg-neutral-800 border-neutral-700">
         <CardHeader>
-          <CardTitle className="text-white">Vendas por Criativos</CardTitle>
+          <CardTitle className="text-white">TOP 5 - Maior Receita</CardTitle>
           <CardDescription className="text-gray-400">
-            Top 10 criativos com maior volume de vendas (baseado em receita líquida)
+            Top 5 criativos com maior receita líquida no período selecionado
           </CardDescription>
         </CardHeader>
         <CardContent>
