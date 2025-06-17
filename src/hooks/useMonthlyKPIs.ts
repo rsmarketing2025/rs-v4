@@ -47,11 +47,11 @@ export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
         throw campaignError;
       }
 
-      // CHANGED: Use net_value instead of gross_value for revenue calculation
+      // Use net_value for revenue calculation and include both completed and Unfulfilled
       const { data: salesData, error: salesError } = await supabase
         .from('creative_sales')
         .select('net_value, status')
-        .in('status', ['completed', 'Unfulfilled']) // Include both statuses
+        .in('status', ['completed', 'Unfulfilled'])
         .gte('sale_date', startDateStr)
         .lte('sale_date', endDateStr);
 
@@ -64,7 +64,7 @@ export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
       // Calcular métricas
       const totalSpent = campaignData?.reduce((acc, campaign) => acc + (campaign.amount_spent || 0), 0) || 0;
       
-      // CHANGED: Use net_value instead of gross_value for revenue calculation
+      // Use net_value for revenue calculation
       const totalRevenue = salesData?.reduce((acc, sale) => acc + (sale.net_value || 0), 0) || 0;
       const totalOrders = salesData?.length || 0;
       

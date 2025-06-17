@@ -43,9 +43,10 @@ export const useSalesRankingData = (dateRange: DateRange) => {
       console.log('Ranking data filtering - Start:', startDateStr, 'End:', endDateStr);
 
       // Fetch all sales data for the period - Include both "completed" and "Unfulfilled" sales
+      // Use net_value for revenue calculations
       const { data: salesData, error: salesError } = await supabase
         .from('creative_sales')
-        .select('creative_name, status, gross_value')
+        .select('creative_name, status, net_value')
         .in('status', ['completed', 'Unfulfilled'])
         .gte('sale_date', startDateStr)
         .lte('sale_date', endDateStr);
@@ -74,7 +75,7 @@ export const useSalesRankingData = (dateRange: DateRange) => {
       ).length;
       const missingRevenue = salesData
         .filter(sale => !sale.creative_name || sale.creative_name.trim() === '')
-        .reduce((acc, sale) => acc + (sale.gross_value || 0), 0);
+        .reduce((acc, sale) => acc + (sale.net_value || 0), 0);
       const percentageMissing = totalSales > 0 ? (salesWithMissingCreative / totalSales) * 100 : 0;
 
       setMissingDataStats({
@@ -107,7 +108,7 @@ export const useSalesRankingData = (dateRange: DateRange) => {
         }
         
         acc[creativeName].total_sales += 1;
-        acc[creativeName].total_revenue += (sale.gross_value || 0);
+        acc[creativeName].total_revenue += (sale.net_value || 0);
         
         if (sale.status === 'completed') {
           acc[creativeName].completed_sales += 1;
