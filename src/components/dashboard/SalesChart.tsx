@@ -8,6 +8,7 @@ import { ptBR } from 'date-fns/locale';
 interface Sale {
   id: string;
   gross_value: number;
+  net_value: number;
   status: string;
   payment_method: string;
   sale_date: string;
@@ -47,7 +48,7 @@ export const SalesChart: React.FC<SalesChartProps> = ({ sales, dateRange }) => {
 
   // Prepare revenue data based on the period
   const prepareRevenueData = () => {
-    // FIXED: Include both "completed" and "Unfulfilled" sales
+    // CHANGED: Use net_value instead of gross_value
     const validSales = sales.filter(sale => sale.status === 'completed' || sale.status === 'Unfulfilled');
     
     if (chartPeriod === 'single-day') {
@@ -62,7 +63,7 @@ export const SalesChart: React.FC<SalesChartProps> = ({ sales, dateRange }) => {
       
       validSales.forEach(sale => {
         const hour = format(parseISO(sale.sale_date), 'HH:00');
-        hourlyRevenue[hour] = (hourlyRevenue[hour] || 0) + (sale.gross_value || 0);
+        hourlyRevenue[hour] = (hourlyRevenue[hour] || 0) + (sale.net_value || 0);
       });
 
       return Object.entries(hourlyRevenue)
@@ -77,7 +78,7 @@ export const SalesChart: React.FC<SalesChartProps> = ({ sales, dateRange }) => {
       return days.map(day => {
         const dayRevenue = validSales
           .filter(sale => isSameDay(parseISO(sale.sale_date), day))
-          .reduce((sum, sale) => sum + (sale.gross_value || 0), 0);
+          .reduce((sum, sale) => sum + (sale.net_value || 0), 0);
         
         return {
           date: format(day, 'EEE dd/MM', { locale: ptBR }),
@@ -101,7 +102,7 @@ export const SalesChart: React.FC<SalesChartProps> = ({ sales, dateRange }) => {
             const saleDate = parseISO(sale.sale_date);
             return saleDate >= monthStart && saleDate <= monthEnd;
           })
-          .reduce((sum, sale) => sum + (sale.gross_value || 0), 0);
+          .reduce((sum, sale) => sum + (sale.net_value || 0), 0);
         
         return {
           date: format(month, 'MMM', { locale: ptBR }),
@@ -114,7 +115,7 @@ export const SalesChart: React.FC<SalesChartProps> = ({ sales, dateRange }) => {
       // Default daily view
       const dailyRevenue = validSales.reduce((acc, sale) => {
         const date = format(parseISO(sale.sale_date), 'dd/MM', { locale: ptBR });
-        acc[date] = (acc[date] || 0) + (sale.gross_value || 0);
+        acc[date] = (acc[date] || 0) + (sale.net_value || 0);
         return acc;
       }, {} as Record<string, number>);
 
@@ -133,7 +134,8 @@ export const SalesChart: React.FC<SalesChartProps> = ({ sales, dateRange }) => {
       acc[status] = { count: 0, value: 0 };
     }
     acc[status].count += 1;
-    acc[status].value += (sale.gross_value || 0);
+    // CHANGED: Use net_value instead of gross_value
+    acc[status].value += (sale.net_value || 0);
     return acc;
   }, {} as Record<string, { count: number; value: number }>);
 

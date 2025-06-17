@@ -29,7 +29,7 @@ export const CreativesSalesChart: React.FC<CreativesSalesChartProps> = ({ creati
         <CardHeader>
           <CardTitle className="text-white">Vendas por Criativos</CardTitle>
           <CardDescription className="text-gray-400">
-            Top 10 criativos com maior volume de vendas
+            Top 10 criativos com maior volume de vendas (baseado em valor líquido)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -58,7 +58,7 @@ export const CreativesSalesChart: React.FC<CreativesSalesChartProps> = ({ creati
                 }}
                 formatter={(value: any, name: string) => [
                   name === 'sales' ? value.toLocaleString('pt-BR') : `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-                  name === 'sales' ? 'Vendas' : 'Receita'
+                  name === 'sales' ? 'Vendas' : 'Receita Líquida'
                 ]}
               />
               <Bar dataKey="sales" fill="#22c55e" radius={[4, 4, 0, 0]} />

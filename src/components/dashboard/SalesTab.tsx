@@ -116,9 +116,9 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   const uniqueCountries = [...new Set(sales.map(sale => sale.country).filter(Boolean))].sort();
   const uniqueStates = [...new Set(sales.map(sale => sale.state).filter(Boolean))].sort();
 
-  // FIXED: Include both "completed" and "Unfulfilled" sales in calculations
+  // CHANGED: Use net_value instead of gross_value for revenue calculations
   const validSales = sales.filter(sale => sale.status === 'completed' || sale.status === 'Unfulfilled');
-  const totalRevenue = validSales.reduce((acc, sale) => acc + (sale.gross_value || 0), 0);
+  const totalRevenue = validSales.reduce((acc, sale) => acc + (sale.net_value || 0), 0);
   const totalSales = validSales.length;
   const avgOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
 
@@ -147,9 +147,9 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
       acc[state] = { total_sales: 0, total_revenue: 0 };
     }
     acc[state].total_sales += 1;
-    // FIXED: Include both "completed" and "Unfulfilled" sales
+    // CHANGED: Use net_value instead of gross_value
     if (sale.status === 'completed' || sale.status === 'Unfulfilled') {
-      acc[state].total_revenue += (sale.gross_value || 0);
+      acc[state].total_revenue += (sale.net_value || 0);
     }
     return acc;
   }, {} as Record<string, { total_sales: number; total_revenue: number }>);
@@ -169,9 +169,9 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
       acc[creativeName] = { total_sales: 0, total_revenue: 0 };
     }
     acc[creativeName].total_sales += 1;
-    // FIXED: Include both "completed" and "Unfulfilled" sales
+    // CHANGED: Use net_value instead of gross_value
     if (sale.status === 'completed' || sale.status === 'Unfulfilled') {
-      acc[creativeName].total_revenue += (sale.gross_value || 0);
+      acc[creativeName].total_revenue += (sale.net_value || 0);
     }
     return acc;
   }, {} as Record<string, { total_sales: number; total_revenue: number }>);
@@ -194,9 +194,9 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
     }
     
     acc[country].orders += 1;
-    // FIXED: Include both "completed" and "Unfulfilled" sales
+    // CHANGED: Use net_value instead of gross_value
     if (sale.status === 'completed' || sale.status === 'Unfulfilled') {
-      acc[country].revenue += (sale.gross_value || 0);
+      acc[country].revenue += (sale.net_value || 0);
     }
     
     if (!acc[country].states[state]) {
@@ -204,7 +204,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
     }
     acc[country].states[state].orders += 1;
     if (sale.status === 'completed' || sale.status === 'Unfulfilled') {
-      acc[country].states[state].revenue += (sale.gross_value || 0);
+      acc[country].states[state].revenue += (sale.net_value || 0);
     }
     
     return acc;
@@ -220,7 +220,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
 
   const exportToCSV = () => {
     const displayedSales = filteredSales.slice(0, 20);
-    const headers = ['Pedido', 'Data', 'Cliente', 'Criativo', 'Status', 'Pagamento', 'Valor Bruto', 'País', 'Estado', 'Afiliado'];
+    const headers = ['Pedido', 'Data', 'Cliente', 'Criativo', 'Status', 'Pagamento', 'Valor Líquido', 'País', 'Estado', 'Afiliado'];
     
     const getStatusLabel = (status: string) => {
       switch (status) {
@@ -250,7 +250,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
         `"${sale.creative_name}"`,
         getStatusLabel(sale.status),
         getPaymentMethodLabel(sale.payment_method),
-        (sale.gross_value || 0).toFixed(2),
+        (sale.net_value || 0).toFixed(2),
         `"${sale.country || 'Não informado'}"`,
         `"${sale.state || 'Não informado'}"`,
         sale.is_affiliate ? `"${sale.affiliate_name || 'Afiliado'}"` : '-'

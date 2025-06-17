@@ -47,10 +47,10 @@ export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
         throw campaignError;
       }
 
-      // FIXED: Include both "completed" and "Unfulfilled" sales in KPIs
+      // CHANGED: Use net_value instead of gross_value for revenue calculation
       const { data: salesData, error: salesError } = await supabase
         .from('creative_sales')
-        .select('gross_value, status')
+        .select('net_value, status')
         .in('status', ['completed', 'Unfulfilled']) // Include both statuses
         .gte('sale_date', startDateStr)
         .lte('sale_date', endDateStr);
@@ -64,8 +64,8 @@ export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
       // Calcular métricas
       const totalSpent = campaignData?.reduce((acc, campaign) => acc + (campaign.amount_spent || 0), 0) || 0;
       
-      // FIXED: Use both completed and Unfulfilled sales for revenue calculation
-      const totalRevenue = salesData?.reduce((acc, sale) => acc + (sale.gross_value || 0), 0) || 0;
+      // CHANGED: Use net_value instead of gross_value for revenue calculation
+      const totalRevenue = salesData?.reduce((acc, sale) => acc + (sale.net_value || 0), 0) || 0;
       const totalOrders = salesData?.length || 0;
       
       // Calcular ROI correto: (Receita Total - Investimento Total) / Investimento Total
