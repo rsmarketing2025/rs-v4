@@ -9,6 +9,7 @@ interface KPICardProps {
   change: string;
   icon: LucideIcon;
   trend: 'up' | 'down' | 'neutral';
+  variant?: 'default' | 'success' | 'warning' | 'info' | 'black' | 'orange' | 'purple';
 }
 
 export const KPICard: React.FC<KPICardProps> = ({
@@ -16,9 +17,11 @@ export const KPICard: React.FC<KPICardProps> = ({
   value,
   change,
   icon,
-  trend
+  trend,
+  variant
 }) => {
   const getVariant = () => {
+    if (variant) return variant;
     if (trend === 'up') return 'success';
     if (trend === 'down') return 'warning';
     return 'default';

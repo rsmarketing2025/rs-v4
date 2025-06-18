@@ -209,6 +209,7 @@ const Dashboard = () => {
               change={kpisLoading ? "..." : "+12.5%"}
               icon={DollarSign}
               trend="up"
+              variant="success"
             />
             <KPICard
               title="Receita Total"
@@ -216,6 +217,7 @@ const Dashboard = () => {
               change={kpisLoading ? "..." : "+18.2%"}
               icon={TrendingUp}
               trend="up"
+              variant="orange"
             />
             <KPICard
               title="Total de Pedidos"
@@ -223,6 +225,7 @@ const Dashboard = () => {
               change={kpisLoading ? "..." : "+15.8%"}
               icon={Target}
               trend="up"
+              variant="purple"
             />
             <KPICard
               title="ROI Médio"
@@ -230,6 +233,7 @@ const Dashboard = () => {
               change={kpisLoading ? "..." : "+0.3x"}
               icon={BarChart3}
               trend="up"
+              variant="black"
             />
           </div>
 
