@@ -27,8 +27,8 @@ export const TopTenChart: React.FC<TopTenChartProps> = ({ creatives }) => {
     .sort((a, b) => b.gross_sales - a.gross_sales)
     .slice(0, 10)
     .map(creative => ({
-      name: creative.creative_name.length > 20 
-        ? creative.creative_name.substring(0, 20) + '...' 
+      name: creative.creative_name.length > 15 
+        ? creative.creative_name.substring(0, 15) + '...' 
         : creative.creative_name,
       fullName: creative.creative_name,
       value: creative.gross_sales
@@ -42,9 +42,9 @@ export const TopTenChart: React.FC<TopTenChartProps> = ({ creatives }) => {
     <PermissionWrapper requirePage="creatives">
       <Card className="bg-slate-800/30 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white text-xl">TOP 10 Criativos por Receita</CardTitle>
+          <CardTitle className="text-white text-xl">Ranking de vendas por Criativo</CardTitle>
           <CardDescription className="text-slate-400">
-            Ranking dos criativos com maior receita de vendas
+            Ranking dos criativos com maior valor de vendas
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -53,21 +53,20 @@ export const TopTenChart: React.FC<TopTenChartProps> = ({ creatives }) => {
               <BarChart
                 data={filteredData}
                 margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
-                layout="horizontal"
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis 
-                  type="number"
-                  stroke="#9ca3af"
-                  fontSize={12}
-                  tickFormatter={formatValue}
-                />
-                <YAxis 
-                  type="category"
                   dataKey="name"
                   stroke="#9ca3af"
                   fontSize={12}
-                  width={120}
+                  angle={-45}
+                  textAnchor="end"
+                  height={100}
+                />
+                <YAxis 
+                  stroke="#9ca3af"
+                  fontSize={12}
+                  tickFormatter={formatValue}
                 />
                 <Tooltip
                   contentStyle={{
@@ -78,7 +77,7 @@ export const TopTenChart: React.FC<TopTenChartProps> = ({ creatives }) => {
                   }}
                   formatter={(value: any) => [
                     formatValue(value),
-                    'Receita de Vendas'
+                    'Valor de Vendas'
                   ]}
                   labelFormatter={(label: any, payload: any) => 
                     payload?.[0]?.payload?.fullName || label
@@ -87,7 +86,7 @@ export const TopTenChart: React.FC<TopTenChartProps> = ({ creatives }) => {
                 <Bar 
                   dataKey="value" 
                   fill="#22c55e"
-                  radius={[0, 4, 4, 0]}
+                  radius={[4, 4, 0, 0]}
                 />
               </BarChart>
             </ResponsiveContainer>
