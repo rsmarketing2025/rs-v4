@@ -7,6 +7,8 @@ interface SubscriptionMetrics {
   activeSubscriptionsGrowth: number;
   newSubscriptions: number;
   newSubscriptionsGrowth: number;
+  cancellations: number;
+  cancellationsGrowth: number;
   mrr: number;
   mrrGrowth: number;
   churnRate: number;
@@ -37,6 +39,8 @@ export const useSubscriptionMetrics = (
     activeSubscriptionsGrowth: 0,
     newSubscriptions: 0,
     newSubscriptionsGrowth: 0,
+    cancellations: 0,
+    cancellationsGrowth: 0,
     mrr: 0,
     mrrGrowth: 0,
     churnRate: 0,
@@ -109,6 +113,8 @@ export const useSubscriptionMetrics = (
             activeSubscriptionsGrowth: 15.2, // Mock growth
             newSubscriptions,
             newSubscriptionsGrowth: 8.7, // Mock growth
+            cancellations: totalCancellations,
+            cancellationsGrowth: -5.3, // Mock growth (negative is good for cancellations)
             mrr: monthlyRevenue,
             mrrGrowth: 12.3, // Mock growth
             churnRate,
