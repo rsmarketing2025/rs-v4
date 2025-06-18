@@ -31,7 +31,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
   return (
     <div className="space-y-6">
       <CreativesMetricsCards 
-        totalSpent={totalMetrics.totalSpent}
+        totalSpent={totalMetrics.spent}
         avgROI={avgROI}
         loading={loading}
       />

@@ -15,9 +15,9 @@ export const CreativesMetricsCards: React.FC<CreativesMetricsCardsProps> = ({
   loading = false
 }) => {
   const formatCurrency = (value: number) => 
-    `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    `R$ ${(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 
-  const formatROI = (value: number) => `${value.toFixed(2)}x`;
+  const formatROI = (value: number) => `${(value || 0).toFixed(2)}x`;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
