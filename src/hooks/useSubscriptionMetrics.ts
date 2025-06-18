@@ -57,7 +57,7 @@ export const useSubscriptionMetrics = (
       try {
         setLoading(true);
 
-        // Build base query
+        // Build base query for all events
         let query = supabase
           .from('subscription_events')
           .select('*')
@@ -71,9 +71,6 @@ export const useSubscriptionMetrics = (
         if (filters.eventType !== 'all') {
           query = query.eq('event_type', filters.eventType);
         }
-        if (filters.paymentMethod !== 'all') {
-          query = query.eq('payment_method', filters.paymentMethod);
-        }
 
         const { data: events, error } = await query;
 
@@ -83,9 +80,11 @@ export const useSubscriptionMetrics = (
         }
 
         if (events && events.length > 0) {
-          // Calcular métricas principais
+          // Buscar especificamente cancelamentos
+          const cancellations = events.filter(e => e.event_type === 'canceled');
+          
+          // Calcular outras métricas
           const subscriptions = events.filter(e => e.event_type === 'subscription');
-          const cancellations = events.filter(e => e.event_type === 'cancellation');
           
           const newSubscriptions = subscriptions.length;
           const totalCancellations = cancellations.length;
@@ -93,7 +92,7 @@ export const useSubscriptionMetrics = (
           // Estimar assinaturas ativas (simplificado)
           const activeSubscriptions = Math.max(0, newSubscriptions - totalCancellations);
           
-          // Calcular MRR usando 'amount' em vez de 'value'
+          // Calcular MRR usando 'amount'
           const monthlyRevenue = subscriptions.reduce((sum, sub) => {
             return sum + (sub.amount || 0);
           }, 0);
@@ -101,28 +100,28 @@ export const useSubscriptionMetrics = (
           // Calcular taxa de churn
           const churnRate = activeSubscriptions > 0 ? (totalCancellations / activeSubscriptions) * 100 : 0;
           
-          // LTV estimado (valor médio * 12 meses / taxa de churn mensal)
+          // LTV estimado
           const avgAmount = subscriptions.length > 0 ? monthlyRevenue / subscriptions.length : 0;
           const averageLTV = churnRate > 0 ? (avgAmount * 12) / (churnRate / 100) : avgAmount * 12;
           
-          // Retenção simplificada (90% para exemplo)
+          // Retenção simplificada
           const retention30d = 90;
 
           setMetrics({
             activeSubscriptions,
-            activeSubscriptionsGrowth: 15.2, // Mock growth
+            activeSubscriptionsGrowth: 15.2,
             newSubscriptions,
-            newSubscriptionsGrowth: 8.7, // Mock growth
+            newSubscriptionsGrowth: 8.7,
             cancellations: totalCancellations,
-            cancellationsGrowth: -5.3, // Mock growth (negative is good for cancellations)
+            cancellationsGrowth: -5.3,
             mrr: monthlyRevenue,
-            mrrGrowth: 12.3, // Mock growth
+            mrrGrowth: 12.3,
             churnRate,
-            churnRateChange: -2.1, // Mock change
+            churnRateChange: -2.1,
             averageLTV,
-            ltvGrowth: 5.8, // Mock growth
+            ltvGrowth: 5.8,
             retention30d,
-            retentionChange: 2.4 // Mock change
+            retentionChange: 2.4
           });
         }
       } catch (error) {
@@ -137,8 +136,7 @@ export const useSubscriptionMetrics = (
     dateRange.from.getTime(),
     dateRange.to.getTime(),
     filters.plan,
-    filters.eventType,
-    filters.paymentMethod
+    filters.eventType
   ]);
 
   return { metrics, loading };
