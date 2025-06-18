@@ -5,6 +5,7 @@ import { CreativesTable } from "./creatives/CreativesTable";
 import { ImprovedMetricsOverviewCharts } from "./creatives/ImprovedMetricsOverviewCharts";
 import { CreativesSummaryCards } from "./creatives/CreativesSummaryCards";
 import { TimeSeriesChart } from "./creatives/TimeSeriesChart";
+import { CreativesMetricsCards } from "./creatives/CreativesMetricsCards";
 import { useCreativesData } from "@/hooks/useCreativesData";
 
 interface CreativesTabProps {
@@ -29,9 +30,10 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
 
   return (
     <div className="space-y-6">
-      <CreativesSummaryCards 
-        totalMetrics={totalMetrics} 
+      <CreativesMetricsCards 
+        totalSpent={totalMetrics.totalSpent}
         avgROI={avgROI}
+        loading={loading}
       />
       
       <ImprovedMetricsOverviewCharts 
