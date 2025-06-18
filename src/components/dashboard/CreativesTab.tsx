@@ -15,7 +15,6 @@ interface CreativesTabProps {
 export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
   const [creativesFilter, setCreativesFilter] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedMetric, setSelectedMetric] = useState("amount_spent");
   
   const { 
     creatives, 
@@ -41,11 +40,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
         dateRange={dateRange}
       />
       
-      <TopTenChart 
-        creatives={creatives}
-        selectedMetric={selectedMetric}
-        onMetricChange={setSelectedMetric}
-      />
+      <TopTenChart creatives={creatives} />
       
       <TimeSeriesChart 
         creatives={creatives}

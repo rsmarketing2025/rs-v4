@@ -35,7 +35,7 @@ interface UserProfile {
   };
 }
 
-interface User {
+interface UserWithPermissions {
   id: string;
   full_name: string;
   email: string;
@@ -50,6 +50,8 @@ interface User {
     'business-managers': boolean;
     subscriptions: boolean;
   };
+  avatar_url?: string;
+  created_at: string;
 }
 
 interface UserListProps {
@@ -66,7 +68,7 @@ export const UserList: React.FC<UserListProps> = ({
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserWithPermissions | null>(null);
   const [userToDelete, setUserToDelete] = useState<{ id: string; name: string } | null>(null);
   const [deletingUser, setDeletingUser] = useState(false);
   const { toast } = useToast();
@@ -223,7 +225,7 @@ export const UserList: React.FC<UserListProps> = ({
     return currentUserRole === 'admin'; // Apenas admins podem deletar
   };
 
-  const convertToModalUser = (user: UserProfile): User => {
+  const convertToModalUser = (user: UserProfile): UserWithPermissions => {
     return {
       id: user.id,
       full_name: user.full_name,
@@ -238,7 +240,9 @@ export const UserList: React.FC<UserListProps> = ({
         users: user.pagePermissions.users,
         'business-managers': true,
         subscriptions: true
-      }
+      },
+      avatar_url: undefined,
+      created_at: user.created_at
     };
   };
 
