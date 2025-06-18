@@ -109,12 +109,12 @@ const Dashboard = () => {
       <SidebarInset>
         <div className="min-h-screen bg-black">
           <div className="container mx-auto p-3 md:p-6">
-            <div className="flex flex-col space-y-3 mb-5 md:mb-6">
-              <div className="flex items-center gap-2 md:gap-3">
+            <div className="flex flex-col space-y-2 mb-4">
+              <div className="flex items-center gap-2">
                 <SidebarTrigger className="text-white" />
                 <div className="flex-1">
-                  <h1 className="text-xl md:text-4xl font-bold text-white mb-1">{getPageTitle()}</h1>
-                  <p className="text-gray-400 text-xs md:text-base">{getPageDescription()}</p>
+                  <h1 className="text-lg md:text-2xl font-bold text-white">{getPageTitle()}</h1>
+                  <p className="text-gray-400 text-xs md:text-sm">{getPageDescription()}</p>
                 </div>
               </div>
               <div className="flex justify-end">
@@ -150,12 +150,12 @@ const Dashboard = () => {
       <SidebarInset>
         <div className="min-h-screen bg-black">
           <div className="container mx-auto p-3 md:p-6">
-            <div className="flex flex-col space-y-3 mb-5 md:mb-6">
-              <div className="flex items-center gap-2 md:gap-3">
+            <div className="flex flex-col space-y-2 mb-4">
+              <div className="flex items-center gap-2">
                 <SidebarTrigger className="text-white" />
                 <div className="flex-1">
-                  <h1 className="text-xl md:text-4xl font-bold text-white mb-1">{getPageTitle()}</h1>
-                  <p className="text-gray-400 text-xs md:text-base">{getPageDescription()}</p>
+                  <h1 className="text-lg md:text-2xl font-bold text-white">{getPageTitle()}</h1>
+                  <p className="text-gray-400 text-xs md:text-sm">{getPageDescription()}</p>
                 </div>
               </div>
               <div className="flex justify-end">
@@ -177,16 +177,16 @@ const Dashboard = () => {
     <SidebarInset>
       <div className="min-h-screen bg-black">
         <div className="container mx-auto p-3 md:p-6">
-          <div className="flex flex-col space-y-3 mb-5 md:mb-6">
-            <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex flex-col space-y-2 mb-4">
+            <div className="flex items-center gap-2">
               <SidebarTrigger className="text-white" />
               <div className="flex-1">
-                <h1 className="text-xl md:text-4xl font-bold text-white mb-1">{getPageTitle()}</h1>
-                <p className="text-gray-400 text-xs md:text-base">{getPageDescription()}</p>
+                <h1 className="text-lg md:text-2xl font-bold text-white">{getPageTitle()}</h1>
+                <p className="text-gray-400 text-xs md:text-sm">{getPageDescription()}</p>
               </div>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-end">
+            <div className="flex flex-col sm:flex-row gap-2 justify-end">
               <div className="order-2 sm:order-1">
                 <DateRangePicker 
                   dateRange={dateRange} 
