@@ -14,7 +14,15 @@ export interface UserPermission {
 }
 
 export interface UserWithPermissions extends User {
-  permissions?: UserPermission[];
+  permissions?: {
+    creatives: boolean;
+    sales: boolean;
+    affiliates: boolean;
+    revenue: boolean;
+    users: boolean;
+    'business-managers': boolean;
+    subscriptions: boolean;
+  };
 }
 
 export interface UserDetailModalProps {
@@ -22,4 +30,7 @@ export interface UserDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUserUpdate: () => void;
+  currentUserRole?: string | null;
+  onUserUpdated?: () => void;
+  onUpdate?: () => void;
 }

@@ -34,14 +34,12 @@ interface ChurnData {
   churnRate: number;
 }
 
-type ChartData = TimelineData[] | PlanData[] | MrrData[] | ChurnData[];
-
 export const useSubscriptionChartData = (
   type: string,
   dateRange: DateRange,
   filters: ChartFilters
 ) => {
-  const [data, setData] = useState<ChartData>([]);
+  const [data, setData] = useState<TimelineData[] | PlanData[] | MrrData[] | ChurnData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
