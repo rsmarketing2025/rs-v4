@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -246,13 +245,13 @@ const Dashboard = () => {
 
           <Card className="bg-neutral-900 border-neutral-700 backdrop-blur-sm">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <CardHeader className="pb-3 md:pb-4">
+              <CardHeader className="pb-0">
                 <div className="overflow-x-auto">
-                  <TabsList className="grid w-full grid-cols-4 bg-transparent border-b border-neutral-700 rounded-none min-w-[400px] sm:min-w-0 h-auto p-0">
+                  <TabsList className="bg-transparent border-0 rounded-none min-w-[400px] sm:min-w-0 h-auto p-0 w-full justify-start">
                     <PermissionWrapper requirePage="creatives" fallback={null}>
                       <TabsTrigger 
                         value="creatives" 
-                        className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-white data-[state=active]:text-white text-gray-400 text-xs sm:text-sm rounded-none py-3 px-4 border-b-2 border-transparent"
+                        className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-white text-gray-400 text-sm font-medium rounded-none border-b-2 border-transparent px-6 py-3 hover:text-gray-300 transition-colors"
                       >
                         Criativos
                       </TabsTrigger>
@@ -260,7 +259,7 @@ const Dashboard = () => {
                     <PermissionWrapper requirePage="sales" fallback={null}>
                       <TabsTrigger 
                         value="sales" 
-                        className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-white data-[state=active]:text-white text-gray-400 text-xs sm:text-sm rounded-none py-3 px-4 border-b-2 border-transparent"
+                        className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-white text-gray-400 text-sm font-medium rounded-none border-b-2 border-transparent px-6 py-3 hover:text-gray-300 transition-colors"
                       >
                         Vendas
                       </TabsTrigger>
@@ -268,7 +267,7 @@ const Dashboard = () => {
                     <PermissionWrapper requirePage="affiliates" fallback={null}>
                       <TabsTrigger 
                         value="affiliates" 
-                        className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-white data-[state=active]:text-white text-gray-400 text-xs sm:text-sm rounded-none py-3 px-4 border-b-2 border-transparent"
+                        className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-white text-gray-400 text-sm font-medium rounded-none border-b-2 border-transparent px-6 py-3 hover:text-gray-300 transition-colors"
                       >
                         Afiliados
                       </TabsTrigger>
@@ -276,13 +275,14 @@ const Dashboard = () => {
                     <PermissionWrapper requirePage="subscriptions" fallback={null}>
                       <TabsTrigger 
                         value="subscriptions" 
-                        className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-white data-[state=active]:text-white text-gray-400 text-xs sm:text-sm rounded-none py-3 px-4 border-b-2 border-transparent"
+                        className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-white text-gray-400 text-sm font-medium rounded-none border-b-2 border-transparent px-6 py-3 hover:text-gray-300 transition-colors"
                       >
                         Assinaturas
                       </TabsTrigger>
                     </PermissionWrapper>
                   </TabsList>
                 </div>
+                <div className="border-b border-neutral-700 mt-0"></div>
               </CardHeader>
 
               <CardContent className="p-3 md:p-6">
