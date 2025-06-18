@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Search, User, Mail, Phone, Shield, ShieldCheck, Edit, Trash2, Crown } from 'lucide-react';
 import { UserDetailModal } from './UserDetailModal';
 import { DeleteUserDialog } from './DeleteUserDialog';
+import { UserWithPermissions } from './types';
 import {
   Table,
   TableBody,
@@ -33,25 +33,6 @@ interface UserProfile {
     revenue: boolean;
     users: boolean;
   };
-}
-
-interface UserWithPermissions {
-  id: string;
-  full_name: string;
-  email: string;
-  username: string;
-  role: 'user' | 'admin' | 'business_manager';
-  permissions: {
-    creatives: boolean;
-    sales: boolean;
-    affiliates: boolean;
-    revenue: boolean;
-    users: boolean;
-    'business-managers': boolean;
-    subscriptions: boolean;
-  };
-  avatar_url?: string;
-  created_at: string;
 }
 
 interface UserListProps {
@@ -228,10 +209,11 @@ export const UserList: React.FC<UserListProps> = ({
   const convertToModalUser = (user: UserProfile): UserWithPermissions => {
     return {
       id: user.id,
-      full_name: user.full_name,
       email: user.email,
-      username: user.username || '',
-      role: user.role === 'gestor' ? 'business_manager' : user.role,
+      full_name: user.full_name,
+      avatar_url: null, // Explicitly set as nullable to match the type
+      created_at: user.created_at,
+      role: user.role === 'gestor' ? 'business_manager' : (user.role as 'admin' | 'user'),
       permissions: {
         creatives: user.pagePermissions.creatives,
         sales: user.pagePermissions.sales,
@@ -240,9 +222,7 @@ export const UserList: React.FC<UserListProps> = ({
         users: user.pagePermissions.users,
         'business-managers': true,
         subscriptions: true
-      },
-      avatar_url: undefined,
-      created_at: user.created_at
+      }
     };
   };
 
