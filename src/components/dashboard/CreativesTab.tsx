@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { CreativesFilters } from "./creatives/CreativesFilters";
 import { CreativesTable } from "./creatives/CreativesTable";
-import { TopTenChart } from "./creatives/TopTenChart";
 import { ImprovedMetricsOverviewCharts } from "./creatives/ImprovedMetricsOverviewCharts";
 import { CreativesSummaryCards } from "./creatives/CreativesSummaryCards";
 import { TimeSeriesChart } from "./creatives/TimeSeriesChart";
@@ -39,8 +38,6 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
         creatives={creatives} 
         dateRange={dateRange}
       />
-      
-      <TopTenChart dateRange={dateRange} />
       
       <TimeSeriesChart 
         creatives={creatives}
