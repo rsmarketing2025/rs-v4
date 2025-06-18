@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { PermissionWrapper } from "@/components/common/PermissionWrapper";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfDay, endOfDay, format } from 'date-fns';
@@ -58,18 +59,18 @@ export const TopTenChart: React.FC<TopTenChartProps> = ({ dateRange }) => {
         creativesMap.set(creativeName, currentValue + (sale.gross_value || 0));
       });
 
-      // Converter para array e ordenar por valor de vendas
+      // Converter para array e ordenar por valor de vendas (REMOVER LIMITE)
       const sortedCreatives = Array.from(creativesMap.entries())
         .map(([creativeName, totalSales]) => ({
-          name: creativeName.length > 15 
-            ? creativeName.substring(0, 15) + '...' 
+          name: creativeName.length > 20 
+            ? creativeName.substring(0, 20) + '...' 
             : creativeName,
           fullName: creativeName,
           value: totalSales
         }))
         .filter(creative => creative.value > 0)
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 10);
+        .sort((a, b) => b.value - a.value);
+        // Removido o .slice(0, 10) para mostrar todos os criativos
 
       console.log('TopTenChart - Processed ranking data:', sortedCreatives);
       setChartData(sortedCreatives);
@@ -108,6 +109,9 @@ export const TopTenChart: React.FC<TopTenChartProps> = ({ dateRange }) => {
     );
   }
 
+  // Calcular largura dinâmica baseada no número de criativos
+  const chartWidth = Math.max(800, chartData.length * 80);
+
   return (
     <PermissionWrapper requirePage="creatives">
       <Card className="bg-slate-800/30 border-slate-700">
@@ -124,47 +128,53 @@ export const TopTenChart: React.FC<TopTenChartProps> = ({ dateRange }) => {
                 Nenhum criativo com vendas encontrado no período selecionado
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis 
-                    dataKey="name"
-                    stroke="#9ca3af"
-                    fontSize={12}
-                    angle={-45}
-                    textAnchor="end"
-                    height={100}
-                  />
-                  <YAxis 
-                    stroke="#9ca3af"
-                    fontSize={12}
-                    tickFormatter={formatValue}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#1f2937',
-                      border: '1px solid #374151',
-                      borderRadius: '8px',
-                      color: '#fff'
-                    }}
-                    formatter={(value: any) => [
-                      formatValue(value),
-                      'Valor de Vendas'
-                    ]}
-                    labelFormatter={(label: any, payload: any) => 
-                      payload?.[0]?.payload?.fullName || label
-                    }
-                  />
-                  <Bar 
-                    dataKey="value" 
-                    fill="#22c55e"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+              <ScrollArea className="w-full h-full">
+                <div style={{ width: chartWidth, height: '100%' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={chartData}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 100 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis 
+                        dataKey="name"
+                        stroke="#9ca3af"
+                        fontSize={11}
+                        angle={-45}
+                        textAnchor="end"
+                        height={120}
+                        interval={0}
+                      />
+                      <YAxis 
+                        stroke="#9ca3af"
+                        fontSize={12}
+                        tickFormatter={formatValue}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#1f2937',
+                          border: '1px solid #374151',
+                          borderRadius: '8px',
+                          color: '#fff'
+                        }}
+                        formatter={(value: any) => [
+                          formatValue(value),
+                          'Valor de Vendas'
+                        ]}
+                        labelFormatter={(label: any, payload: any) => 
+                          payload?.[0]?.payload?.fullName || label
+                        }
+                      />
+                      <Bar 
+                        dataKey="value" 
+                        fill="#22c55e"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
             )}
           </div>
         </CardContent>
