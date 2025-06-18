@@ -211,9 +211,9 @@ export const UserList: React.FC<UserListProps> = ({
       id: user.id,
       email: user.email,
       full_name: user.full_name,
-      avatar_url: null, // Explicitly set as nullable to match the type
+      avatar_url: null,
       created_at: user.created_at,
-      role: user.role === 'gestor' ? 'business_manager' : (user.role as 'admin' | 'user'),
+      role: user.role === 'gestor' ? 'business_manager' : (user.role as 'admin' | 'user' | 'business_manager'),
       permissions: {
         creatives: user.pagePermissions.creatives,
         sales: user.pagePermissions.sales,
@@ -354,6 +354,10 @@ export const UserList: React.FC<UserListProps> = ({
           isOpen={!!selectedUser}
           currentUserRole={currentUserRole}
           onClose={() => setSelectedUser(null)}
+          onUserUpdate={() => {
+            onUserUpdated();
+            fetchUsers();
+          }}
           onUserUpdated={onUserUpdated}
           onUpdate={() => {
             onUserUpdated();

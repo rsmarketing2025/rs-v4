@@ -5,7 +5,7 @@ export interface User {
   full_name: string | null;
   avatar_url: string | null;
   created_at: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'business_manager';
 }
 
 export interface UserPermission {
