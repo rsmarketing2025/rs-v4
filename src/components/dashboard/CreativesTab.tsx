@@ -40,7 +40,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
         dateRange={dateRange}
       />
       
-      <TopTenChart creatives={creatives} />
+      <TopTenChart dateRange={dateRange} />
       
       <TimeSeriesChart 
         creatives={creatives}
