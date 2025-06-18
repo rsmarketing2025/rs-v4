@@ -248,14 +248,14 @@ const Dashboard = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <CardHeader className="pb-3 md:pb-4">
                 <div className="overflow-x-auto">
-                  <div className="flex gap-2 bg-[hsl(var(--card))] rounded-xl p-1 min-w-[400px] sm:min-w-0">
+                  <div className="flex items-center justify-center bg-neutral-800/50 rounded-2xl p-2 min-w-[500px] sm:min-w-0 mx-auto max-w-fit">
                     <PermissionWrapper requirePage="creatives" fallback={null}>
                       <button
                         onClick={() => setActiveTab("creatives")}
-                        className={`px-6 py-2 rounded-xl transition-all duration-200 text-sm font-medium min-h-[42px] ${
+                        className={`px-8 py-3 rounded-xl transition-all duration-300 text-sm font-medium whitespace-nowrap flex-1 text-center ${
                           activeTab === "creatives"
-                            ? "bg-[hsl(var(--background))] text-[hsl(var(--foreground))] font-semibold shadow-sm"
-                            : "bg-transparent text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--background))]/10"
+                            ? "bg-white text-black font-semibold shadow-lg transform scale-105"
+                            : "bg-transparent text-gray-400 hover:text-gray-200 hover:bg-neutral-700/50"
                         }`}
                       >
                         Criativos
@@ -264,10 +264,10 @@ const Dashboard = () => {
                     <PermissionWrapper requirePage="sales" fallback={null}>
                       <button
                         onClick={() => setActiveTab("sales")}
-                        className={`px-6 py-2 rounded-xl transition-all duration-200 text-sm font-medium min-h-[42px] ${
+                        className={`px-8 py-3 rounded-xl transition-all duration-300 text-sm font-medium whitespace-nowrap flex-1 text-center ${
                           activeTab === "sales"
-                            ? "bg-[hsl(var(--background))] text-[hsl(var(--foreground))] font-semibold shadow-sm"
-                            : "bg-transparent text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--background))]/10"
+                            ? "bg-white text-black font-semibold shadow-lg transform scale-105"
+                            : "bg-transparent text-gray-400 hover:text-gray-200 hover:bg-neutral-700/50"
                         }`}
                       >
                         Vendas
@@ -276,10 +276,10 @@ const Dashboard = () => {
                     <PermissionWrapper requirePage="affiliates" fallback={null}>
                       <button
                         onClick={() => setActiveTab("affiliates")}
-                        className={`px-6 py-2 rounded-xl transition-all duration-200 text-sm font-medium min-h-[42px] ${
+                        className={`px-8 py-3 rounded-xl transition-all duration-300 text-sm font-medium whitespace-nowrap flex-1 text-center ${
                           activeTab === "affiliates"
-                            ? "bg-[hsl(var(--background))] text-[hsl(var(--foreground))] font-semibold shadow-sm"
-                            : "bg-transparent text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--background))]/10"
+                            ? "bg-white text-black font-semibold shadow-lg transform scale-105"
+                            : "bg-transparent text-gray-400 hover:text-gray-200 hover:bg-neutral-700/50"
                         }`}
                       >
                         Afiliados
@@ -288,10 +288,10 @@ const Dashboard = () => {
                     <PermissionWrapper requirePage="subscriptions" fallback={null}>
                       <button
                         onClick={() => setActiveTab("subscriptions")}
-                        className={`px-6 py-2 rounded-xl transition-all duration-200 text-sm font-medium min-h-[42px] ${
+                        className={`px-8 py-3 rounded-xl transition-all duration-300 text-sm font-medium whitespace-nowrap flex-1 text-center ${
                           activeTab === "subscriptions"
-                            ? "bg-[hsl(var(--background))] text-[hsl(var(--foreground))] font-semibold shadow-sm"
-                            : "bg-transparent text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--background))]/10"
+                            ? "bg-white text-black font-semibold shadow-lg transform scale-105"
+                            : "bg-transparent text-gray-400 hover:text-gray-200 hover:bg-neutral-700/50"
                         }`}
                       >
                         Assinaturas
