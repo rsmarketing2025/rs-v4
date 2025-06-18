@@ -2,13 +2,8 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { MapPin, ChevronDown, X } from "lucide-react";
+import { MapPin } from "lucide-react";
 
 interface Sale {
   country: string;
@@ -29,7 +24,6 @@ interface ChartDataPoint {
 }
 
 export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) => {
-  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'revenue' | 'orders'>('revenue');
 
   console.log('CountrySalesChart - Total sales:', sales.length);
@@ -52,8 +46,8 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) =
 
   console.log('CountrySalesChart - Calculated metrics:', metrics);
 
-  // Converter para array e ordenar
-  const chartDataPoints: ChartDataPoint[] = Object.entries(metrics)
+  // Converter para array e ordenar - mostrar todos os países
+  const chartData: ChartDataPoint[] = Object.entries(metrics)
     .map(([country, data]) => ({
       country,
       orders: data.orders,
@@ -61,51 +55,7 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) =
     }))
     .sort((a, b) => sortBy === 'revenue' ? b.revenue - a.revenue : b.orders - a.orders);
 
-  console.log('CountrySalesChart - Chart data points:', chartDataPoints);
-
-  // Aplicar filtro de seleção múltipla
-  let chartData: ChartDataPoint[];
-  
-  if (selectedCountries.length === 0) {
-    chartData = chartDataPoints;
-  } else {
-    chartData = chartDataPoints.filter(item => 
-      selectedCountries.includes(item.country)
-    );
-  }
-  
-  // Inicializar com top 5 países se nenhum estiver selecionado
-  React.useEffect(() => {
-    if (selectedCountries.length === 0 && chartDataPoints.length > 0) {
-      const topCountries = chartDataPoints
-        .slice(0, 5)
-        .map(item => item.country);
-      setSelectedCountries(topCountries);
-    }
-  }, [chartDataPoints.length]);
-
-  const handleCountryToggle = (country: string) => {
-    setSelectedCountries(prev => {
-      if (prev.includes(country)) {
-        return prev.filter(c => c !== country);
-      } else {
-        return [...prev, country];
-      }
-    });
-  };
-
-  const handleSelectAll = () => {
-    const availableCountries = chartDataPoints.map(item => item.country);
-    setSelectedCountries(availableCountries);
-  };
-
-  const handleClearAll = () => {
-    setSelectedCountries([]);
-  };
-
-  const removeCountry = (country: string) => {
-    setSelectedCountries(prev => prev.filter(c => c !== country));
-  };
+  console.log('CountrySalesChart - Chart data points:', chartData);
 
   if (sales.length === 0) {
     return null;
@@ -116,8 +66,6 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) =
     revenue: acc.revenue + item.revenue,
     orders: acc.orders + item.orders
   }), { revenue: 0, orders: 0 });
-
-  const availableCountries = chartDataPoints.map(item => item.country);
 
   return (
     <Card className="bg-slate-800/30 border-slate-700">
@@ -157,101 +105,15 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) =
                 <SelectItem value="orders">Pedidos</SelectItem>
               </SelectContent>
             </Select>
-
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  className="w-full sm:w-[200px] justify-between bg-slate-900/50 border-slate-600 text-white hover:bg-slate-800/50"
-                >
-                  <span>
-                    {selectedCountries.length === 0 
-                      ? "Selecionar países"
-                      : `${selectedCountries.length} país${selectedCountries.length !== 1 ? 'es' : ''} selecionado${selectedCountries.length !== 1 ? 's' : ''}`
-                    }
-                  </span>
-                  <ChevronDown className="h-4 w-4 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-0 bg-slate-900 border-slate-700" align="end">
-                <div className="p-3 border-b border-slate-700">
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="text-white text-sm font-medium">Selecionar Países</h4>
-                    <div className="flex gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={handleSelectAll}
-                        className="text-xs text-slate-400 hover:text-white"
-                      >
-                        Todos
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={handleClearAll}
-                        className="text-xs text-slate-400 hover:text-white"
-                      >
-                        Limpar
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-                <ScrollArea className="h-64">
-                  <div className="p-3 space-y-2">
-                    {availableCountries.map((country) => (
-                      <div key={country} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={country}
-                          checked={selectedCountries.includes(country)}
-                          onCheckedChange={() => handleCountryToggle(country)}
-                          className="border-slate-500"
-                        />
-                        <label
-                          htmlFor={country}
-                          className="text-sm text-slate-300 cursor-pointer flex-1"
-                        >
-                          {country}
-                        </label>
-                        <div className="text-xs text-slate-400">
-                          {metrics[country]?.orders || 0} pedidos
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </PopoverContent>
-            </Popover>
           </div>
         </div>
-
-        {/* Países selecionados */}
-        {selectedCountries.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-3">
-            {selectedCountries.map((country) => (
-              <Badge 
-                key={country} 
-                variant="secondary" 
-                className="bg-slate-700 text-slate-300 hover:bg-slate-600"
-              >
-                {country}
-                <button
-                  onClick={() => removeCountry(country)}
-                  className="ml-1 hover:text-red-400"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </Badge>
-            ))}
-          </div>
-        )}
       </CardHeader>
       
       <CardContent>
         {chartData.length === 0 ? (
           <div className="flex items-center justify-center h-[500px]">
             <p className="text-slate-400 text-center">
-              Selecione pelo menos um país para visualizar o gráfico.
+              Nenhum dado encontrado para o período selecionado.
             </p>
           </div>
         ) : (
