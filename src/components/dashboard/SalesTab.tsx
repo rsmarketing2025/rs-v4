@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { SalesChart } from "./SalesChart";
 import { CreativesSalesChart } from "./CreativesSalesChart";
 import { SalesSummaryCards } from "./sales/SalesSummaryCards";
-import { StateSalesChart } from "./sales/StateSalesChart";
+import { CountrySalesChart } from "./sales/CountrySalesChart";
 import { SalesFilters } from "./sales/SalesFilters";
 import { SalesTable } from "./sales/SalesTable";
 import { format, startOfDay, endOfDay } from "date-fns";
@@ -41,7 +41,6 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [countryFilter, setCountryFilter] = useState("all");
   const [stateFilter, setStateFilter] = useState("all");
-  const [countryFilterForChart, setCountryFilterForChart] = useState("all");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -135,32 +134,6 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
     totalRevenue,
     avgOrderValue
   };
-
-  // Process data for StateSalesChart - sem filtros de tabela, apenas filtro específico do gráfico
-  const salesForStateChart = countryFilterForChart === "all" 
-    ? sales 
-    : sales.filter(sale => sale.country === countryFilterForChart);
-
-  const stateMetrics = salesForStateChart.reduce((acc, sale) => {
-    const state = sale.state || 'Não informado';
-    if (!acc[state]) {
-      acc[state] = { total_sales: 0, total_revenue: 0 };
-    }
-    acc[state].total_sales += 1;
-    // CHANGED: Use net_value instead of gross_value
-    if (sale.status === 'completed' || sale.status === 'Unfulfilled') {
-      acc[state].total_revenue += (sale.net_value || 0);
-    }
-    return acc;
-  }, {} as Record<string, { total_sales: number; total_revenue: number }>);
-
-  const stateData = Object.entries(stateMetrics)
-    .map(([state, metrics]) => ({
-      state,
-      total_sales: metrics.total_sales,
-      total_revenue: metrics.total_revenue
-    }))
-    .sort((a, b) => b.total_sales - a.total_sales);
 
   // Process data for CreativesSalesChart
   const creativesMetrics = filteredSales.reduce((acc, sale) => {
@@ -271,12 +244,9 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   return (
     <div className="space-y-6">
       <SalesSummaryCards totalMetrics={totalMetrics} />
-      <StateSalesChart 
-        stateData={stateData}
-        countryFilter={countryFilterForChart}
-        onCountryFilterChange={setCountryFilterForChart}
-        uniqueCountries={uniqueCountries}
-        filteredStateData={stateData}
+      <CountrySalesChart 
+        sales={sales}
+        countryFilter="all"
       />
       <SalesChart sales={filteredSales} dateRange={dateRange} />
       <CreativesSalesChart creativesData={creativesData} />

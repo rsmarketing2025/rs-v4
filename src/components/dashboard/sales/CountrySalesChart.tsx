@@ -13,7 +13,7 @@ import { MapPin, ChevronDown, X } from "lucide-react";
 interface Sale {
   country: string;
   status: string;
-  gross_value: number;
+  net_value: number;
   state?: string;
 }
 
@@ -23,51 +23,28 @@ interface CountrySalesChartProps {
 }
 
 interface ChartDataPoint {
-  country?: string;
-  state?: string;
+  country: string;
   orders: number;
   revenue: number;
 }
 
-export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, countryFilter }) => {
+export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales }) => {
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'revenue' | 'orders'>('revenue');
 
-  // Determinar se devemos mostrar estados (quando um país específico está filtrado)
-  const showingStates = countryFilter !== "all";
-  
-  console.log('CountrySalesChart - Received countryFilter:', countryFilter);
-  console.log('CountrySalesChart - showingStates:', showingStates);
-  
-  // Filtrar vendas conforme o contexto atual
-  let filteredSales: Sale[];
-  
-  if (showingStates) {
-    // Quando mostrando estados: filtrar apenas pelo país específico
-    filteredSales = sales.filter(sale => sale.country === countryFilter);
-  } else {
-    // Quando mostrando países: usar países selecionados ou todos se nenhum selecionado
-    if (selectedCountries.length === 0) {
-      filteredSales = sales;
-    } else {
-      filteredSales = sales.filter(sale => selectedCountries.includes(sale.country));
-    }
-  }
-
   console.log('CountrySalesChart - Total sales:', sales.length);
-  console.log('CountrySalesChart - Filtered sales:', filteredSales.length);
 
-  // Calcular métricas por país ou estado
-  const metrics = filteredSales.reduce((acc, sale) => {
-    const key = showingStates ? (sale.state || 'Não informado') : (sale.country || 'Não informado');
+  // Calcular métricas por país
+  const metrics = sales.reduce((acc, sale) => {
+    const country = sale.country || 'Não informado';
     
-    if (!acc[key]) {
-      acc[key] = { orders: 0, revenue: 0 };
+    if (!acc[country]) {
+      acc[country] = { orders: 0, revenue: 0 };
     }
     
-    acc[key].orders += 1;
-    if (sale.status === 'completed') {
-      acc[key].revenue += (sale.gross_value || 0);
+    acc[country].orders += 1;
+    if (sale.status === 'completed' || sale.status === 'Unfulfilled') {
+      acc[country].revenue += (sale.net_value || 0);
     }
     
     return acc;
@@ -77,8 +54,8 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
 
   // Converter para array e ordenar
   const chartDataPoints: ChartDataPoint[] = Object.entries(metrics)
-    .map(([key, data]) => ({
-      ...(showingStates ? { state: key } : { country: key }),
+    .map(([country, data]) => ({
+      country,
       orders: data.orders,
       revenue: data.revenue
     }))
@@ -86,34 +63,26 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
 
   console.log('CountrySalesChart - Chart data points:', chartDataPoints);
 
-  // Quando mostrando estados, usar todos os dados calculados
-  // Quando mostrando países, aplicar filtro de seleção múltipla
+  // Aplicar filtro de seleção múltipla
   let chartData: ChartDataPoint[];
   
-  if (showingStates) {
-    // Para estados: mostrar todos os estados do país selecionado
+  if (selectedCountries.length === 0) {
     chartData = chartDataPoints;
   } else {
-    // Para países: aplicar filtro de seleção múltipla
-    if (selectedCountries.length === 0) {
-      chartData = chartDataPoints;
-    } else {
-      chartData = chartDataPoints.filter(item => 
-        item.country && selectedCountries.includes(item.country)
-      );
-    }
+    chartData = chartDataPoints.filter(item => 
+      selectedCountries.includes(item.country)
+    );
   }
   
-  // Para países: inicializar com top 5 países se nenhum estiver selecionado
+  // Inicializar com top 5 países se nenhum estiver selecionado
   React.useEffect(() => {
-    if (!showingStates && selectedCountries.length === 0 && chartDataPoints.length > 0) {
+    if (selectedCountries.length === 0 && chartDataPoints.length > 0) {
       const topCountries = chartDataPoints
         .slice(0, 5)
-        .map(item => item.country)
-        .filter((country): country is string => typeof country === 'string');
+        .map(item => item.country);
       setSelectedCountries(topCountries);
     }
-  }, [chartDataPoints.length, showingStates]);
+  }, [chartDataPoints.length]);
 
   const handleCountryToggle = (country: string) => {
     setSelectedCountries(prev => {
@@ -126,9 +95,7 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
   };
 
   const handleSelectAll = () => {
-    const availableCountries = chartDataPoints
-      .map(item => item.country)
-      .filter((country): country is string => typeof country === 'string');
+    const availableCountries = chartDataPoints.map(item => item.country);
     setSelectedCountries(availableCountries);
   };
 
@@ -150,9 +117,7 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
     orders: acc.orders + item.orders
   }), { revenue: 0, orders: 0 });
 
-  const availableCountries = showingStates ? [] : chartDataPoints
-    .map(item => item.country)
-    .filter((country): country is string => typeof country === 'string');
+  const availableCountries = chartDataPoints.map(item => item.country);
 
   return (
     <Card className="bg-slate-800/30 border-slate-700">
@@ -161,13 +126,10 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
           <div>
             <CardTitle className="text-white flex items-center gap-2">
               <MapPin className="w-5 h-5" />
-              {showingStates ? `Vendas por Estado - ${countryFilter}` : 'Vendas por País'}
+              Vendas por País
             </CardTitle>
             <CardDescription className="text-slate-400">
-              {showingStates 
-                ? `Distribuição de vendas e pedidos por estado em ${countryFilter}`
-                : 'Distribuição de vendas e pedidos por país'
-              }
+              Distribuição de vendas e pedidos por país
             </CardDescription>
             <div className="mt-2 flex flex-wrap gap-4">
               <div className="text-sm text-slate-300">
@@ -196,77 +158,75 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
               </SelectContent>
             </Select>
 
-            {!showingStates && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="w-full sm:w-[200px] justify-between bg-slate-900/50 border-slate-600 text-white hover:bg-slate-800/50"
-                  >
-                    <span>
-                      {selectedCountries.length === 0 
-                        ? "Selecionar países"
-                        : `${selectedCountries.length} país${selectedCountries.length !== 1 ? 'es' : ''} selecionado${selectedCountries.length !== 1 ? 's' : ''}`
-                      }
-                    </span>
-                    <ChevronDown className="h-4 w-4 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 p-0 bg-slate-900 border-slate-700" align="end">
-                  <div className="p-3 border-b border-slate-700">
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="text-white text-sm font-medium">Selecionar Países</h4>
-                      <div className="flex gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={handleSelectAll}
-                          className="text-xs text-slate-400 hover:text-white"
-                        >
-                          Todos
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={handleClearAll}
-                          className="text-xs text-slate-400 hover:text-white"
-                        >
-                          Limpar
-                        </Button>
-                      </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="w-full sm:w-[200px] justify-between bg-slate-900/50 border-slate-600 text-white hover:bg-slate-800/50"
+                >
+                  <span>
+                    {selectedCountries.length === 0 
+                      ? "Selecionar países"
+                      : `${selectedCountries.length} país${selectedCountries.length !== 1 ? 'es' : ''} selecionado${selectedCountries.length !== 1 ? 's' : ''}`
+                    }
+                  </span>
+                  <ChevronDown className="h-4 w-4 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0 bg-slate-900 border-slate-700" align="end">
+                <div className="p-3 border-b border-slate-700">
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="text-white text-sm font-medium">Selecionar Países</h4>
+                    <div className="flex gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={handleSelectAll}
+                        className="text-xs text-slate-400 hover:text-white"
+                      >
+                        Todos
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={handleClearAll}
+                        className="text-xs text-slate-400 hover:text-white"
+                      >
+                        Limpar
+                      </Button>
                     </div>
                   </div>
-                  <ScrollArea className="h-64">
-                    <div className="p-3 space-y-2">
-                      {availableCountries.map((country) => (
-                        <div key={country} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={country}
-                            checked={selectedCountries.includes(country)}
-                            onCheckedChange={() => handleCountryToggle(country)}
-                            className="border-slate-500"
-                          />
-                          <label
-                            htmlFor={country}
-                            className="text-sm text-slate-300 cursor-pointer flex-1"
-                          >
-                            {country}
-                          </label>
-                          <div className="text-xs text-slate-400">
-                            {metrics[country]?.orders || 0} pedidos
-                          </div>
+                </div>
+                <ScrollArea className="h-64">
+                  <div className="p-3 space-y-2">
+                    {availableCountries.map((country) => (
+                      <div key={country} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={country}
+                          checked={selectedCountries.includes(country)}
+                          onCheckedChange={() => handleCountryToggle(country)}
+                          className="border-slate-500"
+                        />
+                        <label
+                          htmlFor={country}
+                          className="text-sm text-slate-300 cursor-pointer flex-1"
+                        >
+                          {country}
+                        </label>
+                        <div className="text-xs text-slate-400">
+                          {metrics[country]?.orders || 0} pedidos
                         </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                </PopoverContent>
-              </Popover>
-            )}
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
-        {/* Países selecionados - apenas mostrar quando não estiver mostrando estados */}
-        {!showingStates && selectedCountries.length > 0 && (
+        {/* Países selecionados */}
+        {selectedCountries.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-3">
             {selectedCountries.map((country) => (
               <Badge 
@@ -291,10 +251,7 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
         {chartData.length === 0 ? (
           <div className="flex items-center justify-center h-[500px]">
             <p className="text-slate-400 text-center">
-              {showingStates 
-                ? `Nenhum estado encontrado para ${countryFilter}.`
-                : "Selecione pelo menos um país para visualizar o gráfico."
-              }
+              Selecione pelo menos um país para visualizar o gráfico.
             </p>
           </div>
         ) : (
@@ -303,7 +260,7 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
               <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis 
-                  dataKey={showingStates ? "state" : "country"}
+                  dataKey="country"
                   stroke="#9ca3af"
                   fontSize={12}
                   angle={-45}
@@ -336,7 +293,7 @@ export const CountrySalesChart: React.FC<CountrySalesChartProps> = ({ sales, cou
                       : value.toLocaleString(),
                     name === 'revenue' ? 'Receita' : 'Pedidos'
                   ]}
-                  labelFormatter={(label) => `${showingStates ? 'Estado' : 'País'}: ${label}`}
+                  labelFormatter={(label) => `País: ${label}`}
                 />
                 <Bar 
                   dataKey={sortBy}
