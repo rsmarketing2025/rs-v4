@@ -25,21 +25,21 @@ export const SalesSummaryCards: React.FC<SalesSummaryCardsProps> = ({
       value: totalMetrics.totalSales.toLocaleString(),
       change: "+15.6%",
       icon: ShoppingCart,
-      variant: 'info' as const
+      variant: 'black' as const
     },
     {
       title: "Receita Total", 
       value: `R$ ${totalMetrics.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       change: "+23.8%",
       icon: DollarSign,
-      variant: 'success' as const
+      variant: 'orange' as const
     },
     {
       title: "Ticket Médio",
       value: `R$ ${totalMetrics.avgOrderValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       change: "-2.1%",
       icon: TrendingUp,
-      variant: 'warning' as const
+      variant: 'purple' as const
     }
   ];
 

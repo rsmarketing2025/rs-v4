@@ -28,7 +28,7 @@ export const SubscriptionsSummaryCards: React.FC<SubscriptionsSummaryCardsProps>
       value: loading ? "..." : metrics.activeSubscriptions.toLocaleString(),
       change: loading ? "..." : `+${metrics.activeSubscriptionsGrowth.toFixed(1)}%`,
       icon: Users,
-      variant: 'info' as const
+      variant: 'black' as const
     },
     {
       title: "Novas Assinaturas",
@@ -42,14 +42,14 @@ export const SubscriptionsSummaryCards: React.FC<SubscriptionsSummaryCardsProps>
       value: loading ? "..." : `R$ ${metrics.mrr.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       change: loading ? "..." : `+${metrics.mrrGrowth.toFixed(1)}%`,
       icon: DollarSign,
-      variant: 'success' as const
+      variant: 'orange' as const
     },
     {
       title: "Cancelamento",
       value: loading ? "..." : metrics.cancellations.toLocaleString(),
       change: loading ? "..." : `${metrics.cancellationsGrowth >= 0 ? '+' : ''}${metrics.cancellationsGrowth.toFixed(1)}%`,
       icon: XCircle,
-      variant: 'warning' as const
+      variant: 'purple' as const
     },
     {
       title: "Taxa de Churn",

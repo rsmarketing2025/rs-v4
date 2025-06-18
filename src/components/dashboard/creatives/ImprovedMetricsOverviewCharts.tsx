@@ -31,8 +31,10 @@ export const ImprovedMetricsOverviewCharts: React.FC<ImprovedMetricsOverviewChar
 }) => {
   const { rankingData, loading, missingDataStats } = useSalesRankingData(dateRange);
 
-  // Use ranking data from the specialized hook instead of creatives prop
-  const top5ByRevenue = rankingData.slice(0, 5);
+  // Filter out "Não informado" entries and get top 5 by revenue
+  const top5ByRevenue = rankingData
+    .filter(creative => creative.creative_name !== 'Não informado')
+    .slice(0, 5);
   
   // Filter creatives with ROI data
   const nonZeroCreatives = creatives.filter(c => 
@@ -69,8 +71,8 @@ export const ImprovedMetricsOverviewCharts: React.FC<ImprovedMetricsOverviewChar
       case 0: return 'bg-yellow-500 text-yellow-900'; // Ouro
       case 1: return 'bg-gray-400 text-gray-900'; // Prata
       case 2: return 'bg-orange-600 text-orange-100'; // Bronze
-      case 3: return 'bg-blue-500 text-blue-100'; // 4º lugar
-      case 4: return 'bg-purple-500 text-purple-100'; // 5º lugar
+      case 3: return 'bg-purple-500 text-purple-100'; // 4º lugar
+      case 4: return 'bg-black text-white'; // 5º lugar
       default: return 'bg-slate-500 text-slate-100';
     }
   };
@@ -85,7 +87,7 @@ export const ImprovedMetricsOverviewCharts: React.FC<ImprovedMetricsOverviewChar
             <AlertDescription className="text-yellow-700">
               <strong>Atenção:</strong> {missingDataStats.salesWithMissingCreative} vendas ({missingDataStats.percentageMissing.toFixed(1)}%) 
               não possuem nome do criativo informado, totalizando {formatCurrency(missingDataStats.missingRevenue)} em receita. 
-              Estas vendas estão agrupadas como "Não informado" no ranking.
+              Estas vendas foram excluídas do ranking TOP 5.
             </AlertDescription>
           </Alert>
         )}
@@ -102,7 +104,7 @@ export const ImprovedMetricsOverviewCharts: React.FC<ImprovedMetricsOverviewChar
               {missingDataStats.totalSales > 0 && (
                 <div className="flex items-center gap-2 text-xs text-slate-400">
                   <Info className="w-4 h-4" />
-                  Baseado em {missingDataStats.totalSales} vendas do período
+                  Baseado em vendas com criativo informado • Excluindo "Não informado"
                 </div>
               )}
             </CardHeader>
@@ -153,7 +155,7 @@ export const ImprovedMetricsOverviewCharts: React.FC<ImprovedMetricsOverviewChar
                 ))
               ) : (
                 <p className="text-slate-400 text-center py-4">
-                  Nenhum dado de receita encontrado para o período
+                  Nenhum dado de receita encontrado para criativos com nome informado
                 </p>
               )}
             </CardContent>

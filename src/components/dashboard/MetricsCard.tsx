@@ -9,21 +9,27 @@ interface MetricsCardProps {
   value: string;
   change: string;
   icon: LucideIcon;
-  variant: 'default' | 'success' | 'warning' | 'info';
+  variant: 'default' | 'success' | 'warning' | 'info' | 'black' | 'orange' | 'purple';
 }
 
 const variantStyles = {
   default: "bg-slate-800/60 border-slate-700",
   success: "bg-green-900/30 border-green-800/50",
   warning: "bg-orange-900/30 border-orange-800/50", 
-  info: "bg-blue-900/30 border-blue-800/50"
+  info: "bg-blue-900/30 border-blue-800/50",
+  black: "bg-black/70 border-gray-900",
+  orange: "bg-orange-900/40 border-orange-700/60",
+  purple: "bg-purple-900/40 border-purple-700/60"
 };
 
 const iconStyles = {
   default: "text-slate-400",
   success: "text-green-400",
   warning: "text-orange-400",
-  info: "text-blue-400"
+  info: "text-blue-400",
+  black: "text-gray-200",
+  orange: "text-orange-300",
+  purple: "text-purple-300"
 };
 
 export const MetricsCard: React.FC<MetricsCardProps> = ({
