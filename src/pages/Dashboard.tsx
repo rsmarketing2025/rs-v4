@@ -15,7 +15,8 @@ import {
   Target,
   BarChart3,
   Settings,
-  Calendar
+  Calendar,
+  ShoppingCart
 } from "lucide-react";
 import { CreativesTab } from "@/components/dashboard/CreativesTab";
 import { SalesTab } from "@/components/dashboard/SalesTab";
@@ -86,7 +87,7 @@ const Dashboard = () => {
   const getPageDescription = () => {
     if (location.pathname === '/users') return "Gerenciamento de usuários";
     if (location.pathname === '/business-managers') return "Gerenciamento de Business Managers";
-    return "Visão geral dos principais indicadores de performance";
+    return "Dashboard completo de métricas e análises";
   };
 
   // Verificar acesso às páginas especiais
@@ -207,6 +208,7 @@ const Dashboard = () => {
             </div>
           </div>
 
+          {/* Updated top cards layout to match the image */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
             <KPICard
               title="Total Investido"
@@ -214,31 +216,31 @@ const Dashboard = () => {
               change={kpisLoading ? "..." : "+12.5%"}
               icon={DollarSign}
               trend="up"
+              variant="black"
+            />
+            <KPICard
+              title="Receita"
+              value={kpisLoading ? "Carregando..." : `R$ ${kpis.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+              change={kpisLoading ? "..." : "+23.8%"}
+              icon={TrendingUp}
+              trend="up"
               variant="success"
             />
             <KPICard
-              title="Receita Total"
-              value={kpisLoading ? "Carregando..." : `R$ ${kpis.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              change={kpisLoading ? "..." : "+18.2%"}
-              icon={TrendingUp}
-              trend="up"
-              variant="orange"
+              title="Ticket Médio"
+              value={kpisLoading ? "Carregando..." : `R$ ${(kpis.totalRevenue / Math.max(kpis.totalOrders, 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+              change={kpisLoading ? "..." : "-2.1%"}
+              icon={ShoppingCart}
+              trend="down"
+              variant="warning"
             />
             <KPICard
               title="Total de Pedidos"
               value={kpisLoading ? "Carregando..." : kpis.totalOrders.toLocaleString()}
-              change={kpisLoading ? "..." : "+15.8%"}
+              change={kpisLoading ? "..." : "+15.6%"}
               icon={Target}
               trend="up"
               variant="purple"
-            />
-            <KPICard
-              title="ROI Médio"
-              value={kpisLoading ? "Carregando..." : `${kpis.avgROI.toFixed(2)}x`}
-              change={kpisLoading ? "..." : "+0.3x"}
-              icon={BarChart3}
-              trend="up"
-              variant="black"
             />
           </div>
 
@@ -246,33 +248,37 @@ const Dashboard = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <CardHeader className="pb-3 md:pb-4">
                 <div className="overflow-x-auto">
-                  <TabsList className="grid w-full grid-cols-4 bg-neutral-800 min-w-[400px] sm:min-w-0">
+                  <TabsList className="grid w-full grid-cols-4 bg-transparent border-b border-neutral-700 rounded-none min-w-[400px] sm:min-w-0 h-auto p-0">
                     <PermissionWrapper requirePage="creatives" fallback={null}>
-                      <TabsTrigger value="creatives" className="data-[state=active]:bg-neutral-700 data-[state=active]:text-white text-gray-300 text-xs sm:text-sm">
-                        <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">Criativos</span>
-                        <span className="sm:hidden">Creat.</span>
+                      <TabsTrigger 
+                        value="creatives" 
+                        className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-white data-[state=active]:text-white text-gray-400 text-xs sm:text-sm rounded-none py-3 px-4 border-b-2 border-transparent"
+                      >
+                        Criativos
                       </TabsTrigger>
                     </PermissionWrapper>
                     <PermissionWrapper requirePage="sales" fallback={null}>
-                      <TabsTrigger value="sales" className="data-[state=active]:bg-neutral-700 data-[state=active]:text-white text-gray-300 text-xs sm:text-sm">
-                        <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">Vendas</span>
-                        <span className="sm:hidden">Vend.</span>
+                      <TabsTrigger 
+                        value="sales" 
+                        className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-white data-[state=active]:text-white text-gray-400 text-xs sm:text-sm rounded-none py-3 px-4 border-b-2 border-transparent"
+                      >
+                        Vendas
                       </TabsTrigger>
                     </PermissionWrapper>
                     <PermissionWrapper requirePage="affiliates" fallback={null}>
-                      <TabsTrigger value="affiliates" className="data-[state=active]:bg-neutral-700 data-[state=active]:text-white text-gray-300 text-xs sm:text-sm">
-                        <Users className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">Afiliados</span>
-                        <span className="sm:hidden">Afil.</span>
+                      <TabsTrigger 
+                        value="affiliates" 
+                        className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-white data-[state=active]:text-white text-gray-400 text-xs sm:text-sm rounded-none py-3 px-4 border-b-2 border-transparent"
+                      >
+                        Afiliados
                       </TabsTrigger>
                     </PermissionWrapper>
                     <PermissionWrapper requirePage="subscriptions" fallback={null}>
-                      <TabsTrigger value="subscriptions" className="data-[state=active]:bg-neutral-700 data-[state=active]:text-white text-gray-300 text-xs sm:text-sm">
-                        <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                        <span className="hidden sm:inline">Assinaturas</span>
-                        <span className="sm:hidden">Assin.</span>
+                      <TabsTrigger 
+                        value="subscriptions" 
+                        className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-white data-[state=active]:text-white text-gray-400 text-xs sm:text-sm rounded-none py-3 px-4 border-b-2 border-transparent"
+                      >
+                        Assinaturas
                       </TabsTrigger>
                     </PermissionWrapper>
                   </TabsList>
