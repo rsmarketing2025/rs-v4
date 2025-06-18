@@ -28,28 +28,28 @@ export const SubscriptionsSummaryCards: React.FC<SubscriptionsSummaryCardsProps>
       value: loading ? "..." : metrics.activeSubscriptions.toLocaleString(),
       change: loading ? "..." : `+${metrics.activeSubscriptionsGrowth.toFixed(1)}%`,
       icon: Users,
-      variant: 'black' as const
+      variant: 'purple' as const
     },
     {
       title: "Novas Assinaturas",
       value: loading ? "..." : metrics.newSubscriptions.toLocaleString(),
       change: loading ? "..." : `+${metrics.newSubscriptionsGrowth.toFixed(1)}%`,
       icon: TrendingUp,
-      variant: 'success' as const
+      variant: 'orange' as const
     },
     {
       title: "MRR",
       value: loading ? "..." : `R$ ${metrics.mrr.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       change: loading ? "..." : `+${metrics.mrrGrowth.toFixed(1)}%`,
       icon: DollarSign,
-      variant: 'orange' as const
+      variant: 'black' as const
     },
     {
       title: "Cancelamento",
       value: loading ? "..." : metrics.cancellations.toLocaleString(),
       change: loading ? "..." : `${metrics.cancellationsGrowth >= 0 ? '+' : ''}${metrics.cancellationsGrowth.toFixed(1)}%`,
       icon: XCircle,
-      variant: 'purple' as const
+      variant: 'success' as const
     },
     {
       title: "Taxa de Churn",

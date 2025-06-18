@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
 import { Users, DollarSign, TrendingUp } from "lucide-react";
+import { MetricsCard } from "@/components/dashboard/MetricsCard";
 import { PermissionWrapper } from "@/components/common/PermissionWrapper";
 
 interface TotalMetrics {
@@ -17,50 +17,43 @@ interface AffiliatesSummaryCardsProps {
 export const AffiliatesSummaryCards: React.FC<AffiliatesSummaryCardsProps> = ({
   totalMetrics
 }) => {
+  const cards = [
+    {
+      title: "Total de Afiliados",
+      value: totalMetrics.totalAffiliates.toLocaleString(),
+      change: "+8.2%",
+      icon: Users,
+      variant: 'purple' as const
+    },
+    {
+      title: "Total Comissões",
+      value: `R$ ${totalMetrics.totalCommissions.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      change: "+12.5%",
+      icon: DollarSign,
+      variant: 'orange' as const
+    },
+    {
+      title: "Comissão Média",
+      value: `R$ ${totalMetrics.avgCommissionPerAffiliate.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      change: "+3.1%",
+      icon: TrendingUp,
+      variant: 'success' as const
+    }
+  ];
+
   return (
     <PermissionWrapper requirePage="affiliates">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-neutral-800 border-neutral-700">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Users className="w-5 h-5 text-gray-400" />
-              <div>
-                <p className="text-sm text-gray-400">Total de Afiliados</p>
-                <p className="text-xl font-bold text-white">
-                  {totalMetrics.totalAffiliates.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-neutral-800 border-neutral-700">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <DollarSign className="w-5 h-5 text-green-400" />
-              <div>
-                <p className="text-sm text-gray-400">Total Comissões</p>
-                <p className="text-xl font-bold text-white">
-                  R$ {totalMetrics.totalCommissions.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-neutral-800 border-neutral-700">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="w-5 h-5 text-green-400" />
-              <div>
-                <p className="text-sm text-gray-400">Comissão Média</p>
-                <p className="text-xl font-bold text-white">
-                  R$ {totalMetrics.avgCommissionPerAffiliate.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {cards.map((card, index) => (
+          <MetricsCard
+            key={index}
+            title={card.title}
+            value={card.value}
+            change={card.change}
+            icon={card.icon}
+            variant={card.variant}
+          />
+        ))}
       </div>
     </PermissionWrapper>
   );

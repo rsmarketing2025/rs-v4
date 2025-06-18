@@ -85,9 +85,10 @@ export const useSubscriptionMetrics = (
           // Estimar assinaturas ativas (simplificado)
           const activeSubscriptions = Math.max(0, newSubscriptions - totalCancellations);
           
-          // Calcular MRR usando 'amount' em vez de 'value'
+          // Calcular MRR usando 'amount' 
           const monthlyRevenue = subscriptions.reduce((sum, sub) => {
-            return sum + (sub.amount || 0);
+            const amount = Number(sub.amount) || 0;
+            return sum + amount;
           }, 0);
           
           // Calcular taxa de churn
@@ -95,15 +96,15 @@ export const useSubscriptionMetrics = (
 
           setMetrics({
             activeSubscriptions,
-            activeSubscriptionsGrowth: 15.2, // Mock growth
+            activeSubscriptionsGrowth: 15.2,
             newSubscriptions,
-            newSubscriptionsGrowth: 8.7, // Mock growth
+            newSubscriptionsGrowth: 8.7,
             cancellations: totalCancellations,
-            cancellationsGrowth: -5.3, // Mock growth (negative is good for cancellations)
+            cancellationsGrowth: -5.3,
             mrr: monthlyRevenue,
-            mrrGrowth: 12.3, // Mock growth
+            mrrGrowth: 12.3,
             churnRate,
-            churnRateChange: -2.1 // Mock change
+            churnRateChange: -2.1
           });
         }
       } catch (error) {
