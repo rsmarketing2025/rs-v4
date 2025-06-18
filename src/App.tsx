@@ -1,65 +1,72 @@
 
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ThemeToggle } from '@/components/ui/theme-toggle'
-import './App.css'
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { ThemeProvider } from "@/hooks/useTheme";
+import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AppSidebar } from "@/components/layout/AppSidebar";
+import Dashboard from "./pages/Dashboard";
+import AIAgents from "./pages/AIAgents";
+import Auth from "./pages/Auth";
+import NotFound from "./pages/NotFound";
 
-function App() {
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto max-w-7xl p-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-foreground mb-2">
-              Dashboard Manager
-            </h1>
-            <p className="text-lg text-muted-foreground">
-              Sistema com tema herdado do rs-dashboard-manager
-            </p>
-          </div>
-          <ThemeToggle />
-        </div>
+const queryClient = new QueryClient();
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Tema Implementado</CardTitle>
-              <CardDescription>
-                Paleta neutra HSL com suporte completo para dark/light mode
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <ul className="text-sm text-muted-foreground space-y-2">
-                <li>✅ Fonte Inter carregada via Google Fonts</li>
-                <li>✅ Tokens HSL para dark/light theme</li>
-                <li>✅ Paleta slate para utilidades diretas</li>
-                <li>✅ Border radius e animações configurados</li>
-                <li>✅ Container com max-width 1400px</li>
-              </ul>
-            </CardContent>
-          </Card>
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <BrowserRouter>
+      <ThemeProvider defaultTheme="dark" storageKey="dw-marketing-theme">
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route 
+                path="/*" 
+                element={
+                  <ProtectedRoute>
+                    <SidebarProvider>
+                      <div className="min-h-screen flex w-full">
+                        <AppSidebar />
+                        <Routes>
+                          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                          <Route path="/dashboard" element={<Dashboard />} />
+                          <Route path="/ai-agents" element={<AIAgents />} />
+                          <Route 
+                            path="/users" 
+                            element={
+                              <ProtectedRoute requireAdmin={true}>
+                                <Dashboard />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/business-managers" 
+                            element={
+                              <ProtectedRoute requireAdmin={true}>
+                                <Dashboard />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </div>
+                    </SidebarProvider>
+                  </ProtectedRoute>
+                } 
+              />
+            </Routes>
+          </TooltipProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </BrowserRouter>
+  </QueryClientProvider>
+);
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Página de Teste</CardTitle>
-              <CardDescription>
-                Demonstração completa de todos os componentes com o tema aplicado
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link to="/theme-test">
-                <Button className="w-full">
-                  Ver Página de Teste do Tema
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export default App
+export default App;

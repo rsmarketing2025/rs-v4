@@ -5,7 +5,7 @@ export interface User {
   full_name: string | null;
   avatar_url: string | null;
   created_at: string;
-  role: 'admin' | 'user' | 'business_manager';
+  role: 'admin' | 'user';
 }
 
 export interface UserPermission {
@@ -14,15 +14,7 @@ export interface UserPermission {
 }
 
 export interface UserWithPermissions extends User {
-  permissions?: {
-    creatives: boolean;
-    sales: boolean;
-    affiliates: boolean;
-    revenue: boolean;
-    users: boolean;
-    'business-managers': boolean;
-    subscriptions: boolean;
-  };
+  permissions?: UserPermission[];
 }
 
 export interface UserDetailModalProps {
@@ -30,7 +22,4 @@ export interface UserDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUserUpdate: () => void;
-  currentUserRole?: string | null;
-  onUserUpdated?: () => void;
-  onUpdate?: () => void;
 }
