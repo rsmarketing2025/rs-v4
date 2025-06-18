@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SalesChart } from "./SalesChart";
 import { CreativesSalesChart } from "./CreativesSalesChart";
-import { SalesSummaryCards } from "./sales/SalesSummaryCards";
 import { CountrySalesChart } from "./sales/CountrySalesChart";
 import { SalesFilters } from "./sales/SalesFilters";
 import { SalesTable } from "./sales/SalesTable";
@@ -243,7 +241,6 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
 
   return (
     <div className="space-y-6">
-      <SalesSummaryCards totalMetrics={totalMetrics} />
       <CountrySalesChart 
         sales={sales}
         countryFilter="all"

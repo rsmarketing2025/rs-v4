@@ -13,13 +13,13 @@ interface MetricsCardProps {
 }
 
 const variantStyles = {
-  default: "bg-slate-800/60 border-slate-700",
-  success: "bg-green-900/30 border-green-800/50",
-  warning: "bg-orange-900/30 border-orange-800/50", 
-  info: "bg-blue-900/30 border-blue-800/50",
-  black: "bg-black/70 border-gray-900",
-  orange: "bg-orange-900/40 border-orange-700/60",
-  purple: "bg-purple-900/40 border-purple-700/60"
+  default: "bg-slate-800/45 border-slate-700",
+  success: "bg-green-900/25 border-green-800/50",
+  warning: "bg-orange-900/25 border-orange-800/50", 
+  info: "bg-blue-900/25 border-blue-800/50",
+  black: "bg-black/55 border-gray-900",
+  orange: "bg-orange-900/30 border-orange-700/60",
+  purple: "bg-purple-900/30 border-purple-700/60"
 };
 
 const iconStyles = {

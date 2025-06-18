@@ -254,7 +254,7 @@ const Dashboard = () => {
                         onClick={() => setActiveTab("creatives")}
                         className={`px-8 py-3 rounded-xl transition-all duration-300 text-sm font-medium whitespace-nowrap flex-1 text-center ${
                           activeTab === "creatives"
-                            ? "bg-white text-black font-semibold shadow-lg transform scale-105"
+                            ? "bg-gray-400 text-black font-semibold shadow-lg transform scale-105"
                             : "bg-transparent text-gray-400 hover:text-gray-200 hover:bg-neutral-700/50"
                         }`}
                       >
@@ -266,7 +266,7 @@ const Dashboard = () => {
                         onClick={() => setActiveTab("sales")}
                         className={`px-8 py-3 rounded-xl transition-all duration-300 text-sm font-medium whitespace-nowrap flex-1 text-center ${
                           activeTab === "sales"
-                            ? "bg-white text-black font-semibold shadow-lg transform scale-105"
+                            ? "bg-gray-400 text-black font-semibold shadow-lg transform scale-105"
                             : "bg-transparent text-gray-400 hover:text-gray-200 hover:bg-neutral-700/50"
                         }`}
                       >
@@ -278,7 +278,7 @@ const Dashboard = () => {
                         onClick={() => setActiveTab("affiliates")}
                         className={`px-8 py-3 rounded-xl transition-all duration-300 text-sm font-medium whitespace-nowrap flex-1 text-center ${
                           activeTab === "affiliates"
-                            ? "bg-white text-black font-semibold shadow-lg transform scale-105"
+                            ? "bg-gray-400 text-black font-semibold shadow-lg transform scale-105"
                             : "bg-transparent text-gray-400 hover:text-gray-200 hover:bg-neutral-700/50"
                         }`}
                       >
@@ -290,7 +290,7 @@ const Dashboard = () => {
                         onClick={() => setActiveTab("subscriptions")}
                         className={`px-8 py-3 rounded-xl transition-all duration-300 text-sm font-medium whitespace-nowrap flex-1 text-center ${
                           activeTab === "subscriptions"
-                            ? "bg-white text-black font-semibold shadow-lg transform scale-105"
+                            ? "bg-gray-400 text-black font-semibold shadow-lg transform scale-105"
                             : "bg-transparent text-gray-400 hover:text-gray-200 hover:bg-neutral-700/50"
                         }`}
                       >
