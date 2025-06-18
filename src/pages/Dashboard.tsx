@@ -248,66 +248,82 @@ const Dashboard = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <CardHeader className="pb-3 md:pb-4">
                 <div className="overflow-x-auto">
-                  <TabsList className="grid w-full grid-cols-4 bg-transparent border-b border-neutral-700 rounded-none min-w-[400px] sm:min-w-0 h-auto p-0">
+                  <div className="flex gap-2 bg-[hsl(var(--card))] rounded-xl p-1 min-w-[400px] sm:min-w-0">
                     <PermissionWrapper requirePage="creatives" fallback={null}>
-                      <TabsTrigger 
-                        value="creatives" 
-                        className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-white data-[state=active]:text-white text-gray-400 text-xs sm:text-sm rounded-none py-3 px-4 border-b-2 border-transparent"
+                      <button
+                        onClick={() => setActiveTab("creatives")}
+                        className={`px-6 py-2 rounded-xl transition-all duration-200 text-sm font-medium min-h-[42px] ${
+                          activeTab === "creatives"
+                            ? "bg-[hsl(var(--background))] text-[hsl(var(--foreground))] font-semibold shadow-sm"
+                            : "bg-transparent text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--background))]/10"
+                        }`}
                       >
                         Criativos
-                      </TabsTrigger>
+                      </button>
                     </PermissionWrapper>
                     <PermissionWrapper requirePage="sales" fallback={null}>
-                      <TabsTrigger 
-                        value="sales" 
-                        className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-white data-[state=active]:text-white text-gray-400 text-xs sm:text-sm rounded-none py-3 px-4 border-b-2 border-transparent"
+                      <button
+                        onClick={() => setActiveTab("sales")}
+                        className={`px-6 py-2 rounded-xl transition-all duration-200 text-sm font-medium min-h-[42px] ${
+                          activeTab === "sales"
+                            ? "bg-[hsl(var(--background))] text-[hsl(var(--foreground))] font-semibold shadow-sm"
+                            : "bg-transparent text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--background))]/10"
+                        }`}
                       >
                         Vendas
-                      </TabsTrigger>
+                      </button>
                     </PermissionWrapper>
                     <PermissionWrapper requirePage="affiliates" fallback={null}>
-                      <TabsTrigger 
-                        value="affiliates" 
-                        className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-white data-[state=active]:text-white text-gray-400 text-xs sm:text-sm rounded-none py-3 px-4 border-b-2 border-transparent"
+                      <button
+                        onClick={() => setActiveTab("affiliates")}
+                        className={`px-6 py-2 rounded-xl transition-all duration-200 text-sm font-medium min-h-[42px] ${
+                          activeTab === "affiliates"
+                            ? "bg-[hsl(var(--background))] text-[hsl(var(--foreground))] font-semibold shadow-sm"
+                            : "bg-transparent text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--background))]/10"
+                        }`}
                       >
                         Afiliados
-                      </TabsTrigger>
+                      </button>
                     </PermissionWrapper>
                     <PermissionWrapper requirePage="subscriptions" fallback={null}>
-                      <TabsTrigger 
-                        value="subscriptions" 
-                        className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-white data-[state=active]:text-white text-gray-400 text-xs sm:text-sm rounded-none py-3 px-4 border-b-2 border-transparent"
+                      <button
+                        onClick={() => setActiveTab("subscriptions")}
+                        className={`px-6 py-2 rounded-xl transition-all duration-200 text-sm font-medium min-h-[42px] ${
+                          activeTab === "subscriptions"
+                            ? "bg-[hsl(var(--background))] text-[hsl(var(--foreground))] font-semibold shadow-sm"
+                            : "bg-transparent text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--background))]/10"
+                        }`}
                       >
                         Assinaturas
-                      </TabsTrigger>
+                      </button>
                     </PermissionWrapper>
-                  </TabsList>
+                  </div>
                 </div>
               </CardHeader>
 
               <CardContent className="p-3 md:p-6">
                 <PermissionWrapper requirePage="creatives">
-                  <TabsContent value="creatives" className="mt-0">
+                  <div className={activeTab === "creatives" ? "block" : "hidden"}>
                     <CreativesTab dateRange={dateRange} />
-                  </TabsContent>
+                  </div>
                 </PermissionWrapper>
                 
                 <PermissionWrapper requirePage="sales">
-                  <TabsContent value="sales" className="mt-0">
+                  <div className={activeTab === "sales" ? "block" : "hidden"}>
                     <SalesTab dateRange={dateRange} />
-                  </TabsContent>
+                  </div>
                 </PermissionWrapper>
                 
                 <PermissionWrapper requirePage="affiliates">
-                  <TabsContent value="affiliates" className="mt-0">
+                  <div className={activeTab === "affiliates" ? "block" : "hidden"}>
                     <AffiliatesTab dateRange={dateRange} />
-                  </TabsContent>
+                  </div>
                 </PermissionWrapper>
 
                 <PermissionWrapper requirePage="subscriptions">
-                  <TabsContent value="subscriptions" className="mt-0">
+                  <div className={activeTab === "subscriptions" ? "block" : "hidden"}>
                     <SubscriptionsTab dateRange={dateRange} />
-                  </TabsContent>
+                  </div>
                 </PermissionWrapper>
               </CardContent>
             </Tabs>

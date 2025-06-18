@@ -3,9 +3,8 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { DollarSign, TrendingUp, AlertTriangle, Info } from 'lucide-react';
+import { DollarSign, TrendingUp, Info } from 'lucide-react';
 import { PermissionWrapper } from "@/components/common/PermissionWrapper";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useSalesRankingData } from "@/hooks/useSalesRankingData";
 
 interface CreativeData {
@@ -29,7 +28,7 @@ export const ImprovedMetricsOverviewCharts: React.FC<ImprovedMetricsOverviewChar
   creatives, 
   dateRange 
 }) => {
-  const { rankingData, loading, missingDataStats } = useSalesRankingData(dateRange);
+  const { rankingData, loading } = useSalesRankingData(dateRange);
 
   // Filter out "Não informado" entries and get top 5 by revenue
   const top5ByRevenue = rankingData
@@ -80,18 +79,6 @@ export const ImprovedMetricsOverviewCharts: React.FC<ImprovedMetricsOverviewChar
   return (
     <PermissionWrapper requirePage="creatives">
       <div className="space-y-6">
-        {/* Data Quality Alert */}
-        {missingDataStats.percentageMissing > 0 && (
-          <Alert className="border-yellow-500/50 bg-yellow-500/10">
-            <AlertTriangle className="h-4 w-4 text-yellow-500" />
-            <AlertDescription className="text-yellow-700">
-              <strong>Atenção:</strong> {missingDataStats.salesWithMissingCreative} vendas ({missingDataStats.percentageMissing.toFixed(1)}%) 
-              não possuem nome do criativo informado, totalizando {formatCurrency(missingDataStats.missingRevenue)} em receita. 
-              Estas vendas foram excluídas do ranking TOP 5.
-            </AlertDescription>
-          </Alert>
-        )}
-
         {/* Cards TOP 5 */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <Card className="bg-slate-800/30 border-slate-700">
@@ -101,12 +88,6 @@ export const ImprovedMetricsOverviewCharts: React.FC<ImprovedMetricsOverviewChar
                 TOP 5 - Maior Receita
                 {loading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-400"></div>}
               </CardTitle>
-              {missingDataStats.totalSales > 0 && (
-                <div className="flex items-center gap-2 text-xs text-slate-400">
-                  <Info className="w-4 h-4" />
-                  Baseado em vendas com criativo informado • Excluindo "Não informado"
-                </div>
-              )}
             </CardHeader>
             <CardContent className="space-y-3">
               {loading ? (
