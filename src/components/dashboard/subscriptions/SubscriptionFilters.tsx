@@ -26,12 +26,12 @@ export const SubscriptionFilters: React.FC<SubscriptionFiltersProps> = ({
   };
 
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="flex flex-col sm:flex-row flex-wrap gap-2 md:gap-3">
       <Select
         value={filters.plan}
         onValueChange={(value) => onFiltersChange({ ...filters, plan: value })}
       >
-        <SelectTrigger className="w-40 bg-slate-800 border-slate-700 text-white">
+        <SelectTrigger className="w-full sm:w-32 md:w-40 bg-slate-800 border-slate-700 text-white text-xs md:text-sm">
           <SelectValue placeholder="Plano" />
         </SelectTrigger>
         <SelectContent className="bg-slate-800 border-slate-700">
@@ -46,7 +46,7 @@ export const SubscriptionFilters: React.FC<SubscriptionFiltersProps> = ({
         value={filters.eventType}
         onValueChange={(value) => onFiltersChange({ ...filters, eventType: value })}
       >
-        <SelectTrigger className="w-40 bg-slate-800 border-slate-700 text-white">
+        <SelectTrigger className="w-full sm:w-32 md:w-40 bg-slate-800 border-slate-700 text-white text-xs md:text-sm">
           <SelectValue placeholder="Tipo de Evento" />
         </SelectTrigger>
         <SelectContent className="bg-slate-800 border-slate-700">
@@ -60,7 +60,7 @@ export const SubscriptionFilters: React.FC<SubscriptionFiltersProps> = ({
         value={filters.paymentMethod}
         onValueChange={(value) => onFiltersChange({ ...filters, paymentMethod: value })}
       >
-        <SelectTrigger className="w-40 bg-slate-800 border-slate-700 text-white">
+        <SelectTrigger className="w-full sm:w-32 md:w-40 bg-slate-800 border-slate-700 text-white text-xs md:text-sm">
           <SelectValue placeholder="Pagamento" />
         </SelectTrigger>
         <SelectContent className="bg-slate-800 border-slate-700">
@@ -75,9 +75,9 @@ export const SubscriptionFilters: React.FC<SubscriptionFiltersProps> = ({
         variant="outline"
         size="sm"
         onClick={resetFilters}
-        className="text-slate-300 border-slate-600"
+        className="text-slate-300 border-slate-600 text-xs md:text-sm px-2 md:px-3"
       >
-        <RotateCcw className="w-4 h-4 mr-2" />
+        <RotateCcw className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
         Limpar
       </Button>
     </div>
