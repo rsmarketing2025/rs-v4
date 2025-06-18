@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
 import { DollarSign, ShoppingCart, TrendingUp } from "lucide-react";
+import { MetricsCard } from "@/components/dashboard/MetricsCard";
 
 interface TotalMetrics {
   totalSales: number;
@@ -19,49 +19,42 @@ export const SalesSummaryCards: React.FC<SalesSummaryCardsProps> = ({
   // Debug logging to track the values
   console.log('SalesSummaryCards - totalMetrics:', totalMetrics);
 
+  const cards = [
+    {
+      title: "Total de Vendas",
+      value: totalMetrics.totalSales.toLocaleString(),
+      change: "+15.6%",
+      icon: ShoppingCart,
+      variant: 'info' as const
+    },
+    {
+      title: "Receita Total", 
+      value: `R$ ${totalMetrics.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      change: "+23.8%",
+      icon: DollarSign,
+      variant: 'success' as const
+    },
+    {
+      title: "Ticket Médio",
+      value: `R$ ${totalMetrics.avgOrderValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      change: "-2.1%",
+      icon: TrendingUp,
+      variant: 'warning' as const
+    }
+  ];
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <Card className="bg-neutral-800 border-neutral-700">
-        <CardContent className="p-4">
-          <div className="flex items-center space-x-2">
-            <ShoppingCart className="w-5 h-5 text-green-400" />
-            <div>
-              <p className="text-sm text-gray-400">Total de Vendas</p>
-              <p className="text-xl font-bold text-white">
-                {totalMetrics.totalSales.toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-neutral-800 border-neutral-700">
-        <CardContent className="p-4">
-          <div className="flex items-center space-x-2">
-            <DollarSign className="w-5 h-5 text-green-400" />
-            <div>
-              <p className="text-sm text-gray-400">Receita Total</p>
-              <p className="text-xl font-bold text-white">
-                R$ {totalMetrics.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-neutral-800 border-neutral-700">
-        <CardContent className="p-4">
-          <div className="flex items-center space-x-2">
-            <TrendingUp className="w-5 h-5 text-green-400" />
-            <div>
-              <p className="text-sm text-gray-400">Ticket Médio</p>
-              <p className="text-xl font-bold text-white">
-                R$ {totalMetrics.avgOrderValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {cards.map((card, index) => (
+        <MetricsCard
+          key={index}
+          title={card.title}
+          value={card.value}
+          change={card.change}
+          icon={card.icon}
+          variant={card.variant}
+        />
+      ))}
     </div>
   );
 };

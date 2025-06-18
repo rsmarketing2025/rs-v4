@@ -13,10 +13,6 @@ interface SubscriptionMetrics {
   mrrGrowth: number;
   churnRate: number;
   churnRateChange: number;
-  averageLTV: number;
-  ltvGrowth: number;
-  retention30d: number;
-  retentionChange: number;
 }
 
 interface Filters {
@@ -44,11 +40,7 @@ export const useSubscriptionMetrics = (
     mrr: 0,
     mrrGrowth: 0,
     churnRate: 0,
-    churnRateChange: 0,
-    averageLTV: 0,
-    ltvGrowth: 0,
-    retention30d: 0,
-    retentionChange: 0
+    churnRateChange: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -85,7 +77,7 @@ export const useSubscriptionMetrics = (
         if (events && events.length > 0) {
           // Calcular métricas principais
           const subscriptions = events.filter(e => e.event_type === 'subscription');
-          const cancellations = events.filter(e => e.event_type === 'cancellation');
+          const cancellations = events.filter(e => e.event_type === 'canceled');
           
           const newSubscriptions = subscriptions.length;
           const totalCancellations = cancellations.length;
@@ -100,13 +92,6 @@ export const useSubscriptionMetrics = (
           
           // Calcular taxa de churn
           const churnRate = activeSubscriptions > 0 ? (totalCancellations / activeSubscriptions) * 100 : 0;
-          
-          // LTV estimado (valor médio * 12 meses / taxa de churn mensal)
-          const avgAmount = subscriptions.length > 0 ? monthlyRevenue / subscriptions.length : 0;
-          const averageLTV = churnRate > 0 ? (avgAmount * 12) / (churnRate / 100) : avgAmount * 12;
-          
-          // Retenção simplificada (90% para exemplo)
-          const retention30d = 90;
 
           setMetrics({
             activeSubscriptions,
@@ -118,11 +103,7 @@ export const useSubscriptionMetrics = (
             mrr: monthlyRevenue,
             mrrGrowth: 12.3, // Mock growth
             churnRate,
-            churnRateChange: -2.1, // Mock change
-            averageLTV,
-            ltvGrowth: 5.8, // Mock growth
-            retention30d,
-            retentionChange: 2.4 // Mock change
+            churnRateChange: -2.1 // Mock change
           });
         }
       } catch (error) {
@@ -133,13 +114,7 @@ export const useSubscriptionMetrics = (
     };
 
     fetchMetrics();
-  }, [
-    dateRange.from.getTime(),
-    dateRange.to.getTime(),
-    filters.plan,
-    filters.eventType,
-    filters.paymentMethod
-  ]);
+  }, [dateRange, filters]);
 
   return { metrics, loading };
 };
