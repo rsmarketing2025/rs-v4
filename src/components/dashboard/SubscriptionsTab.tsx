@@ -1,8 +1,7 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { SubscriptionsSummaryCards } from "./subscriptions/SubscriptionsSummaryCards";
-import { SubscriptionsChart } from "./subscriptions/SubscriptionsChart";
 import { SubscriptionsTable } from "./subscriptions/SubscriptionsTable";
 import { PermissionWrapper } from "@/components/common/PermissionWrapper";
 
@@ -32,80 +31,8 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
 
         <SubscriptionsSummaryCards dateRange={dateRange} filters={filters} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-          <Card className="bg-neutral-800 border-neutral-700">
-            <CardHeader className="p-3 md:p-6">
-              <CardTitle className="text-white text-sm md:text-base">Evolução de Assinaturas</CardTitle>
-              <CardDescription className="text-gray-400 text-xs md:text-sm">
-                Novos assinantes vs cancelamentos
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-3 md:p-6 pt-0">
-              <SubscriptionsChart 
-                type="timeline" 
-                dateRange={dateRange} 
-                filters={filters} 
-              />
-            </CardContent>
-          </Card>
-
-          <Card className="bg-neutral-800 border-neutral-700">
-            <CardHeader className="p-3 md:p-6">
-              <CardTitle className="text-white text-sm md:text-base">Distribuição por Plano</CardTitle>
-              <CardDescription className="text-gray-400 text-xs md:text-sm">
-                Participação de cada plano
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-3 md:p-6 pt-0">
-              <SubscriptionsChart 
-                type="plan-distribution" 
-                dateRange={dateRange} 
-                filters={filters} 
-              />
-            </CardContent>
-          </Card>
-
-          <Card className="bg-neutral-800 border-neutral-700">
-            <CardHeader className="p-3 md:p-6">
-              <CardTitle className="text-white text-sm md:text-base">MRR por Período</CardTitle>
-              <CardDescription className="text-gray-400 text-xs md:text-sm">
-                Receita recorrente mensal
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-3 md:p-6 pt-0">
-              <SubscriptionsChart 
-                type="mrr" 
-                dateRange={dateRange} 
-                filters={filters} 
-              />
-            </CardContent>
-          </Card>
-
-          <Card className="bg-neutral-800 border-neutral-700">
-            <CardHeader className="p-3 md:p-6">
-              <CardTitle className="text-white text-sm md:text-base">Taxa de Churn</CardTitle>
-              <CardDescription className="text-gray-400 text-xs md:text-sm">
-                Porcentagem de cancelamentos
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-3 md:p-6 pt-0">
-              <SubscriptionsChart 
-                type="churn-rate" 
-                dateRange={dateRange} 
-                filters={filters} 
-              />
-            </CardContent>
-          </Card>
-        </div>
-
         <Card className="bg-neutral-800 border-neutral-700">
-          <CardHeader className="p-3 md:p-6">
-            <CardTitle className="text-white text-sm md:text-base">Eventos de Assinatura</CardTitle>
-            <CardDescription className="text-gray-400 text-xs md:text-sm">
-              Lista detalhada de todos os eventos
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-3 md:p-6 pt-0">
+          <CardContent className="p-3 md:p-6">
             <SubscriptionsTable dateRange={dateRange} filters={filters} />
           </CardContent>
         </Card>

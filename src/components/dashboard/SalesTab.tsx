@@ -1,13 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { SalesChart } from "./SalesChart";
-import { CreativesSalesChart } from "./CreativesSalesChart";
-import { CountrySalesChart } from "./sales/CountrySalesChart";
 import { SalesFilters } from "./sales/SalesFilters";
 import { SalesTable } from "./sales/SalesTable";
 import { format, startOfDay, endOfDay } from "date-fns";
-import { ptBR } from "date-fns/locale";
 
 interface Sale {
   id: string;
@@ -113,74 +110,6 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   const uniqueCountries = [...new Set(sales.map(sale => sale.country).filter(Boolean))].sort();
   const uniqueStates = [...new Set(sales.map(sale => sale.state).filter(Boolean))].sort();
 
-  // CHANGED: Use net_value instead of gross_value for revenue calculations
-  const validSales = sales.filter(sale => sale.status === 'completed' || sale.status === 'Unfulfilled');
-  const totalRevenue = validSales.reduce((acc, sale) => acc + (sale.net_value || 0), 0);
-  const totalSales = validSales.length;
-  const avgOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
-
-  console.log('SalesTab calculations:', {
-    totalSales: sales.length,
-    validSales: validSales.length,
-    totalRevenue,
-    avgOrderValue,
-    dateRange
-  });
-
-  const totalMetrics = {
-    totalSales,
-    totalRevenue,
-    avgOrderValue
-  };
-
-  // Process data for CreativesSalesChart
-  const creativesMetrics = filteredSales.reduce((acc, sale) => {
-    const creativeName = sale.creative_name || 'Não informado';
-    if (!acc[creativeName]) {
-      acc[creativeName] = { total_sales: 0, total_revenue: 0 };
-    }
-    acc[creativeName].total_sales += 1;
-    // CHANGED: Use net_value instead of gross_value
-    if (sale.status === 'completed' || sale.status === 'Unfulfilled') {
-      acc[creativeName].total_revenue += (sale.net_value || 0);
-    }
-    return acc;
-  }, {} as Record<string, { total_sales: number; total_revenue: number }>);
-
-  const creativesData = Object.entries(creativesMetrics)
-    .map(([creative_name, metrics]) => ({
-      creative_name,
-      total_sales: metrics.total_sales,
-      total_revenue: metrics.total_revenue
-    }))
-    .sort((a, b) => b.total_sales - a.total_sales);
-
-  // Regional metrics
-  const regionalMetrics = filteredSales.reduce((acc, sale) => {
-    const country = sale.country || 'Não informado';
-    const state = sale.state || 'Não informado';
-    
-    if (!acc[country]) {
-      acc[country] = { orders: 0, revenue: 0, states: {} };
-    }
-    
-    acc[country].orders += 1;
-    // CHANGED: Use net_value instead of gross_value
-    if (sale.status === 'completed' || sale.status === 'Unfulfilled') {
-      acc[country].revenue += (sale.net_value || 0);
-    }
-    
-    if (!acc[country].states[state]) {
-      acc[country].states[state] = { orders: 0, revenue: 0 };
-    }
-    acc[country].states[state].orders += 1;
-    if (sale.status === 'completed' || sale.status === 'Unfulfilled') {
-      acc[country].states[state].revenue += (sale.net_value || 0);
-    }
-    
-    return acc;
-  }, {} as Record<string, { orders: number; revenue: number; states: Record<string, { orders: number; revenue: number }> }>);
-
   const handleClearFilters = () => {
     setSearchTerm("");
     setStatusFilter("all");
@@ -216,7 +145,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
       headers.join(','),
       ...displayedSales.map(sale => [
         `"${sale.order_id}"`,
-        sale.sale_date ? format(new Date(sale.sale_date), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : '-',
+        sale.sale_date ? format(new Date(sale.sale_date), 'dd/MM/yyyy HH:mm') : '-',
         `"${sale.customer_name}"`,
         `"${sale.creative_name}"`,
         getStatusLabel(sale.status),
@@ -241,12 +170,6 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
 
   return (
     <div className="space-y-6">
-      <CountrySalesChart 
-        sales={sales}
-        countryFilter="all"
-      />
-      <SalesChart sales={filteredSales} dateRange={dateRange} />
-      <CreativesSalesChart creativesData={creativesData} />
       <SalesFilters
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
