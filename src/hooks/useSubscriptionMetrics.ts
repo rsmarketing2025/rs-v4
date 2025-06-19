@@ -71,18 +71,6 @@ export const useSubscriptionMetrics = (
 
         if (error) {
           console.error('Error fetching subscription events:', error);
-          setMetrics({
-            activeSubscriptions: 0,
-            activeSubscriptionsGrowth: 0,
-            newSubscriptions: 0,
-            newSubscriptionsGrowth: 0,
-            cancellations: 0,
-            cancellationsGrowth: 0,
-            mrr: 0,
-            mrrGrowth: 0,
-            churnRate: 0,
-            churnRateChange: 0
-          });
           return;
         }
 
@@ -134,18 +122,6 @@ export const useSubscriptionMetrics = (
         }
       } catch (error) {
         console.error('Error fetching subscription metrics:', error);
-        setMetrics({
-          activeSubscriptions: 0,
-          activeSubscriptionsGrowth: 0,
-          newSubscriptions: 0,
-          newSubscriptionsGrowth: 0,
-          cancellations: 0,
-          cancellationsGrowth: 0,
-          mrr: 0,
-          mrrGrowth: 0,
-          churnRate: 0,
-          churnRateChange: 0
-        });
       } finally {
         setLoading(false);
       }

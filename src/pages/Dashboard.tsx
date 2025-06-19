@@ -53,11 +53,6 @@ const Dashboard = () => {
 
   const { kpis, loading: kpisLoading } = useMonthlyKPIs(dateRange);
 
-  // Função para resetar o período para "hoje" sempre que necessário
-  const resetToToday = () => {
-    setDateRange(getTodayRange());
-  };
-
   React.useEffect(() => {
     if (activeTab === "users") {
       window.history.pushState({}, '', '/users');
@@ -66,15 +61,7 @@ const Dashboard = () => {
     } else {
       window.history.pushState({}, '', '/dashboard');
     }
-    
-    // Sempre que a aba mudar, resetar para "hoje"
-    resetToToday();
   }, [activeTab]);
-
-  // Resetar para "hoje" sempre que o componente for montado/atualizado
-  React.useEffect(() => {
-    resetToToday();
-  }, []);
 
   // Função para obter o título da página atual
   const getPageTitle = () => {
@@ -187,22 +174,13 @@ const Dashboard = () => {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-2 justify-end">
-              <div className="order-2 sm:order-1">
+              <div className="order-1">
                 <DateRangePicker 
                   dateRange={dateRange} 
                   onDateRangeChange={setDateRange} 
                 />
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={resetToToday}
-                className="bg-slate-900/50 border-slate-700 text-slate-300 hover:bg-slate-800 order-1 sm:order-2"
-              >
-                <Calendar className="w-4 h-4 mr-2" />
-                Hoje
-              </Button>
-              <div className="order-3">
+              <div className="order-2">
                 <ThemeToggle />
               </div>
             </div>
