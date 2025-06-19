@@ -15,6 +15,7 @@ import {
   Target,
   BarChart3,
   Settings,
+  Calendar,
   ShoppingCart
 } from "lucide-react";
 import { CreativesTab } from "@/components/dashboard/CreativesTab";
@@ -24,6 +25,7 @@ import { SubscriptionsTab } from "@/components/dashboard/SubscriptionsTab";
 import { UsersTab } from "@/components/dashboard/UsersTab";
 import { BusinessManagersTab } from "@/components/dashboard/BusinessManagersTab";
 import { KPICard } from "@/components/dashboard/KPICard";
+import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { PermissionWrapper } from "@/components/common/PermissionWrapper";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -41,13 +43,20 @@ const Dashboard = () => {
     return "creatives";
   });
   
-  // Período fixo para "hoje"
-  const dateRange = {
+  // Função para obter o período "hoje" por padrão
+  const getTodayRange = () => ({
     from: startOfDay(new Date()),
     to: endOfDay(new Date())
-  };
+  });
+  
+  const [dateRange, setDateRange] = useState(getTodayRange);
 
   const { kpis, loading: kpisLoading } = useMonthlyKPIs(dateRange);
+
+  // Função para resetar o período para "hoje" sempre que necessário
+  const resetToToday = () => {
+    setDateRange(getTodayRange());
+  };
 
   React.useEffect(() => {
     if (activeTab === "users") {
@@ -57,7 +66,15 @@ const Dashboard = () => {
     } else {
       window.history.pushState({}, '', '/dashboard');
     }
+    
+    // Sempre que a aba mudar, resetar para "hoje"
+    resetToToday();
   }, [activeTab]);
+
+  // Resetar para "hoje" sempre que o componente for montado/atualizado
+  React.useEffect(() => {
+    resetToToday();
+  }, []);
 
   // Função para obter o título da página atual
   const getPageTitle = () => {
@@ -169,8 +186,25 @@ const Dashboard = () => {
               </div>
             </div>
             
-            <div className="flex justify-end">
-              <ThemeToggle />
+            <div className="flex flex-col sm:flex-row gap-2 justify-end">
+              <div className="order-2 sm:order-1">
+                <DateRangePicker 
+                  dateRange={dateRange} 
+                  onDateRangeChange={setDateRange} 
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resetToToday}
+                className="bg-slate-900/50 border-slate-700 text-slate-300 hover:bg-slate-800 order-1 sm:order-2"
+              >
+                <Calendar className="w-4 h-4 mr-2" />
+                Hoje
+              </Button>
+              <div className="order-3">
+                <ThemeToggle />
+              </div>
             </div>
           </div>
 
