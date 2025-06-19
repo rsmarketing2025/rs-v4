@@ -49,7 +49,7 @@ export const useSubscriptionMetrics = (
       try {
         setLoading(true);
 
-        // Build base query
+        // Build base query with explicit type
         let query = supabase
           .from('subscription_events')
           .select('*')
@@ -152,7 +152,7 @@ export const useSubscriptionMetrics = (
     };
 
     fetchMetrics();
-  }, [dateRange, filters]);
+  }, [dateRange.from, dateRange.to, filters.plan, filters.eventType, filters.paymentMethod]);
 
   return { metrics, loading };
 };

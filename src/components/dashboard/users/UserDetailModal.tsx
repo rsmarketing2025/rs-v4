@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -7,20 +8,44 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { UserDetailModalProps, UserWithPermissions } from "./types";
+
+interface UserPermission {
+  page: string;
+  can_access: boolean;
+}
+
+interface UserWithPermissions {
+  id: string;
+  email: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  created_at: string;
+  role: 'admin' | 'user' | 'business_manager';
+  permissions?: UserPermission[];
+}
+
+interface UserDetailModalProps {
+  user: UserWithPermissions | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onUserUpdate: () => void;
+  currentUserRole?: string | null;
+  onUpdate?: () => void;
+}
 
 export const UserDetailModal: React.FC<UserDetailModalProps> = ({
   user,
   isOpen,
   onClose,
-  onUserUpdate
+  onUserUpdate,
+  onUpdate
 }) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [permissions, setPermissions] = useState(() => {
     const initialPermissions: Record<string, boolean> = {};
     
     if (user && user.permissions && Array.isArray(user.permissions)) {
-      user.permissions.forEach((permission: any) => {
+      user.permissions.forEach((permission: UserPermission) => {
         if (permission && permission.page) {
           initialPermissions[permission.page] = permission.can_access || false;
         }
@@ -79,6 +104,7 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
       });
 
       onUserUpdate();
+      if (onUpdate) onUpdate();
       onClose();
     } catch (error) {
       console.error('Error updating permissions:', error);
