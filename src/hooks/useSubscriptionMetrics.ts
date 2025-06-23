@@ -50,11 +50,11 @@ export const useSubscriptionMetrics = (
         setLoading(true);
         console.log('📊 Fetching subscription metrics from subscription_status table...');
 
-        // 1. Get active subscriptions from subscription_status table
+        // 1. Get active subscriptions from subscription_status table (using Portuguese "Ativo")
         let activeQuery = supabase
           .from('subscription_status')
           .select('*', { count: 'exact' })
-          .eq('subscription_status', 'active');
+          .eq('subscription_status', 'Ativo');
 
         if (filters.plan !== 'all') {
           activeQuery = activeQuery.eq('plan', filters.plan);
@@ -67,11 +67,11 @@ export const useSubscriptionMetrics = (
           return sum + (Number(sub.amount) || 0);
         }, 0);
 
-        // 2. Get new subscriptions in the period from subscription_events
+        // 2. Get new subscriptions in the period from subscription_events (simplified to 'subscription')
         let newSubsQuery = supabase
           .from('subscription_events')
           .select('*', { count: 'exact' })
-          .in('event_type', ['subscription', 'created', 'subscription_created'])
+          .eq('event_type', 'subscription')
           .gte('event_date', dateRange.from.toISOString())
           .lte('event_date', dateRange.to.toISOString());
 
@@ -81,11 +81,11 @@ export const useSubscriptionMetrics = (
 
         const { count: newSubscriptionsCount } = await newSubsQuery;
 
-        // 3. Get cancellations in the period from subscription_events
+        // 3. Get cancellations in the period from subscription_events (simplified to 'canceled')
         let cancellationsQuery = supabase
           .from('subscription_events')
           .select('*', { count: 'exact' })
-          .in('event_type', ['canceled', 'cancelled', 'cancellation'])
+          .eq('event_type', 'canceled')
           .gte('event_date', dateRange.from.toISOString())
           .lte('event_date', dateRange.to.toISOString());
 
