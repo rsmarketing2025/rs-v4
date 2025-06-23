@@ -67,13 +67,12 @@ export const useSubscriptionMetrics = (
           return sum + (Number(sub.amount) || 0);
         }, 0);
 
-        // 2. Get new subscriptions in the period from subscription_events (simplified to 'subscription')
+        // 2. Get new subscriptions created in the period from subscription_status table
         let newSubsQuery = supabase
-          .from('subscription_events')
+          .from('subscription_status')
           .select('*', { count: 'exact' })
-          .eq('event_type', 'subscription')
-          .gte('event_date', dateRange.from.toISOString())
-          .lte('event_date', dateRange.to.toISOString());
+          .gte('created_at', dateRange.from.toISOString())
+          .lte('created_at', dateRange.to.toISOString());
 
         if (filters.plan !== 'all') {
           newSubsQuery = newSubsQuery.eq('plan', filters.plan);
