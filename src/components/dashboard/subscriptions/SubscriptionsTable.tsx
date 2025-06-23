@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { useSubscriptionEvents } from "@/hooks/useSubscriptionEvents";
 
@@ -30,7 +31,7 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = ({
   filters
 }) => {
   const [page, setPage] = useState(1);
-  const pageSize = 20;
+  const [pageSize, setPageSize] = useState(20);
   
   const { events, loading, totalCount } = useSubscriptionEvents(
     dateRange, 
@@ -61,6 +62,11 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = ({
     );
   };
 
+  const handlePageSizeChange = (newPageSize: string) => {
+    setPageSize(Number(newPageSize));
+    setPage(1); // Reset to first page when changing page size
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -72,9 +78,25 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = ({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <p className="text-sm text-slate-400">
-          Mostrando {events.length} de {totalCount} eventos
-        </p>
+        <div className="flex items-center gap-4">
+          <p className="text-sm text-slate-400">
+            Mostrando {events.length} de {totalCount} eventos
+          </p>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-slate-400">Linhas por página:</span>
+            <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+              <SelectTrigger className="w-20 bg-slate-800 border-slate-600 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-800 border-slate-600">
+                <SelectItem value="10" className="text-white hover:bg-slate-700">10</SelectItem>
+                <SelectItem value="20" className="text-white hover:bg-slate-700">20</SelectItem>
+                <SelectItem value="50" className="text-white hover:bg-slate-700">50</SelectItem>
+                <SelectItem value="100" className="text-white hover:bg-slate-700">100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         <Button variant="outline" size="sm" className="text-slate-300 border-slate-600">
           <Download className="w-4 h-4 mr-2" />
           Exportar
@@ -91,7 +113,6 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = ({
                 <TableHead className="text-slate-300">Plano</TableHead>
                 <TableHead className="text-slate-300">Valor</TableHead>
                 <TableHead className="text-slate-300">Data</TableHead>
-                <TableHead className="text-slate-300">ID Assinatura</TableHead>
                 <TableHead className="text-slate-300">Número</TableHead>
               </TableRow>
             </TableHeader>
@@ -115,11 +136,6 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = ({
                   </TableCell>
                   <TableCell className="text-slate-300">
                     {new Date(event.event_date).toLocaleDateString('pt-BR')}
-                  </TableCell>
-                  <TableCell className="text-slate-300">
-                    <div className="max-w-32 truncate">
-                      {event.subscription_id}
-                    </div>
                   </TableCell>
                   <TableCell className="text-slate-300">
                     {event.subscription_number || 'N/A'}
