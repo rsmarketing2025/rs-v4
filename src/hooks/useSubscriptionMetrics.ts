@@ -34,18 +34,6 @@ interface SubscriptionEvent {
   customer_id: string;
 }
 
-interface ProcessedSubscription {
-  subscription_id: string;
-  customer_id: string;
-  plan: string;
-  amount: number;
-  isActive: boolean;
-  lastEventDate: string;
-  lastEventType: string;
-  createdAt: string;
-  events: SubscriptionEvent[];
-}
-
 export const useSubscriptionMetrics = (
   dateRange: DateRange,
   filters: Filters
@@ -68,22 +56,15 @@ export const useSubscriptionMetrics = (
     const fetchMetrics = async () => {
       try {
         setLoading(true);
-        console.log('🔄 Starting improved subscription metrics calculation...', {
-          dateRange: {
-            from: dateRange.from.toISOString(),
-            to: dateRange.to.toISOString()
-          },
-          filters
-        });
+        console.log('🔄 Starting corrected subscription metrics calculation...');
 
-        // 1. Fetch ALL subscription events (ordered chronologically)
+        // Buscar TODOS os eventos de assinatura
         let eventsQuery = supabase
           .from('subscription_events')
           .select('*')
-          .order('subscription_id', { ascending: true })
           .order('event_date', { ascending: true });
 
-        // Apply plan filter if specified
+        // Aplicar filtro de plano se especificado
         if (filters.plan !== 'all') {
           eventsQuery = eventsQuery.eq('plan', filters.plan);
         }
@@ -98,156 +79,74 @@ export const useSubscriptionMetrics = (
         const events = (allEvents || []) as SubscriptionEvent[];
         console.log('📊 Total events fetched:', events.length);
 
-        // 2. Define event types
-        const subscriptionStartEvents = [
-          'subscription',
-          'created',
-          'subscription_created',
-          'activated',
-          'active',
-          'started'
-        ];
+        // Implementar lógica CORRETA:
+        // 1. Encontrar todos os customer_id únicos com evento 'subscription'
+        // 2. Para cada customer_id, verificar se tem evento 'canceled'
+        // 3. Se tem 'subscription' mas NÃO tem 'canceled', contar como ativo
 
-        const cancellationEvents = [
-          'canceled', 
-          'cancelled', 
-          'cancellation',
-          'subscription_cancelled',
-          'subscription_canceled',
-          'cancel',
-          'refund',
-          'refunded',
-          'chargeback',
-          'expired',
-          'suspended',
-          'terminated'
-        ];
-
-        const paymentEvents = [
-          'payment_succeeded',
-          'payment_completed',
-          'renewed',
-          'charge_succeeded'
-        ];
-
-        // 3. Process events chronologically by subscription
-        const subscriptionMap = new Map<string, ProcessedSubscription>();
-
-        // Group events by subscription_id
-        const eventsBySubscription = new Map<string, SubscriptionEvent[]>();
+        const customersWithSubscription = new Set<string>();
+        const customersWithCancellation = new Set<string>();
+        const subscriptionAmounts = new Map<string, number>();
+        
+        // Processar todos os eventos
         events.forEach(event => {
-          const existing = eventsBySubscription.get(event.subscription_id) || [];
-          existing.push(event);
-          eventsBySubscription.set(event.subscription_id, existing);
+          const eventType = event.event_type.toLowerCase().trim();
+          
+          // Identificar eventos de assinatura
+          if (eventType === 'subscription' || eventType === 'created' || eventType === 'subscription_created') {
+            customersWithSubscription.add(event.customer_id);
+            // Armazenar o valor da assinatura (pegar o último valor)
+            subscriptionAmounts.set(event.customer_id, Number(event.amount) || 0);
+          }
+          
+          // Identificar eventos de cancelamento
+          if (eventType === 'canceled' || eventType === 'cancelled' || eventType === 'cancellation') {
+            customersWithCancellation.add(event.customer_id);
+          }
         });
 
-        console.log('📋 Processing', eventsBySubscription.size, 'unique subscriptions...');
+        // Calcular assinaturas ativas: clientes com subscription MAS SEM cancelamento
+        const activeCustomers = Array.from(customersWithSubscription).filter(
+          customerId => !customersWithCancellation.has(customerId)
+        );
 
-        // Process each subscription's events chronologically
-        eventsBySubscription.forEach((subscriptionEvents, subscriptionId) => {
-          // Sort events by date to ensure chronological processing
-          subscriptionEvents.sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
-
-          let isActive = false;
-          let createdAt = '';
-          let lastAmount = 0;
-          let lastPlan = '';
-          let lastEventDate = '';
-          let lastEventType = '';
-
-          // Process events in chronological order
-          subscriptionEvents.forEach(event => {
-            const eventType = event.event_type.toLowerCase().trim();
-            
-            // Track subscription creation
-            if (subscriptionStartEvents.some(startEvent => eventType.includes(startEvent))) {
-              isActive = true;
-              if (!createdAt) {
-                createdAt = event.event_date;
-              }
-              lastAmount = Number(event.amount) || lastAmount;
-              lastPlan = event.plan || lastPlan;
-            }
-
-            // Track payment events (keep active)
-            if (paymentEvents.some(payEvent => eventType.includes(payEvent))) {
-              isActive = true;
-              lastAmount = Number(event.amount) || lastAmount;
-            }
-
-            // Track cancellation events
-            if (cancellationEvents.some(cancelEvent => eventType.includes(cancelEvent))) {
-              isActive = false;
-            }
-
-            // Always update last event info
-            lastEventDate = event.event_date;
-            lastEventType = event.event_type;
-          });
-
-          // Store processed subscription
-          subscriptionMap.set(subscriptionId, {
-            subscription_id: subscriptionId,
-            customer_id: subscriptionEvents[0].customer_id,
-            plan: lastPlan || subscriptionEvents[0].plan,
-            amount: lastAmount,
-            isActive,
-            lastEventDate,
-            lastEventType,
-            createdAt: createdAt || subscriptionEvents[0].event_date,
-            events: subscriptionEvents
-          });
-        });
-
-        // 4. Calculate metrics
-        const processedSubscriptions = Array.from(subscriptionMap.values());
-        const activeSubscriptions = processedSubscriptions.filter(sub => sub.isActive);
-        const totalMRR = activeSubscriptions.reduce((sum, sub) => sum + sub.amount, 0);
+        const activeSubscriptionsCount = activeCustomers.length;
+        
+        // Calcular MRR total
+        const totalMRR = activeCustomers.reduce((sum, customerId) => {
+          return sum + (subscriptionAmounts.get(customerId) || 0);
+        }, 0);
 
         console.log('✅ Subscription Analysis Results:', {
-          totalProcessed: processedSubscriptions.length,
-          activeCount: activeSubscriptions.length,
-          inactiveCount: processedSubscriptions.length - activeSubscriptions.length,
+          totalCustomersWithSubscription: customersWithSubscription.size,
+          totalCustomersWithCancellation: customersWithCancellation.size,
+          activeSubscriptions: activeSubscriptionsCount,
           totalMRR: totalMRR.toFixed(2)
         });
 
-        // Log sample active subscriptions for debugging
-        if (activeSubscriptions.length > 0) {
-          console.log('🔍 Sample Active Subscriptions:', 
-            activeSubscriptions.slice(0, 5).map(sub => ({
-              id: sub.subscription_id.slice(-8),
-              plan: sub.plan,
-              amount: sub.amount,
-              lastEvent: sub.lastEventType,
-              lastDate: sub.lastEventDate,
-              eventsCount: sub.events.length
-            }))
-          );
-        }
-
-        // 5. Calculate new subscriptions in the selected period
-        const newSubscriptionsInPeriod = processedSubscriptions.filter(sub => {
-          const createdDate = new Date(sub.createdAt);
-          return createdDate >= dateRange.from && createdDate <= dateRange.to;
+        // Calcular novas assinaturas no período
+        const newSubscriptionsInPeriod = events.filter(event => {
+          const eventType = event.event_type.toLowerCase().trim();
+          const eventDate = new Date(event.event_date);
+          return (eventType === 'subscription' || eventType === 'created' || eventType === 'subscription_created') &&
+                 eventDate >= dateRange.from && eventDate <= dateRange.to;
         });
 
-        // 6. Calculate cancellations in the selected period
-        const cancellationsInPeriod = events.filter(event => 
-          cancellationEvents.some(cancelEvent => 
-            event.event_type.toLowerCase().includes(cancelEvent)
-          ) &&
-          new Date(event.event_date) >= dateRange.from &&
-          new Date(event.event_date) <= dateRange.to
-        );
+        // Calcular cancelamentos no período
+        const cancellationsInPeriod = events.filter(event => {
+          const eventType = event.event_type.toLowerCase().trim();
+          const eventDate = new Date(event.event_date);
+          return (eventType === 'canceled' || eventType === 'cancelled' || eventType === 'cancellation') &&
+                 eventDate >= dateRange.from && eventDate <= dateRange.to;
+        });
 
-        // 7. Calculate churn rate
-        const churnRate = activeSubscriptions.length > 0 
-          ? (cancellationsInPeriod.length / (activeSubscriptions.length + cancellationsInPeriod.length)) * 100 
+        // Calcular taxa de churn
+        const churnRate = activeSubscriptionsCount > 0 
+          ? (cancellationsInPeriod.length / (activeSubscriptionsCount + cancellationsInPeriod.length)) * 100 
           : 0;
 
-        // 8. Calculate growth metrics (simplified - using placeholder values for complex calculations)
         const finalMetrics = {
-          activeSubscriptions: activeSubscriptions.length,
+          activeSubscriptions: activeSubscriptionsCount,
           activeSubscriptionsGrowth: 15.2, // Placeholder
           newSubscriptions: newSubscriptionsInPeriod.length,
           newSubscriptionsGrowth: 8.5, // Placeholder
@@ -261,15 +160,12 @@ export const useSubscriptionMetrics = (
 
         setMetrics(finalMetrics);
 
-        console.log('🎯 Final Subscription Metrics:', {
-          ...finalMetrics,
-          details: {
-            newInPeriod: newSubscriptionsInPeriod.length,
-            cancellationsInPeriod: cancellationsInPeriod.length,
-            averageSubscriptionValue: activeSubscriptions.length > 0 
-              ? (totalMRR / activeSubscriptions.length).toFixed(2) 
-              : 0
-          }
+        console.log('🎯 Final Corrected Metrics:', {
+          activeSubscriptions: activeSubscriptionsCount,
+          newInPeriod: newSubscriptionsInPeriod.length,
+          cancellationsInPeriod: cancellationsInPeriod.length,
+          mrr: totalMRR.toFixed(2),
+          churnRate: churnRate.toFixed(1) + '%'
         });
 
       } catch (error) {
