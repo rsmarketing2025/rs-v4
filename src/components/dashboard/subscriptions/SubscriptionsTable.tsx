@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Download } from "lucide-react";
-import { useSubscriptionEvents } from "@/hooks/useSubscriptionEvents";
+import { useSubscriptionStatusData } from "@/hooks/useSubscriptionStatusData";
 
 interface SubscriptionsTableProps {
   dateRange: {
@@ -33,7 +33,7 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = ({
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   
-  const { events, loading, totalCount } = useSubscriptionEvents(
+  const { subscriptions, loading, totalCount } = useSubscriptionStatusData(
     dateRange, 
     filters, 
     page, 
@@ -42,11 +42,11 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = ({
 
   const totalPages = Math.ceil(totalCount / pageSize);
 
-  const getEventTypeBadge = (eventType: string) => {
-    if (eventType === 'subscription') {
-      return <Badge className="bg-green-600 hover:bg-green-700">Nova Assinatura</Badge>;
+  const getStatusBadge = (status: string) => {
+    if (status === 'Ativo') {
+      return <Badge className="bg-green-600 hover:bg-green-700">Ativo</Badge>;
     }
-    return <Badge className="bg-red-600 hover:bg-red-700">Cancelamento</Badge>;
+    return <Badge className="bg-red-600 hover:bg-red-700">Cancelado</Badge>;
   };
 
   const getPlanBadge = (plan: string) => {
@@ -70,7 +70,7 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = ({
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-slate-400">Carregando eventos...</div>
+        <div className="text-slate-400">Carregando assinaturas...</div>
       </div>
     );
   }
@@ -80,7 +80,7 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = ({
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">
           <p className="text-sm text-slate-400">
-            Mostrando {events.length} de {totalCount} eventos
+            Mostrando {subscriptions.length} de {totalCount} assinaturas
           </p>
           <div className="flex items-center gap-2">
             <span className="text-sm text-slate-400">Linhas por página:</span>
@@ -109,36 +109,36 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = ({
             <TableHeader>
               <TableRow className="border-slate-700 hover:bg-slate-800/50">
                 <TableHead className="text-slate-300">Cliente</TableHead>
-                <TableHead className="text-slate-300">Evento</TableHead>
+                <TableHead className="text-slate-300">Status</TableHead>
                 <TableHead className="text-slate-300">Plano</TableHead>
                 <TableHead className="text-slate-300">Valor</TableHead>
-                <TableHead className="text-slate-300">Data</TableHead>
+                <TableHead className="text-slate-300">Data Criação</TableHead>
                 <TableHead className="text-slate-300">Número</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {events.map((event) => (
-                <TableRow key={event.id} className="border-slate-700 hover:bg-slate-800/30">
+              {subscriptions.map((subscription) => (
+                <TableRow key={subscription.id} className="border-slate-700 hover:bg-slate-800/30">
                   <TableCell className="text-white">
                     <div>
-                      <div className="font-medium">{event.customer_name || 'N/A'}</div>
-                      <div className="text-sm text-slate-400">{event.customer_email}</div>
+                      <div className="font-medium">{subscription.customer_name || 'N/A'}</div>
+                      <div className="text-sm text-slate-400">{subscription.customer_email}</div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    {getEventTypeBadge(event.event_type)}
+                    {getStatusBadge(subscription.subscription_status)}
                   </TableCell>
                   <TableCell>
-                    {getPlanBadge(event.plan)}
+                    {getPlanBadge(subscription.plan)}
                   </TableCell>
                   <TableCell className="text-white">
-                    R$ {(event.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    R$ {(subscription.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </TableCell>
                   <TableCell className="text-slate-300">
-                    {new Date(event.event_date).toLocaleDateString('pt-BR')}
+                    {new Date(subscription.created_at).toLocaleDateString('pt-BR')}
                   </TableCell>
                   <TableCell className="text-slate-300">
-                    {event.subscription_number || 'N/A'}
+                    {subscription.subscription_number || 'N/A'}
                   </TableCell>
                 </TableRow>
               ))}

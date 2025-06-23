@@ -50,7 +50,7 @@ export const useSubscriptionMetrics = (
         setLoading(true);
         console.log('📊 Fetching subscription metrics from subscription_status table...');
 
-        // 1. Get active subscriptions from subscription_status table (using Portuguese "Ativo")
+        // 1. Get active subscriptions from subscription_status table (using "Ativo")
         let activeQuery = supabase
           .from('subscription_status')
           .select('*', { count: 'exact' })
@@ -62,7 +62,7 @@ export const useSubscriptionMetrics = (
 
         const { count: activeCount, data: activeSubscriptions } = await activeQuery;
 
-        // Calculate total MRR from active subscriptions
+        // Calculate MRR ONLY from active subscriptions
         const totalMRR = (activeSubscriptions || []).reduce((sum, sub) => {
           return sum + (Number(sub.amount) || 0);
         }, 0);
@@ -118,7 +118,7 @@ export const useSubscriptionMetrics = (
           activeSubscriptions: activeCount || 0,
           newInPeriod: newSubscriptionsCount || 0,
           cancellationsInPeriod: cancellationsCount || 0,
-          mrr: totalMRR.toFixed(2),
+          mrrFromActiveOnly: totalMRR.toFixed(2),
           churnRate: churnRate.toFixed(1) + '%'
         });
 
