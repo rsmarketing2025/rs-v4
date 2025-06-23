@@ -353,7 +353,7 @@ export type Database = {
         Insert: {
           amount?: number
           canceled_at?: string | null
-          created_at: string
+          created_at?: string
           currency?: string
           customer_email: string
           customer_id: string

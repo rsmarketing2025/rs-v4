@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   AlertDialog,
@@ -10,52 +9,76 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Trash2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from "@/hooks/use-toast";
+import { UserWithPermissions } from './types';
 
-interface DeleteUserDialogProps {
+export interface DeleteUserDialogProps {
+  user?: UserWithPermissions;
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
-  userName: string;
-  loading?: boolean;
+  onUserUpdate?: () => void;
 }
 
-export const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
-  isOpen,
-  onClose,
-  onConfirm,
-  userName,
-  loading = false,
+export const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({ 
+  user, 
+  isOpen, 
+  onClose, 
+  onUserUpdate 
 }) => {
+  const { toast } = useToast();
+
+  const handleDeleteUser = async () => {
+    if (!user?.id) {
+      toast({
+        title: "Erro!",
+        description: "Usuário inválido.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.admin.deleteUser(user.id);
+
+      if (error) {
+        toast({
+          title: "Erro!",
+          description: `Falha ao excluir usuário: ${error.message}`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Sucesso!",
+          description: "Usuário excluído com sucesso.",
+        });
+        onClose();
+        if (onUserUpdate) {
+          onUserUpdate();
+        }
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro!",
+        description: `Erro inesperado: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent className="bg-slate-800 border-slate-700">
+      <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-white flex items-center gap-2">
-            <Trash2 className="w-5 h-5 text-red-400" />
-            Confirmar Exclusão
-          </AlertDialogTitle>
-          <AlertDialogDescription className="text-slate-300">
-            Tem certeza que deseja remover o usuário <strong className="text-white">{userName}</strong>?
-            <br />
-            <span className="text-red-400 font-medium">Esta ação não pode ser desfeita.</span>
+          <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta ação irá excluir permanentemente o usuário {user?.full_name} da plataforma.
+            Esta ação não pode ser desfeita.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel 
-            onClick={onClose}
-            className="border-slate-600 text-slate-300 hover:bg-slate-700"
-            disabled={loading}
-          >
-            Cancelar
-          </AlertDialogCancel>
-          <AlertDialogAction
-            onClick={onConfirm}
-            className="bg-red-600 hover:bg-red-700 text-white"
-            disabled={loading}
-          >
-            {loading ? 'Removendo...' : 'Remover Usuário'}
-          </AlertDialogAction>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={handleDeleteUser}>Excluir</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

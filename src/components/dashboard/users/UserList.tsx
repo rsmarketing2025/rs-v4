@@ -1,223 +1,266 @@
-
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { UserForm } from './UserForm';
-import { DeleteUserDialog } from './DeleteUserDialog';
-import { UserDetailModal } from './UserDetailModal';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
-import { toast } from 'sonner';
-import { Input } from '@/components/ui/input';
-import type { UserWithPermissions } from './types';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Search, Edit, Trash2, Eye } from "lucide-react";
+import { UserForm } from "./UserForm";
+import { DeleteUserDialog } from "./DeleteUserDialog";
+import { UserDetailModal } from "./UserDetailModal";
+import { UserWithPermissions } from './types';
+import { useToast } from "@/hooks/use-toast";
 
-export const UserList = () => {
-  const [selectedUser, setSelectedUser] = useState<UserWithPermissions | null>(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
+interface UserListProps {
+  refreshTrigger?: number;
+  currentUserRole?: string;
+  onUserUpdated?: () => void;
+}
+
+export const UserList: React.FC<UserListProps> = ({ 
+  refreshTrigger = 0, 
+  currentUserRole = 'user',
+  onUserUpdated 
+}) => {
+  const [users, setUsers] = useState<UserWithPermissions[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUser, setSelectedUser] = useState<UserWithPermissions | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const { data: users = [], isLoading, refetch } = useQuery({
-    queryKey: ['users'],
-    queryFn: async () => {
-      const { data, error } = await supabase
+  useEffect(() => {
+    fetchUsers();
+  }, [refreshTrigger]);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          user_roles (role),
-          user_page_permissions (page, can_access)
-        `)
-        .order('created_at', { ascending: false });
+        .select('id, full_name, email, username, avatar_url, created_at, updated_at');
 
-      if (error) {
-        console.error('Error fetching users:', error);
-        throw error;
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+        toast({
+          title: "Erro ao buscar usuários",
+          description: "Ocorreu um erro ao carregar a lista de usuários.",
+          variant: "destructive",
+        });
+        return;
       }
 
-      return data?.map(user => ({
-        ...user,
-        role: user.user_roles?.[0]?.role || 'user',
-        permissions: user.user_page_permissions || []
-      })) || [];
-    },
-  });
+      const { data: roles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
 
-  const filteredUsers = users.filter(user => 
-    user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      if (rolesError) {
+        console.error("Error fetching user roles:", rolesError);
+        toast({
+          title: "Erro ao buscar funções dos usuários",
+          description: "Ocorreu um erro ao carregar as funções dos usuários.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-  const handleEdit = (user: UserWithPermissions) => {
-    setSelectedUser(user);
-    setIsFormOpen(true);
-  };
+      const { data: permissions, error: permissionsError } = await supabase
+        .from('user_page_permissions')
+        .select('user_id, page, can_access');
 
-  const handleDelete = (user: UserWithPermissions) => {
-    setSelectedUser(user);
-    setIsDeleteDialogOpen(true);
-  };
+      if (permissionsError) {
+        console.error("Error fetching user permissions:", permissionsError);
+        toast({
+          title: "Erro ao buscar permissões dos usuários",
+          description: "Ocorreu um erro ao carregar as permissões dos usuários.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-  const handleViewDetails = (user: UserWithPermissions) => {
-    setSelectedUser(user);
-    setIsDetailModalOpen(true);
-  };
+      const usersWithRoles = profiles.map(profile => {
+        const role = roles.find(r => r.user_id === profile.id)?.role || 'user';
+        const userPermissions = permissions
+          .filter(p => p.user_id === profile.id)
+          .map(p => ({ page: p.page, can_access: p.can_access }));
 
-  const handleFormClose = () => {
-    setSelectedUser(null);
-    setIsFormOpen(false);
-    refetch();
-  };
+        return {
+          id: profile.id,
+          full_name: profile.full_name,
+          email: profile.email,
+          username: profile.username,
+          avatar_url: profile.avatar_url,
+          created_at: profile.created_at,
+          updated_at: profile.updated_at,
+          role: role,
+          permissions: userPermissions,
+          user_page_permissions: userPermissions
+        };
+      });
 
-  const handleDeleteClose = () => {
-    setSelectedUser(null);
-    setIsDeleteDialogOpen(false);
-    refetch();
-  };
-
-  const handleDetailClose = () => {
-    setSelectedUser(null);
-    setIsDetailModalOpen(false);
-  };
-
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return 'bg-red-600 hover:bg-red-700';
-      case 'business_manager':
-        return 'bg-blue-600 hover:bg-blue-700';
-      default:
-        return 'bg-gray-600 hover:bg-gray-700';
+      setUsers(usersWithRoles);
+    } catch (error) {
+      console.error("Unexpected error fetching users:", error);
+      toast({
+        title: "Erro Inesperado",
+        description: "Ocorreu um erro inesperado ao carregar os dados dos usuários.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (isLoading) {
+  const handleUserUpdate = () => {
+    fetchUsers();
+    if (onUserUpdated) {
+      onUserUpdated();
+    }
+  };
+
+  const filteredUsers = users.filter(user => {
+    const searchTermLower = searchTerm.toLowerCase();
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-slate-400">Carregando usuários...</div>
-      </div>
+      (user.full_name && user.full_name.toLowerCase().includes(searchTermLower)) ||
+      (user.email && user.email.toLowerCase().includes(searchTermLower))
     );
-  }
+  });
 
   return (
-    <div className="space-y-6">
-      <Card className="bg-neutral-800 border-neutral-700">
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <CardTitle className="text-white">Gerenciamento de Usuários</CardTitle>
-            <Button
-              onClick={() => setIsFormOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Adicionar Usuário
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-              <Input
-                placeholder="Buscar por nome ou email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-neutral-700 border-neutral-600 text-white placeholder-slate-400"
-              />
-            </div>
-          </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <Input
+          type="search"
+          placeholder="Buscar usuário..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="max-w-md bg-neutral-700 text-white placeholder:text-slate-400 border-neutral-600 focus-visible:ring-neutral-500"
+        />
+        {currentUserRole === 'admin' && (
+          <Button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="bg-sky-500 hover:bg-sky-600 text-white"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Adicionar Usuário
+          </Button>
+        )}
+      </div>
 
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-slate-700 hover:bg-slate-800/50">
-                  <TableHead className="text-slate-300">Nome</TableHead>
-                  <TableHead className="text-slate-300">Email</TableHead>
-                  <TableHead className="text-slate-300">Função</TableHead>
-                  <TableHead className="text-slate-300">Criado em</TableHead>
-                  <TableHead className="text-slate-300">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id} className="border-slate-700 hover:bg-slate-800/30">
-                    <TableCell className="text-white">
-                      <div>
-                        <div className="font-medium">{user.full_name || 'N/A'}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-slate-300">{user.email}</TableCell>
-                    <TableCell>
-                      <Badge className={getRoleBadgeColor(user.role)}>
-                        {user.role === 'admin' && 'Administrador'}
-                        {user.role === 'business_manager' && 'Gerente de Negócios'}
-                        {user.role === 'user' && 'Usuário'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-slate-300">
-                      {user.created_at ? new Date(user.created_at).toLocaleDateString('pt-BR') : 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
+      <div className="rounded-lg border border-slate-700 overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-slate-700 hover:bg-slate-800/50">
+              <TableHead className="text-slate-300">Nome</TableHead>
+              <TableHead className="text-slate-300">Email</TableHead>
+              <TableHead className="text-slate-300">Função</TableHead>
+              <TableHead className="text-slate-300">Criado em</TableHead>
+              <TableHead className="text-slate-300">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredUsers.map((user) => (
+              <TableRow key={user.id} className="border-slate-700 hover:bg-slate-800/30">
+                <TableCell className="text-white">
+                  {user.full_name || 'N/A'}
+                </TableCell>
+                <TableCell className="text-slate-300">
+                  {user.email || 'N/A'}
+                </TableCell>
+                <TableCell>
+                  <Badge className="bg-sky-500 hover:bg-sky-600">
+                    {user.role}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-slate-300">
+                  {new Date(user.created_at || '').toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedUser(user);
+                        setIsDetailModalOpen(true);
+                      }}
+                      className="text-slate-300 border-slate-600"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    {currentUserRole === 'admin' && (
+                      <>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleViewDetails(user)}
-                          className="text-slate-300 border-slate-600 hover:bg-slate-700"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(user)}
-                          className="text-slate-300 border-slate-600 hover:bg-slate-700"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setIsEditModalOpen(true);
+                          }}
+                          className="text-slate-300 border-slate-600"
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleDelete(user)}
-                          className="text-red-400 border-red-600 hover:bg-red-700"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setIsDeleteDialogOpen(true);
+                          }}
+                          className="text-red-400 border-red-600 hover:bg-red-600/20"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          {filteredUsers.length === 0 && (
-            <div className="text-center py-8 text-slate-400">
-              {searchTerm ? 'Nenhum usuário encontrado com o termo de busca.' : 'Nenhum usuário encontrado.'}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                      </>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
       <UserForm
         user={selectedUser}
-        isOpen={isFormOpen}
-        onClose={handleFormClose}
+        isOpen={isCreateModalOpen || isEditModalOpen}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setIsEditModalOpen(false);
+          setSelectedUser(undefined);
+        }}
+        onUserUpdate={handleUserUpdate}
       />
 
       <DeleteUserDialog
         user={selectedUser}
         isOpen={isDeleteDialogOpen}
-        onClose={handleDeleteClose}
+        onClose={() => {
+          setIsDeleteDialogOpen(false);
+          setSelectedUser(undefined);
+        }}
+        onUserUpdate={handleUserUpdate}
       />
 
       <UserDetailModal
         user={selectedUser}
         isOpen={isDetailModalOpen}
-        onClose={handleDetailClose}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedUser(undefined);
+        }}
+        onUserUpdate={handleUserUpdate}
       />
     </div>
   );
