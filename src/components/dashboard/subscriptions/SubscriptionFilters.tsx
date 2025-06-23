@@ -9,6 +9,7 @@ interface SubscriptionFiltersProps {
     plan: string;
     eventType: string;
     paymentMethod: string;
+    status: string;
   };
   onFiltersChange: (filters: any) => void;
 }
@@ -21,12 +22,27 @@ export const SubscriptionFilters: React.FC<SubscriptionFiltersProps> = ({
     onFiltersChange({
       plan: 'all',
       eventType: 'all',
-      paymentMethod: 'all'
+      paymentMethod: 'all',
+      status: 'all'
     });
   };
 
   return (
     <div className="flex flex-col sm:flex-row flex-wrap gap-2 md:gap-3">
+      <Select
+        value={filters.status}
+        onValueChange={(value) => onFiltersChange({ ...filters, status: value })}
+      >
+        <SelectTrigger className="w-full sm:w-32 md:w-40 bg-slate-800 border-slate-700 text-white text-xs md:text-sm">
+          <SelectValue placeholder="Status" />
+        </SelectTrigger>
+        <SelectContent className="bg-slate-800 border-slate-700">
+          <SelectItem value="all">Todos</SelectItem>
+          <SelectItem value="active">Ativos</SelectItem>
+          <SelectItem value="canceled">Cancelados</SelectItem>
+        </SelectContent>
+      </Select>
+
       <Select
         value={filters.plan}
         onValueChange={(value) => onFiltersChange({ ...filters, plan: value })}

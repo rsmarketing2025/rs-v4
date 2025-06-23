@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { SubscriptionsSummaryCards } from "./subscriptions/SubscriptionsSummaryCards";
 import { SubscriptionsTable } from "./subscriptions/SubscriptionsTable";
+import { SubscriptionFilters } from "./subscriptions/SubscriptionFilters";
 import { PermissionWrapper } from "@/components/common/PermissionWrapper";
 
 interface SubscriptionsTabProps {
@@ -16,7 +17,8 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
   const [filters, setFilters] = useState({
     plan: 'all',
     eventType: 'all',
-    paymentMethod: 'all'
+    paymentMethod: 'all',
+    status: 'all'
   });
 
   return (
@@ -33,7 +35,13 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
 
         <Card className="bg-neutral-800 border-neutral-700">
           <CardContent className="p-3 md:p-6">
-            <SubscriptionsTable dateRange={dateRange} filters={filters} />
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h3 className="text-lg font-semibold text-white">Lista de Assinaturas</h3>
+                <SubscriptionFilters filters={filters} onFiltersChange={setFilters} />
+              </div>
+              <SubscriptionsTable dateRange={dateRange} filters={filters} />
+            </div>
           </CardContent>
         </Card>
       </div>

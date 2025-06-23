@@ -19,6 +19,7 @@ interface Filters {
   plan: string;
   eventType: string;
   paymentMethod: string;
+  status: string;
 }
 
 interface DateRange {
@@ -30,7 +31,8 @@ export const useSubscriptionStatusData = (
   dateRange: DateRange,
   filters: Filters,
   page: number,
-  pageSize: number
+  pageSize: number,
+  searchTerm: string = ''
 ) => {
   const [subscriptions, setSubscriptions] = useState<SubscriptionStatusData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,12 +58,14 @@ export const useSubscriptionStatusData = (
           query = query.eq('plan', filters.plan);
         }
 
-        if (filters.eventType !== 'all') {
-          if (filters.eventType === 'subscription') {
-            query = query.eq('subscription_status', 'Ativo');
-          } else if (filters.eventType === 'cancellation') {
-            query = query.eq('subscription_status', 'Cancelado');
-          }
+        // Status filter
+        if (filters.status !== 'all') {
+          query = query.eq('subscription_status', filters.status);
+        }
+
+        // Search filter
+        if (searchTerm.trim()) {
+          query = query.or(`customer_name.ilike.%${searchTerm}%,customer_email.ilike.%${searchTerm}%,subscription_id.ilike.%${searchTerm}%`);
         }
 
         const { data, error, count } = await query;
@@ -78,7 +82,8 @@ export const useSubscriptionStatusData = (
           count: data?.length || 0,
           totalCount: count || 0,
           page,
-          pageSize
+          pageSize,
+          searchTerm
         });
 
       } catch (error) {
@@ -91,7 +96,7 @@ export const useSubscriptionStatusData = (
     };
 
     fetchSubscriptions();
-  }, [dateRange, filters, page, pageSize]);
+  }, [dateRange, filters, page, pageSize, searchTerm]);
 
   return { subscriptions, loading, totalCount };
 };

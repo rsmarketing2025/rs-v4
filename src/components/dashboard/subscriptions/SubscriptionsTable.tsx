@@ -10,8 +10,9 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Search } from "lucide-react";
 import { useSubscriptionStatusData } from "@/hooks/useSubscriptionStatusData";
 
 interface SubscriptionsTableProps {
@@ -23,6 +24,7 @@ interface SubscriptionsTableProps {
     plan: string;
     eventType: string;
     paymentMethod: string;
+    status: string;
   };
 }
 
@@ -32,18 +34,20 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = ({
 }) => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [searchTerm, setSearchTerm] = useState('');
   
   const { subscriptions, loading, totalCount } = useSubscriptionStatusData(
     dateRange, 
     filters, 
     page, 
-    pageSize
+    pageSize,
+    searchTerm
   );
 
   const totalPages = Math.ceil(totalCount / pageSize);
 
   const getStatusBadge = (status: string) => {
-    if (status === 'Ativo') {
+    if (status === 'active' || status === 'Ativo') {
       return <Badge className="bg-green-600 hover:bg-green-700">Ativo</Badge>;
     }
     return <Badge className="bg-red-600 hover:bg-red-700">Cancelado</Badge>;
@@ -67,6 +71,11 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = ({
     setPage(1); // Reset to first page when changing page size
   };
 
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+    setPage(1); // Reset to first page when searching
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -77,24 +86,37 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <p className="text-sm text-slate-400">
-            Mostrando {subscriptions.length} de {totalCount} assinaturas
-          </p>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-400">Linhas por página:</span>
-            <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
-              <SelectTrigger className="w-20 bg-slate-800 border-slate-600 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-600">
-                <SelectItem value="10" className="text-white hover:bg-slate-700">10</SelectItem>
-                <SelectItem value="20" className="text-white hover:bg-slate-700">20</SelectItem>
-                <SelectItem value="50" className="text-white hover:bg-slate-700">50</SelectItem>
-                <SelectItem value="100" className="text-white hover:bg-slate-700">100</SelectItem>
-              </SelectContent>
-            </Select>
+      {/* Search and Controls */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+            <Input
+              placeholder="Buscar por nome, email ou ID..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="pl-10 bg-slate-800 border-slate-600 text-white placeholder:text-slate-400"
+            />
+          </div>
+          <div className="flex items-center gap-4">
+            <p className="text-sm text-slate-400 whitespace-nowrap">
+              Mostrando {subscriptions.length} de {totalCount} assinaturas
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-400 whitespace-nowrap">Linhas por página:</span>
+              <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                <SelectTrigger className="w-20 bg-slate-800 border-slate-600 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-slate-600">
+                  <SelectItem value="10" className="text-white hover:bg-slate-700">10</SelectItem>
+                  <SelectItem value="20" className="text-white hover:bg-slate-700">20</SelectItem>
+                  <SelectItem value="50" className="text-white hover:bg-slate-700">50</SelectItem>
+                  <SelectItem value="100" className="text-white hover:bg-slate-700">100</SelectItem>
+                  <SelectItem value="1000" className="text-white hover:bg-slate-700">1000</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
         <Button variant="outline" size="sm" className="text-slate-300 border-slate-600">
