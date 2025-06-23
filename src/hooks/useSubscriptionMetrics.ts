@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -56,15 +57,15 @@ export const useSubscriptionMetrics = (
     const fetchMetrics = async () => {
       try {
         setLoading(true);
-        console.log('🔄 Starting corrected subscription metrics calculation...');
+        console.log('🔄 Implementing corrected subscription metrics calculation...');
 
-        // Buscar TODOS os eventos de assinatura
+        // Fetch ALL subscription events
         let eventsQuery = supabase
           .from('subscription_events')
           .select('*')
           .order('event_date', { ascending: true });
 
-        // Aplicar filtro de plano se especificado
+        // Apply plan filter if specified
         if (filters.plan !== 'all') {
           eventsQuery = eventsQuery.eq('plan', filters.plan);
         }
@@ -79,52 +80,52 @@ export const useSubscriptionMetrics = (
         const events = (allEvents || []) as SubscriptionEvent[];
         console.log('📊 Total events fetched:', events.length);
 
-        // Implementar lógica CORRETA:
-        // 1. Encontrar todos os customer_id únicos com evento 'subscription'
-        // 2. Para cada customer_id, verificar se tem evento 'canceled'
-        // 3. Se tem 'subscription' mas NÃO tem 'canceled', contar como ativo
+        // CORRECTED LOGIC:
+        // 1. Find all customer_id with 'subscription' event
+        // 2. For each customer_id, check if they have 'canceled' event
+        // 3. If has 'subscription' but NOT 'canceled', count as active
 
         const customersWithSubscription = new Set<string>();
         const customersWithCancellation = new Set<string>();
         const subscriptionAmounts = new Map<string, number>();
         
-        // Processar todos os eventos
+        // Process all events to identify customers with subscriptions and cancellations
         events.forEach(event => {
           const eventType = event.event_type.toLowerCase().trim();
           
-          // Identificar eventos de assinatura
+          // Identify subscription events
           if (eventType === 'subscription' || eventType === 'created' || eventType === 'subscription_created') {
             customersWithSubscription.add(event.customer_id);
-            // Armazenar o valor da assinatura (pegar o último valor)
+            // Store subscription amount (use latest value)
             subscriptionAmounts.set(event.customer_id, Number(event.amount) || 0);
           }
           
-          // Identificar eventos de cancelamento
+          // Identify cancellation events
           if (eventType === 'canceled' || eventType === 'cancelled' || eventType === 'cancellation') {
             customersWithCancellation.add(event.customer_id);
           }
         });
 
-        // Calcular assinaturas ativas: clientes com subscription MAS SEM cancelamento
+        // Calculate active subscriptions: customers with subscription BUT WITHOUT cancellation
         const activeCustomers = Array.from(customersWithSubscription).filter(
           customerId => !customersWithCancellation.has(customerId)
         );
 
         const activeSubscriptionsCount = activeCustomers.length;
         
-        // Calcular MRR total
+        // Calculate total MRR from active customers
         const totalMRR = activeCustomers.reduce((sum, customerId) => {
           return sum + (subscriptionAmounts.get(customerId) || 0);
         }, 0);
 
-        console.log('✅ Subscription Analysis Results:', {
+        console.log('✅ CORRECTED Subscription Analysis Results:', {
           totalCustomersWithSubscription: customersWithSubscription.size,
           totalCustomersWithCancellation: customersWithCancellation.size,
           activeSubscriptions: activeSubscriptionsCount,
           totalMRR: totalMRR.toFixed(2)
         });
 
-        // Calcular novas assinaturas no período
+        // Calculate new subscriptions in the period
         const newSubscriptionsInPeriod = events.filter(event => {
           const eventType = event.event_type.toLowerCase().trim();
           const eventDate = new Date(event.event_date);
@@ -132,7 +133,7 @@ export const useSubscriptionMetrics = (
                  eventDate >= dateRange.from && eventDate <= dateRange.to;
         });
 
-        // Calcular cancelamentos no período
+        // Calculate cancellations in the period
         const cancellationsInPeriod = events.filter(event => {
           const eventType = event.event_type.toLowerCase().trim();
           const eventDate = new Date(event.event_date);
@@ -140,7 +141,7 @@ export const useSubscriptionMetrics = (
                  eventDate >= dateRange.from && eventDate <= dateRange.to;
         });
 
-        // Calcular taxa de churn
+        // Calculate churn rate
         const churnRate = activeSubscriptionsCount > 0 
           ? (cancellationsInPeriod.length / (activeSubscriptionsCount + cancellationsInPeriod.length)) * 100 
           : 0;
@@ -160,7 +161,7 @@ export const useSubscriptionMetrics = (
 
         setMetrics(finalMetrics);
 
-        console.log('🎯 Final Corrected Metrics:', {
+        console.log('🎯 Final CORRECTED Metrics:', {
           activeSubscriptions: activeSubscriptionsCount,
           newInPeriod: newSubscriptionsInPeriod.length,
           cancellationsInPeriod: cancellationsInPeriod.length,

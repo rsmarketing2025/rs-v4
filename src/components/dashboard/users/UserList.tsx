@@ -213,7 +213,7 @@ export const UserList: React.FC<UserListProps> = ({
       full_name: user.full_name,
       email: user.email,
       username: user.username || '',
-      role: user.role === 'gestor' ? 'business_manager' : (user.role as 'admin' | 'user'),
+      role: user.role === 'gestor' ? 'admin' : (user.role as 'admin' | 'user'), // Fix: map gestor to admin
       permissions: [
         { page: 'creatives', can_access: user.pagePermissions.creatives },
         { page: 'sales', can_access: user.pagePermissions.sales },

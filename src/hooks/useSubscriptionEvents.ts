@@ -17,18 +17,11 @@ interface SubscriptionEvent {
   payment_method?: string;
 }
 
-interface UseSubscriptionEventsProps {
-  dateRange: { from: Date; to: Date };
-  filters: { plan: string; eventType: string; paymentMethod: string };
-  page: number;
-  pageSize: number;
-}
-
 export const useSubscriptionEvents = (
-  dateRange: UseSubscriptionEventsProps['dateRange'],
-  filters: UseSubscriptionEventsProps['filters'],
-  page: UseSubscriptionEventsProps['page'],
-  pageSize: UseSubscriptionEventsProps['pageSize']
+  dateRange: { from: Date; to: Date },
+  filters: { plan: string; eventType: string; paymentMethod: string },
+  page: number,
+  pageSize: number
 ) => {
   const [events, setEvents] = useState<SubscriptionEvent[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -56,7 +49,7 @@ export const useSubscriptionEvents = (
           query = query.eq('payment_method', filters.paymentMethod);
         }
 
-        // Aplicar paginação
+        // Apply pagination
         const from = (page - 1) * pageSize;
         const to = from + pageSize - 1;
         query = query.range(from, to);
