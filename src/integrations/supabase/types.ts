@@ -287,6 +287,7 @@ export type Database = {
           frequency: string | null
           id: string
           metadata: Json | null
+          payment_method: string | null
           plan: string
           subscription_id: string
           subscription_number: number | null
@@ -305,6 +306,7 @@ export type Database = {
           frequency?: string | null
           id?: string
           metadata?: Json | null
+          payment_method?: string | null
           plan: string
           subscription_id: string
           subscription_number?: number | null
@@ -323,9 +325,58 @@ export type Database = {
           frequency?: string | null
           id?: string
           metadata?: Json | null
+          payment_method?: string | null
           plan?: string
           subscription_id?: string
           subscription_number?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subscription_status: {
+        Row: {
+          amount: number
+          canceled_at: string | null
+          created_at: string
+          currency: string
+          customer_email: string
+          customer_id: string
+          customer_name: string | null
+          frequency: string | null
+          id: string
+          plan: string
+          status: string
+          subscription_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          canceled_at?: string | null
+          created_at: string
+          currency?: string
+          customer_email: string
+          customer_id: string
+          customer_name?: string | null
+          frequency?: string | null
+          id?: string
+          plan: string
+          status: string
+          subscription_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          canceled_at?: string | null
+          created_at?: string
+          currency?: string
+          customer_email?: string
+          customer_id?: string
+          customer_name?: string | null
+          frequency?: string | null
+          id?: string
+          plan?: string
+          status?: string
+          subscription_id?: string
           updated_at?: string
         }
         Relationships: []

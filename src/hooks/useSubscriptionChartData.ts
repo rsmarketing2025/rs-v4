@@ -49,57 +49,25 @@ export const useSubscriptionChartData = (
       try {
         setLoading(true);
 
-        let query = supabase
-          .from('subscription_events')
-          .select('*')
-          .gte('event_date', dateRange.from.toISOString())
-          .lte('event_date', dateRange.to.toISOString());
+        if (type === 'plan-distribution') {
+          // Use subscription_status table for plan distribution
+          let query = supabase
+            .from('subscription_status')
+            .select('plan')
+            .eq('status', 'active');
 
-        if (filters.plan !== 'all') {
-          query = query.eq('plan', filters.plan);
-        }
-        if (filters.eventType !== 'all') {
-          query = query.eq('event_type', filters.eventType);
-        }
-        if (filters.paymentMethod !== 'all') {
-          query = query.eq('payment_method', filters.paymentMethod);
-        }
+          if (filters.plan !== 'all') {
+            query = query.eq('plan', filters.plan);
+          }
 
-        const { data: events } = await query;
+          const { data: subscriptions } = await query;
 
-        if (events) {
-          if (type === 'timeline') {
-            // Agrupar por data
-            const groupedByDate: Record<string, { subscriptions: number; cancellations: number }> = {};
-            
-            events.forEach(event => {
-              const date = new Date(event.event_date).toLocaleDateString('pt-BR');
-              if (!groupedByDate[date]) {
-                groupedByDate[date] = { subscriptions: 0, cancellations: 0 };
-              }
-              if (event.event_type === 'subscription') {
-                groupedByDate[date].subscriptions++;
-              } else if (event.event_type === 'cancellation') {
-                groupedByDate[date].cancellations++;
-              }
-            });
-
-            const timelineData: TimelineData[] = Object.entries(groupedByDate).map(([date, values]) => ({
-              date,
-              subscriptions: values.subscriptions,
-              cancellations: values.cancellations
-            }));
-
-            setData(timelineData);
-          } else if (type === 'plan-distribution') {
-            // Contar por plano
+          if (subscriptions) {
             const planCounts: Record<string, number> = {};
             
-            events
-              .filter(e => e.event_type === 'subscription')
-              .forEach(event => {
-                planCounts[event.plan] = (planCounts[event.plan] || 0) + 1;
-              });
+            subscriptions.forEach(sub => {
+              planCounts[sub.plan] = (planCounts[sub.plan] || 0) + 1;
+            });
 
             const planData: PlanData[] = Object.entries(planCounts).map(([name, value]) => ({
               name: name.charAt(0).toUpperCase() + name.slice(1),
@@ -107,34 +75,77 @@ export const useSubscriptionChartData = (
             }));
 
             setData(planData);
-          } else if (type === 'mrr') {
-            // Calcular MRR por mês
-            const mrrByMonth: Record<string, number> = {};
-            
-            events
-              .filter(e => e.event_type === 'subscription')
-              .forEach(event => {
-                const month = new Date(event.event_date).toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' });
-                mrrByMonth[month] = (mrrByMonth[month] || 0) + (event.amount || 0);
+          }
+        } else {
+          // Use subscription_events for other chart types
+          let query = supabase
+            .from('subscription_events')
+            .select('*')
+            .gte('event_date', dateRange.from.toISOString())
+            .lte('event_date', dateRange.to.toISOString());
+
+          if (filters.plan !== 'all') {
+            query = query.eq('plan', filters.plan);
+          }
+          if (filters.eventType !== 'all') {
+            query = query.eq('event_type', filters.eventType);
+          }
+          if (filters.paymentMethod !== 'all') {
+            query = query.eq('payment_method', filters.paymentMethod);
+          }
+
+          const { data: events } = await query;
+
+          if (events) {
+            if (type === 'timeline') {
+              const groupedByDate: Record<string, { subscriptions: number; cancellations: number }> = {};
+              
+              events.forEach(event => {
+                const date = new Date(event.event_date).toLocaleDateString('pt-BR');
+                if (!groupedByDate[date]) {
+                  groupedByDate[date] = { subscriptions: 0, cancellations: 0 };
+                }
+                if (event.event_type === 'subscription') {
+                  groupedByDate[date].subscriptions++;
+                } else if (event.event_type === 'cancellation') {
+                  groupedByDate[date].cancellations++;
+                }
               });
 
-            const mrrData: MrrData[] = Object.entries(mrrByMonth).map(([date, mrr]) => ({
-              date,
-              mrr
-            }));
+              const timelineData: TimelineData[] = Object.entries(groupedByDate).map(([date, values]) => ({
+                date,
+                subscriptions: values.subscriptions,
+                cancellations: values.cancellations
+              }));
 
-            setData(mrrData);
-          } else if (type === 'churn-rate') {
-            // Calcular taxa de churn por período
-            const churnData: ChurnData[] = [
-              { date: 'Jan', churnRate: 5.2 },
-              { date: 'Fev', churnRate: 4.8 },
-              { date: 'Mar', churnRate: 6.1 },
-              { date: 'Abr', churnRate: 3.9 },
-              { date: 'Mai', churnRate: 4.5 }
-            ];
+              setData(timelineData);
+            } else if (type === 'mrr') {
+              const mrrByMonth: Record<string, number> = {};
+              
+              events
+                .filter(e => e.event_type === 'subscription')
+                .forEach(event => {
+                  const month = new Date(event.event_date).toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' });
+                  mrrByMonth[month] = (mrrByMonth[month] || 0) + (event.amount || 0);
+                });
 
-            setData(churnData);
+              const mrrData: MrrData[] = Object.entries(mrrByMonth).map(([date, mrr]) => ({
+                date,
+                mrr
+              }));
+
+              setData(mrrData);
+            } else if (type === 'churn-rate') {
+              const churnData: ChurnData[] = [
+                { date: 'Jan', churnRate: 5.2 },
+                { date: 'Fev', churnRate: 4.8 },
+                { date: 'Mar', churnRate: 6.1 },
+                { date: 'Abr', churnRate: 3.9 },
+                { date: 'Mai', churnRate: 4.5 }
+              ];
+
+              setData(churnData);
+            }
           }
         }
       } catch (error) {

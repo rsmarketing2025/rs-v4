@@ -17,11 +17,18 @@ interface SubscriptionEvent {
   payment_method?: string;
 }
 
+interface UseSubscriptionEventsParams {
+  dateRange: { from: Date; to: Date };
+  filters: { plan: string; eventType: string; paymentMethod: string };
+  page: number;
+  pageSize: number;
+}
+
 export const useSubscriptionEvents = (
-  dateRange: { from: Date; to: Date },
-  filters: { plan: string; eventType: string; paymentMethod: string },
-  page: number,
-  pageSize: number
+  dateRange: UseSubscriptionEventsParams['dateRange'],
+  filters: UseSubscriptionEventsParams['filters'],
+  page: UseSubscriptionEventsParams['page'],
+  pageSize: UseSubscriptionEventsParams['pageSize']
 ) => {
   const [events, setEvents] = useState<SubscriptionEvent[]>([]);
   const [totalCount, setTotalCount] = useState(0);

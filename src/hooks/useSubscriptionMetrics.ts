@@ -26,15 +26,6 @@ interface DateRange {
   to: Date;
 }
 
-interface SubscriptionEvent {
-  subscription_id: string;
-  event_type: string;
-  amount: number;
-  plan: string;
-  event_date: string;
-  customer_id: string;
-}
-
 export const useSubscriptionMetrics = (
   dateRange: DateRange,
   filters: Filters
@@ -57,114 +48,77 @@ export const useSubscriptionMetrics = (
     const fetchMetrics = async () => {
       try {
         setLoading(true);
-        console.log('🔄 Implementing corrected subscription metrics calculation...');
+        console.log('📊 Fetching subscription metrics using new subscription_status table...');
 
-        // Fetch ALL subscription events
-        let eventsQuery = supabase
-          .from('subscription_events')
-          .select('*')
-          .order('event_date', { ascending: true });
+        // 1. Get active subscriptions from subscription_status table
+        let activeQuery = supabase
+          .from('subscription_status')
+          .select('*', { count: 'exact' })
+          .eq('status', 'active');
 
-        // Apply plan filter if specified
         if (filters.plan !== 'all') {
-          eventsQuery = eventsQuery.eq('plan', filters.plan);
+          activeQuery = activeQuery.eq('plan', filters.plan);
         }
 
-        const { data: allEvents, error: eventsError } = await eventsQuery;
+        const { count: activeCount, data: activeSubscriptions } = await activeQuery;
 
-        if (eventsError) {
-          console.error('❌ Error fetching events:', eventsError);
-          return;
-        }
-
-        const events = (allEvents || []) as SubscriptionEvent[];
-        console.log('📊 Total events fetched:', events.length);
-
-        // CORRECTED LOGIC:
-        // 1. Find all customer_id with 'subscription' event
-        // 2. For each customer_id, check if they have 'canceled' event
-        // 3. If has 'subscription' but NOT 'canceled', count as active
-
-        const customersWithSubscription = new Set<string>();
-        const customersWithCancellation = new Set<string>();
-        const subscriptionAmounts = new Map<string, number>();
-        
-        // Process all events to identify customers with subscriptions and cancellations
-        events.forEach(event => {
-          const eventType = event.event_type.toLowerCase().trim();
-          
-          // Identify subscription events
-          if (eventType === 'subscription' || eventType === 'created' || eventType === 'subscription_created') {
-            customersWithSubscription.add(event.customer_id);
-            // Store subscription amount (use latest value)
-            subscriptionAmounts.set(event.customer_id, Number(event.amount) || 0);
-          }
-          
-          // Identify cancellation events
-          if (eventType === 'canceled' || eventType === 'cancelled' || eventType === 'cancellation') {
-            customersWithCancellation.add(event.customer_id);
-          }
-        });
-
-        // Calculate active subscriptions: customers with subscription BUT WITHOUT cancellation
-        const activeCustomers = Array.from(customersWithSubscription).filter(
-          customerId => !customersWithCancellation.has(customerId)
-        );
-
-        const activeSubscriptionsCount = activeCustomers.length;
-        
-        // Calculate total MRR from active customers
-        const totalMRR = activeCustomers.reduce((sum, customerId) => {
-          return sum + (subscriptionAmounts.get(customerId) || 0);
+        // Calculate total MRR from active subscriptions
+        const totalMRR = (activeSubscriptions || []).reduce((sum, sub) => {
+          return sum + (Number(sub.amount) || 0);
         }, 0);
 
-        console.log('✅ CORRECTED Subscription Analysis Results:', {
-          totalCustomersWithSubscription: customersWithSubscription.size,
-          totalCustomersWithCancellation: customersWithCancellation.size,
-          activeSubscriptions: activeSubscriptionsCount,
-          totalMRR: totalMRR.toFixed(2)
-        });
+        // 2. Get new subscriptions in the period from subscription_events
+        let newSubsQuery = supabase
+          .from('subscription_events')
+          .select('*', { count: 'exact' })
+          .in('event_type', ['subscription', 'created', 'subscription_created'])
+          .gte('event_date', dateRange.from.toISOString())
+          .lte('event_date', dateRange.to.toISOString());
 
-        // Calculate new subscriptions in the period
-        const newSubscriptionsInPeriod = events.filter(event => {
-          const eventType = event.event_type.toLowerCase().trim();
-          const eventDate = new Date(event.event_date);
-          return (eventType === 'subscription' || eventType === 'created' || eventType === 'subscription_created') &&
-                 eventDate >= dateRange.from && eventDate <= dateRange.to;
-        });
+        if (filters.plan !== 'all') {
+          newSubsQuery = newSubsQuery.eq('plan', filters.plan);
+        }
 
-        // Calculate cancellations in the period
-        const cancellationsInPeriod = events.filter(event => {
-          const eventType = event.event_type.toLowerCase().trim();
-          const eventDate = new Date(event.event_date);
-          return (eventType === 'canceled' || eventType === 'cancelled' || eventType === 'cancellation') &&
-                 eventDate >= dateRange.from && eventDate <= dateRange.to;
-        });
+        const { count: newSubscriptionsCount } = await newSubsQuery;
 
-        // Calculate churn rate
-        const churnRate = activeSubscriptionsCount > 0 
-          ? (cancellationsInPeriod.length / (activeSubscriptionsCount + cancellationsInPeriod.length)) * 100 
+        // 3. Get cancellations in the period from subscription_events
+        let cancellationsQuery = supabase
+          .from('subscription_events')
+          .select('*', { count: 'exact' })
+          .in('event_type', ['canceled', 'cancelled', 'cancellation'])
+          .gte('event_date', dateRange.from.toISOString())
+          .lte('event_date', dateRange.to.toISOString());
+
+        if (filters.plan !== 'all') {
+          cancellationsQuery = cancellationsQuery.eq('plan', filters.plan);
+        }
+
+        const { count: cancellationsCount } = await cancellationsQuery;
+
+        // 4. Calculate churn rate
+        const churnRate = (activeCount || 0) > 0 
+          ? ((cancellationsCount || 0) / ((activeCount || 0) + (cancellationsCount || 0))) * 100 
           : 0;
 
         const finalMetrics = {
-          activeSubscriptions: activeSubscriptionsCount,
-          activeSubscriptionsGrowth: 15.2, // Placeholder
-          newSubscriptions: newSubscriptionsInPeriod.length,
-          newSubscriptionsGrowth: 8.5, // Placeholder
-          cancellations: cancellationsInPeriod.length,
-          cancellationsGrowth: -5.3, // Placeholder
+          activeSubscriptions: activeCount || 0,
+          activeSubscriptionsGrowth: 15.2, // Placeholder for growth calculation
+          newSubscriptions: newSubscriptionsCount || 0,
+          newSubscriptionsGrowth: 8.5, // Placeholder for growth calculation
+          cancellations: cancellationsCount || 0,
+          cancellationsGrowth: -5.3, // Placeholder for growth calculation
           mrr: totalMRR,
-          mrrGrowth: 12.3, // Placeholder
+          mrrGrowth: 12.3, // Placeholder for growth calculation
           churnRate: parseFloat(churnRate.toFixed(1)),
-          churnRateChange: -2.1 // Placeholder
+          churnRateChange: -2.1 // Placeholder for growth calculation
         };
 
         setMetrics(finalMetrics);
 
-        console.log('🎯 Final CORRECTED Metrics:', {
-          activeSubscriptions: activeSubscriptionsCount,
-          newInPeriod: newSubscriptionsInPeriod.length,
-          cancellationsInPeriod: cancellationsInPeriod.length,
+        console.log('✅ Updated Subscription Metrics using new table:', {
+          activeSubscriptions: activeCount || 0,
+          newInPeriod: newSubscriptionsCount || 0,
+          cancellationsInPeriod: cancellationsCount || 0,
           mrr: totalMRR.toFixed(2),
           churnRate: churnRate.toFixed(1) + '%'
         });
