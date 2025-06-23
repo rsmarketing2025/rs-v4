@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -60,18 +59,22 @@ export const UserForm: React.FC<UserFormProps> = ({
 
   useEffect(() => {
     if (user) {
+      // Create a complete permissions object with all pages
+      const userPermissions = PAGES.reduce((acc, page) => {
+        const permission = user.user_page_permissions?.find(p => p.page === page);
+        acc[page] = permission?.can_access || false;
+        return acc;
+      }, {} as Record<UserPage, boolean>);
+
       setFormData({
         full_name: user.full_name || '',
         email: user.email || '',
         username: user.username || '',
         role: user.role,
-        permissions: user.user_page_permissions?.reduce((acc, perm) => {
-          acc[perm.page] = perm.can_access;
-          return acc;
-        }, {} as Record<UserPage, boolean>) || {}
+        permissions: userPermissions
       });
     } else {
-      // Default permissions for new users
+      // Default permissions for new users - ensure all pages are included
       const defaultPermissions = PAGES.reduce((acc, page) => {
         acc[page] = page !== 'users'; // All pages except users
         return acc;

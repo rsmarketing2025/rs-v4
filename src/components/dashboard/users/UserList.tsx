@@ -260,7 +260,6 @@ export const UserList: React.FC<UserListProps> = ({
           setIsDetailModalOpen(false);
           setSelectedUser(undefined);
         }}
-        onUserUpdate={handleUserUpdate}
       />
     </div>
   );
