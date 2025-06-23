@@ -339,13 +339,13 @@ export type Database = {
           canceled_at: string | null
           created_at: string
           currency: string
-          customer_email: string
-          customer_id: string
+          customer_email: string | null
+          customer_id: string | null
           customer_name: string | null
           frequency: string | null
           id: string
           plan: string
-          subscription_id: string
+          subscription_id: string | null
           subscription_number: number | null
           subscription_status: string
           updated_at: string
@@ -355,13 +355,13 @@ export type Database = {
           canceled_at?: string | null
           created_at?: string
           currency?: string
-          customer_email: string
-          customer_id: string
+          customer_email?: string | null
+          customer_id?: string | null
           customer_name?: string | null
           frequency?: string | null
           id?: string
           plan: string
-          subscription_id: string
+          subscription_id?: string | null
           subscription_number?: number | null
           subscription_status: string
           updated_at?: string
@@ -371,13 +371,13 @@ export type Database = {
           canceled_at?: string | null
           created_at?: string
           currency?: string
-          customer_email?: string
-          customer_id?: string
+          customer_email?: string | null
+          customer_id?: string | null
           customer_name?: string | null
           frequency?: string | null
           id?: string
           plan?: string
-          subscription_id?: string
+          subscription_id?: string | null
           subscription_number?: number | null
           subscription_status?: string
           updated_at?: string

@@ -48,7 +48,7 @@ export const useSubscriptionMetrics = (
     const fetchMetrics = async () => {
       try {
         setLoading(true);
-        console.log('📊 Fetching subscription metrics using updated subscription_status table...');
+        console.log('📊 Fetching subscription metrics from subscription_status table...');
 
         // 1. Get active subscriptions from subscription_status table
         let activeQuery = supabase
@@ -115,7 +115,7 @@ export const useSubscriptionMetrics = (
 
         setMetrics(finalMetrics);
 
-        console.log('✅ Updated Subscription Metrics using renamed column:', {
+        console.log('✅ Subscription Metrics updated:', {
           activeSubscriptions: activeCount || 0,
           newInPeriod: newSubscriptionsCount || 0,
           cancellationsInPeriod: cancellationsCount || 0,
