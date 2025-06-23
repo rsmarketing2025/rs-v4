@@ -15,6 +15,7 @@ interface SubscriptionEvent {
   currency: string;
   frequency: string | null;
   payment_method?: string;
+  subscription_number: number | null;
 }
 
 interface UseSubscriptionEventsParams {

@@ -347,6 +347,7 @@ export type Database = {
           plan: string
           status: string
           subscription_id: string
+          subscription_number: number | null
           updated_at: string
         }
         Insert: {
@@ -362,6 +363,7 @@ export type Database = {
           plan: string
           status: string
           subscription_id: string
+          subscription_number?: number | null
           updated_at?: string
         }
         Update: {
@@ -377,6 +379,7 @@ export type Database = {
           plan?: string
           status?: string
           subscription_id?: string
+          subscription_number?: number | null
           updated_at?: string
         }
         Relationships: []

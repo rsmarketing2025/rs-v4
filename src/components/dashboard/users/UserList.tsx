@@ -1,371 +1,223 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { Search, User, Mail, Phone, Shield, ShieldCheck, Edit, Trash2, Crown } from 'lucide-react';
-import { UserDetailModal } from './UserDetailModal';
+import { UserForm } from './UserForm';
 import { DeleteUserDialog } from './DeleteUserDialog';
-import { UserWithPermissions } from './types';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { UserDetailModal } from './UserDetailModal';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
+import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
+import type { UserWithPermissions } from './types';
 
-interface UserProfile {
-  id: string;
-  full_name: string;
-  email: string;
-  username: string | null;
-  status?: string;
-  created_at: string;
-  role: 'admin' | 'user' | 'gestor';
-  pagePermissions: {
-    creatives: boolean;
-    sales: boolean;
-    affiliates: boolean;
-    revenue: boolean;
-    users: boolean;
-  };
-}
-
-interface UserListProps {
-  refreshTrigger: number;
-  currentUserRole: string | null;
-  onUserUpdated: () => void;
-}
-
-export const UserList: React.FC<UserListProps> = ({ 
-  refreshTrigger, 
-  currentUserRole,
-  onUserUpdated 
-}) => {
-  const [users, setUsers] = useState<UserProfile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+export const UserList = () => {
   const [selectedUser, setSelectedUser] = useState<UserWithPermissions | null>(null);
-  const [userToDelete, setUserToDelete] = useState<{ id: string; name: string } | null>(null);
-  const [deletingUser, setDeletingUser] = useState(false);
-  const { toast } = useToast();
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    fetchUsers();
-  }, [refreshTrigger]);
-
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      
-      // Buscar perfis
-      const { data: profilesData, error: profilesError } = await supabase
+  const { data: users = [], isLoading, refetch } = useQuery({
+    queryKey: ['users'],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from('profiles')
         .select(`
-          id,
-          full_name,
-          email,
-          username,
-          created_at
+          *,
+          user_roles (role),
+          user_page_permissions (page, can_access)
         `)
         .order('created_at', { ascending: false });
 
-      if (profilesError) throw profilesError;
-      if (!profilesData) return;
-
-      // Buscar roles para cada usuário
-      const userIds = profilesData.map(profile => profile.id);
-      const { data: rolesData, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role')
-        .in('user_id', userIds);
-
-      if (rolesError) throw rolesError;
-
-      // Buscar permissões de página para cada usuário
-      const { data: pagePermissionsData, error: pagePermissionsError } = await supabase
-        .from('user_page_permissions')
-        .select('user_id, page, can_access')
-        .in('user_id', userIds);
-
-      if (pagePermissionsError) throw pagePermissionsError;
-
-      // Combinar todos os dados
-      const usersWithDetails = profilesData.map(profile => {
-        const userRole = rolesData?.find(role => role.user_id === profile.id);
-        const userPagePermissions = pagePermissionsData?.filter(perm => perm.user_id === profile.id) || [];
-        
-        // Construir objeto de permissões de página
-        const pagePermissions = {
-          creatives: userPagePermissions.find(p => p.page === 'creatives')?.can_access ?? true,
-          sales: userPagePermissions.find(p => p.page === 'sales')?.can_access ?? true,
-          affiliates: userPagePermissions.find(p => p.page === 'affiliates')?.can_access ?? true,
-          revenue: userPagePermissions.find(p => p.page === 'revenue')?.can_access ?? true,
-          users: userPagePermissions.find(p => p.page === 'users')?.can_access ?? false,
-        };
-
-        return {
-          id: profile.id,
-          full_name: profile.full_name || '',
-          email: profile.email || '',
-          username: profile.username,
-          status: 'active', // Default status since it's not in the profiles table
-          created_at: profile.created_at,
-          role: (userRole?.role as 'admin' | 'user' | 'gestor') || 'user',
-          pagePermissions
-        };
-      });
-
-      setUsers(usersWithDetails);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      toast({
-        title: "Erro ao carregar usuários",
-        description: "Não foi possível carregar a lista de usuários.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteUser = async () => {
-    if (!userToDelete) return;
-
-    try {
-      setDeletingUser(true);
-
-      // Chamar a Edge Function para deletar o usuário
-      const { data, error } = await supabase.functions.invoke('delete-user', {
-        body: { userId: userToDelete.id }
-      });
-
       if (error) {
+        console.error('Error fetching users:', error);
         throw error;
       }
 
-      toast({
-        title: "Usuário removido",
-        description: `${userToDelete.name} foi removido do sistema com sucesso.`,
-      });
-
-      // Fechar o dialog e recarregar a lista
-      setUserToDelete(null);
-      fetchUsers();
-    } catch (error: any) {
-      console.error('Error deleting user:', error);
-      toast({
-        title: "Erro ao remover usuário",
-        description: error.message || "Ocorreu um erro ao remover o usuário.",
-        variant: "destructive",
-      });
-    } finally {
-      setDeletingUser(false);
-    }
-  };
-
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return (
-          <Badge className="bg-red-600 text-white">
-            <Crown className="w-3 h-3 mr-1" />
-            Admin
-          </Badge>
-        );
-      case 'gestor':
-        return (
-          <Badge className="bg-blue-600 text-white">
-            <ShieldCheck className="w-3 h-3 mr-1" />
-            Gestor
-          </Badge>
-        );
-      default:
-        return (
-          <Badge variant="secondary" className="bg-slate-600 text-slate-200">
-            <Shield className="w-3 h-3 mr-1" />
-            Usuário
-          </Badge>
-        );
-    }
-  };
-
-  const canEditUser = (targetUser: UserProfile) => {
-    if (currentUserRole === 'admin') return true;
-    if (currentUserRole === 'gestor') {
-      return targetUser.role === 'user'; // Gestores só podem editar usuários comuns
-    }
-    return false;
-  };
-
-  const canDeleteUser = (targetUser: UserProfile) => {
-    return currentUserRole === 'admin'; // Apenas admins podem deletar
-  };
-
-  const convertToModalUser = (user: UserProfile): UserWithPermissions => {
-    return {
-      id: user.id,
-      full_name: user.full_name,
-      email: user.email,
-      username: user.username || '',
-      role: user.role === 'gestor' ? 'admin' : (user.role as 'admin' | 'user'), // Fix: map gestor to admin
-      permissions: [
-        { page: 'creatives', can_access: user.pagePermissions.creatives },
-        { page: 'sales', can_access: user.pagePermissions.sales },
-        { page: 'affiliates', can_access: user.pagePermissions.affiliates },
-        { page: 'revenue', can_access: user.pagePermissions.revenue },
-        { page: 'users', can_access: user.pagePermissions.users },
-        { page: 'business-managers', can_access: true },
-        { page: 'subscriptions', can_access: true }
-      ],
-      avatar_url: undefined,
-      created_at: user.created_at
-    };
-  };
+      return data?.map(user => ({
+        ...user,
+        role: user.user_roles?.[0]?.role || 'user',
+        permissions: user.user_page_permissions || []
+      })) || [];
+    },
+  });
 
   const filteredUsers = users.filter(user => 
-    user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase()))
+    user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) {
+  const handleEdit = (user: UserWithPermissions) => {
+    setSelectedUser(user);
+    setIsFormOpen(true);
+  };
+
+  const handleDelete = (user: UserWithPermissions) => {
+    setSelectedUser(user);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleViewDetails = (user: UserWithPermissions) => {
+    setSelectedUser(user);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleFormClose = () => {
+    setSelectedUser(null);
+    setIsFormOpen(false);
+    refetch();
+  };
+
+  const handleDeleteClose = () => {
+    setSelectedUser(null);
+    setIsDeleteDialogOpen(false);
+    refetch();
+  };
+
+  const handleDetailClose = () => {
+    setSelectedUser(null);
+    setIsDetailModalOpen(false);
+  };
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-red-600 hover:bg-red-700';
+      case 'business_manager':
+        return 'bg-blue-600 hover:bg-blue-700';
+      default:
+        return 'bg-gray-600 hover:bg-gray-700';
+    }
+  };
+
+  if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-          <Input
-            placeholder="Buscar usuários..."
-            className="pl-10 bg-slate-900/50 border-slate-600 text-white"
-            disabled
-          />
-        </div>
-        <div className="text-center text-slate-400 py-8">
-          Carregando usuários...
-        </div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-slate-400">Carregando usuários...</div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-        <Input
-          placeholder="Buscar por nome, email ou username..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 bg-slate-900/50 border-slate-600 text-white"
-        />
-      </div>
+    <div className="space-y-6">
+      <Card className="bg-neutral-800 border-neutral-700">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <CardTitle className="text-white">Gerenciamento de Usuários</CardTitle>
+            <Button
+              onClick={() => setIsFormOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Adicionar Usuário
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+              <Input
+                placeholder="Buscar por nome ou email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-neutral-700 border-neutral-600 text-white placeholder-slate-400"
+              />
+            </div>
+          </div>
 
-      {/* Users Table */}
-      <Card className="bg-slate-800/50 border-slate-700">
-        <CardContent className="p-0">
-          <div className="max-h-[600px] overflow-y-auto">
+          <div className="overflow-x-auto">
             <Table>
-              <TableHeader sticky={true}>
-                <TableRow className="border-slate-700">
+              <TableHeader>
+                <TableRow className="border-slate-700 hover:bg-slate-800/50">
                   <TableHead className="text-slate-300">Nome</TableHead>
                   <TableHead className="text-slate-300">Email</TableHead>
-                  <TableHead className="text-slate-300">Username</TableHead>
-                  <TableHead className="text-slate-300">Papel</TableHead>
-                  <TableHead className="text-slate-300">Status</TableHead>
+                  <TableHead className="text-slate-300">Função</TableHead>
                   <TableHead className="text-slate-300">Criado em</TableHead>
-                  <TableHead className="text-slate-300 text-right">Ações</TableHead>
+                  <TableHead className="text-slate-300">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center text-slate-400 py-8">
-                      {searchTerm ? "Nenhum usuário encontrado." : "Nenhum usuário cadastrado."}
+                {filteredUsers.map((user) => (
+                  <TableRow key={user.id} className="border-slate-700 hover:bg-slate-800/30">
+                    <TableCell className="text-white">
+                      <div>
+                        <div className="font-medium">{user.full_name || 'N/A'}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-slate-300">{user.email}</TableCell>
+                    <TableCell>
+                      <Badge className={getRoleBadgeColor(user.role)}>
+                        {user.role === 'admin' && 'Administrador'}
+                        {user.role === 'business_manager' && 'Gerente de Negócios'}
+                        {user.role === 'user' && 'Usuário'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-slate-300">
+                      {user.created_at ? new Date(user.created_at).toLocaleDateString('pt-BR') : 'N/A'}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewDetails(user)}
+                          className="text-slate-300 border-slate-600 hover:bg-slate-700"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(user)}
+                          className="text-slate-300 border-slate-600 hover:bg-slate-700"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(user)}
+                          className="text-red-400 border-red-600 hover:bg-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
-                ) : (
-                  filteredUsers.map((user) => (
-                    <TableRow key={user.id} className="border-slate-700 hover:bg-slate-800/30">
-                      <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <div className="bg-slate-700 p-2 rounded-full">
-                            <User className="w-4 h-4 text-slate-300" />
-                          </div>
-                          <div>
-                            <p className="text-white font-medium">{user.full_name}</p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-slate-300">{user.email}</TableCell>
-                      <TableCell className="text-slate-300">{user.username || '-'}</TableCell>
-                      <TableCell>{getRoleBadge(user.role)}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={user.status === 'active' ? 'default' : 'secondary'}
-                          className={user.status === 'active' 
-                            ? 'bg-green-600 text-white' 
-                            : 'bg-slate-600 text-slate-200'
-                          }
-                        >
-                          {user.status === 'active' ? 'Ativo' : 'Inativo'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        {new Date(user.created_at).toLocaleDateString('pt-BR')}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedUser(convertToModalUser(user))}
-                            className="border-slate-600 text-slate-300 hover:bg-slate-800"
-                          >
-                            <Edit className="w-3 h-3" />
-                          </Button>
-                          {canDeleteUser(user) && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setUserToDelete({ id: user.id, name: user.full_name })}
-                              className="border-red-600 text-red-400 hover:bg-red-600/10"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
+                ))}
               </TableBody>
             </Table>
           </div>
+
+          {filteredUsers.length === 0 && (
+            <div className="text-center py-8 text-slate-400">
+              {searchTerm ? 'Nenhum usuário encontrado com o termo de busca.' : 'Nenhum usuário encontrado.'}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* User Detail Modal */}
-      {selectedUser && (
-        <UserDetailModal
-          user={selectedUser}
-          isOpen={!!selectedUser}
-          onClose={() => setSelectedUser(null)}
-          onUserUpdate={onUserUpdated}
-        />
-      )}
+      <UserForm
+        user={selectedUser}
+        isOpen={isFormOpen}
+        onClose={handleFormClose}
+      />
 
-      {/* Delete User Dialog */}
       <DeleteUserDialog
-        isOpen={!!userToDelete}
-        onClose={() => setUserToDelete(null)}
-        onConfirm={handleDeleteUser}
-        userName={userToDelete?.name || ''}
-        loading={deletingUser}
+        user={selectedUser}
+        isOpen={isDeleteDialogOpen}
+        onClose={handleDeleteClose}
+      />
+
+      <UserDetailModal
+        user={selectedUser}
+        isOpen={isDetailModalOpen}
+        onClose={handleDetailClose}
       />
     </div>
   );

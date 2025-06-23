@@ -92,6 +92,7 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = ({
                 <TableHead className="text-slate-300">Valor</TableHead>
                 <TableHead className="text-slate-300">Data</TableHead>
                 <TableHead className="text-slate-300">ID Assinatura</TableHead>
+                <TableHead className="text-slate-300">Número</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -119,6 +120,9 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = ({
                     <div className="max-w-32 truncate">
                       {event.subscription_id}
                     </div>
+                  </TableCell>
+                  <TableCell className="text-slate-300">
+                    {event.subscription_number || 'N/A'}
                   </TableCell>
                 </TableRow>
               ))}
