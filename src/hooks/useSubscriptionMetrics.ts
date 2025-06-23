@@ -80,13 +80,13 @@ export const useSubscriptionMetrics = (
 
         const { count: newSubscriptionsCount } = await newSubsQuery;
 
-        // 3. Get cancellations in the period from subscription_events (simplified to 'canceled')
+        // 3. Get cancellations in the period from subscription_status table using updated_at
         let cancellationsQuery = supabase
-          .from('subscription_events')
+          .from('subscription_status')
           .select('*', { count: 'exact' })
-          .eq('event_type', 'canceled')
-          .gte('event_date', dateRange.from.toISOString())
-          .lte('event_date', dateRange.to.toISOString());
+          .eq('subscription_status', 'Cancelado')
+          .gte('updated_at', dateRange.from.toISOString())
+          .lte('updated_at', dateRange.to.toISOString());
 
         if (filters.plan !== 'all') {
           cancellationsQuery = cancellationsQuery.eq('plan', filters.plan);
