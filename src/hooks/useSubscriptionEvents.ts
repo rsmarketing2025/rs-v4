@@ -1,18 +1,36 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
 
-type SubscriptionPlan = Database['public']['Enums']['subscription_plan'];
-type SubscriptionEventType = Database['public']['Enums']['subscription_event_type'];
+interface SubscriptionEvent {
+  id: string;
+  subscription_id: string;
+  event_type: string;
+  amount: number;
+  plan: string;
+  event_date: string;
+  customer_id: string;
+  customer_email: string;
+  customer_name: string | null;
+  currency: string;
+  frequency: string | null;
+  payment_method?: string;
+}
+
+interface UseSubscriptionEventsProps {
+  dateRange: { from: Date; to: Date };
+  filters: { plan: string; eventType: string; paymentMethod: string };
+  page: number;
+  pageSize: number;
+}
 
 export const useSubscriptionEvents = (
-  dateRange: { from: Date; to: Date },
-  filters: { plan: string; eventType: string; paymentMethod: string },
-  page: number,
-  pageSize: number
+  dateRange: UseSubscriptionEventsProps['dateRange'],
+  filters: UseSubscriptionEventsProps['filters'],
+  page: UseSubscriptionEventsProps['page'],
+  pageSize: UseSubscriptionEventsProps['pageSize']
 ) => {
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<SubscriptionEvent[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -29,10 +47,10 @@ export const useSubscriptionEvents = (
           .order('event_date', { ascending: false });
 
         if (filters.plan !== 'all') {
-          query = query.eq('plan', filters.plan as SubscriptionPlan);
+          query = query.eq('plan', filters.plan);
         }
         if (filters.eventType !== 'all') {
-          query = query.eq('event_type', filters.eventType as SubscriptionEventType);
+          query = query.eq('event_type', filters.eventType);
         }
         if (filters.paymentMethod !== 'all') {
           query = query.eq('payment_method', filters.paymentMethod);

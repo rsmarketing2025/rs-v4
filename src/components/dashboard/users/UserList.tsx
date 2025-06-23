@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Search, User, Mail, Phone, Shield, ShieldCheck, Edit, Trash2, Crown } from 'lucide-react';
 import { UserDetailModal } from './UserDetailModal';
 import { DeleteUserDialog } from './DeleteUserDialog';
+import { UserWithPermissions } from './types';
 import {
   Table,
   TableBody,
@@ -33,25 +34,6 @@ interface UserProfile {
     revenue: boolean;
     users: boolean;
   };
-}
-
-interface UserWithPermissions {
-  id: string;
-  full_name: string;
-  email: string;
-  username: string;
-  role: 'user' | 'admin' | 'business_manager';
-  permissions: {
-    creatives: boolean;
-    sales: boolean;
-    affiliates: boolean;
-    revenue: boolean;
-    users: boolean;
-    'business-managers': boolean;
-    subscriptions: boolean;
-  };
-  avatar_url?: string;
-  created_at: string;
 }
 
 interface UserListProps {
@@ -232,15 +214,15 @@ export const UserList: React.FC<UserListProps> = ({
       email: user.email,
       username: user.username || '',
       role: user.role === 'gestor' ? 'business_manager' : user.role,
-      permissions: {
-        creatives: user.pagePermissions.creatives,
-        sales: user.pagePermissions.sales,
-        affiliates: user.pagePermissions.affiliates,
-        revenue: user.pagePermissions.revenue,
-        users: user.pagePermissions.users,
-        'business-managers': true,
-        subscriptions: true
-      },
+      permissions: [
+        { page: 'creatives', can_access: user.pagePermissions.creatives },
+        { page: 'sales', can_access: user.pagePermissions.sales },
+        { page: 'affiliates', can_access: user.pagePermissions.affiliates },
+        { page: 'revenue', can_access: user.pagePermissions.revenue },
+        { page: 'users', can_access: user.pagePermissions.users },
+        { page: 'business-managers', can_access: true },
+        { page: 'subscriptions', can_access: true }
+      ],
       avatar_url: undefined,
       created_at: user.created_at
     };
@@ -372,13 +354,8 @@ export const UserList: React.FC<UserListProps> = ({
         <UserDetailModal
           user={selectedUser}
           isOpen={!!selectedUser}
-          currentUserRole={currentUserRole}
           onClose={() => setSelectedUser(null)}
-          onUserUpdated={onUserUpdated}
-          onUpdate={() => {
-            onUserUpdated();
-            setSelectedUser(null);
-          }}
+          onUserUpdate={onUserUpdated}
         />
       )}
 
