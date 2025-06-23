@@ -1,55 +1,89 @@
+
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
 import { UserWithPermissions } from './types';
+import type { Database } from '@/integrations/supabase/types';
 
-export interface UserFormProps {
+type UserPage = Database['public']['Enums']['user_page'];
+type AppRole = Database['public']['Enums']['app_role'];
+
+interface UserFormProps {
   user?: UserWithPermissions;
   isOpen: boolean;
   onClose: () => void;
   onUserUpdate?: () => void;
 }
 
-const PAGES = [
-  { id: 'creatives', label: 'Criativos' },
-  { id: 'sales', label: 'Vendas' },
-  { id: 'affiliates', label: 'Afiliados' },
-  { id: 'revenue', label: 'Receita' },
-  { id: 'users', label: 'Usuários' },
-  { id: 'business-managers', label: 'Business Managers' },
-  { id: 'subscriptions', label: 'Assinaturas' }
+const PAGES: UserPage[] = [
+  'creatives',
+  'sales', 
+  'affiliates',
+  'revenue',
+  'users',
+  'business-managers',
+  'subscriptions'
 ];
 
-export const UserForm: React.FC<UserFormProps> = ({ user, isOpen, onClose, onUserUpdate }) => {
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
-  const [role, setRole] = useState<'admin' | 'user' | 'business_manager'>('user');
-  const [permissions, setPermissions] = useState<{ page: string; can_access: boolean; }[]>([]);
-  const [loading, setLoading] = useState(false);
-
+export const UserForm: React.FC<UserFormProps> = ({ 
+  user, 
+  isOpen, 
+  onClose, 
+  onUserUpdate 
+}) => {
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    full_name: '',
+    email: '',
+    username: '',
+    role: 'user' as AppRole,
+    permissions: {} as Record<UserPage, boolean>
+  });
 
   useEffect(() => {
     if (user) {
-      setFullName(user.full_name || '');
-      setEmail(user.email || '');
-      setUsername(user.username || '');
-      setRole(user.role);
-      setPermissions(user.user_page_permissions.map(p => ({ page: p.page, can_access: p.can_access })));
+      setFormData({
+        full_name: user.full_name || '',
+        email: user.email || '',
+        username: user.username || '',
+        role: user.role,
+        permissions: user.user_page_permissions?.reduce((acc, perm) => {
+          acc[perm.page] = perm.can_access;
+          return acc;
+        }, {} as Record<UserPage, boolean>) || {}
+      });
     } else {
-      // Reset form when creating a new user
-      setFullName('');
-      setEmail('');
-      setUsername('');
-      setRole('user');
-      setPermissions(PAGES.map(p => ({ page: p.id, can_access: false })));
+      // Default permissions for new users
+      const defaultPermissions = PAGES.reduce((acc, page) => {
+        acc[page] = page !== 'users'; // All pages except users
+        return acc;
+      }, {} as Record<UserPage, boolean>);
+
+      setFormData({
+        full_name: '',
+        email: '',
+        username: '',
+        role: 'user',
+        permissions: defaultPermissions
+      });
     }
   }, [user]);
 
@@ -57,111 +91,110 @@ export const UserForm: React.FC<UserFormProps> = ({ user, isOpen, onClose, onUse
     e.preventDefault();
     setLoading(true);
 
-    const userPermissions = PAGES.map(page => {
-      const permission = permissions.find(p => p.page === page.id);
-      return { page: page.id, can_access: permission?.can_access || false };
-    });
-
     try {
       if (user) {
         // Update existing user
-        const { error } = await supabase
+        const { error: profileError } = await supabase
           .from('profiles')
           .update({
-            full_name: fullName,
-            username: username
+            full_name: formData.full_name,
+            username: formData.username,
           })
           .eq('id', user.id);
 
-        if (error) {
-          throw new Error(error.message);
-        }
+        if (profileError) throw profileError;
 
-        // Update user role
+        // Update role
         const { error: roleError } = await supabase
           .from('user_roles')
-          .update({ role: role })
+          .update({ role: formData.role })
           .eq('user_id', user.id);
 
-        if (roleError) {
-          throw new Error(roleError.message);
+        if (roleError) throw roleError;
+
+        // Update permissions
+        for (const page of PAGES) {
+          const pageTyped = page as UserPage;
+          const { error: permError } = await supabase
+            .from('user_page_permissions')
+            .update({ can_access: formData.permissions[pageTyped] })
+            .eq('user_id', user.id)
+            .eq('page', pageTyped);
+
+          if (permError) throw permError;
         }
-
-        // Update user permissions
-        await Promise.all(
-          userPermissions.map(async (permission) => {
-            const { data, error } = await supabase
-              .from('user_page_permissions')
-              .update({ can_access: permission.can_access })
-              .eq('user_id', user.id)
-              .eq('page', permission.page);
-
-            if (error) {
-              throw new Error(error.message);
-            }
-          })
-        );
 
         toast({
-          title: "Usuário atualizado!",
-          description: "As informações do usuário foram atualizadas com sucesso.",
+          title: "Sucesso!",
+          description: "Usuário atualizado com sucesso.",
         });
       } else {
-        // Create new user
-        const { data: newUser, error } = await supabase.auth.signUp({
-          email: email,
-          password: 'defaultpassword', // You should implement a proper password reset flow
-          options: {
-            data: {
-              full_name: fullName,
-              username: username,
-            },
-          },
+        // Create new user via Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+          email: formData.email,
+          email_confirm: true,
+          user_metadata: {
+            full_name: formData.full_name,
+            username: formData.username,
+            role: formData.role
+          }
         });
 
-        if (error) {
-          throw new Error(error.message);
-        }
+        if (authError) throw authError;
 
-        if (newUser.user) {
-          // Assign role to new user
-          const { error: roleError } = await supabase
-            .from('user_roles')
-            .insert({ user_id: newUser.user.id, role: role });
+        const userId = authData.user?.id;
+        if (!userId) throw new Error('Failed to create user');
 
-          if (roleError) {
-            throw new Error(roleError.message);
-          }
-
-          // Set user permissions
-          await Promise.all(
-            userPermissions.map(async (permission) => {
-              const { error } = await supabase
-                .from('user_page_permissions')
-                .insert({ user_id: newUser.user.id, page: permission.page, can_access: permission.can_access });
-
-              if (error) {
-                throw new Error(error.message);
-              }
-            })
-          );
-
-          toast({
-            title: "Usuário criado!",
-            description: "Um novo usuário foi criado com sucesso.",
+        // Create profile
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            full_name: formData.full_name,
+            email: formData.email,
+            username: formData.username,
           });
-        }
+
+        if (profileError) throw profileError;
+
+        // Set role
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: userId,
+            role: formData.role,
+          });
+
+        if (roleError) throw roleError;
+
+        // Set permissions
+        const permissionInserts = PAGES.map(page => ({
+          user_id: userId,
+          page: page as UserPage,
+          can_access: formData.permissions[page as UserPage]
+        }));
+
+        const { error: permError } = await supabase
+          .from('user_page_permissions')
+          .insert(permissionInserts);
+
+        if (permError) throw permError;
+
+        toast({
+          title: "Sucesso!",
+          description: "Usuário criado com sucesso.",
+        });
       }
 
       onClose();
       if (onUserUpdate) {
         onUserUpdate();
       }
-    } catch (err: any) {
+    } catch (error: any) {
       toast({
+        title: "Erro!",
+        description: `Falha ao ${user ? 'atualizar' : 'criar'} usuário: ${error.message}`,
         variant: "destructive",
-        title: "Erro ao salvar",
-        description: err.message,
       });
     } finally {
       setLoading(false);
@@ -170,79 +203,93 @@ export const UserForm: React.FC<UserFormProps> = ({ user, isOpen, onClose, onUse
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{user ? "Editar Usuário" : "Novo Usuário"}</DialogTitle>
+          <DialogTitle>{user ? 'Editar Usuário' : 'Criar Usuário'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name">Nome Completo</Label>
-            <Input
-              id="name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-            />
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="full_name">Nome Completo</Label>
+              <Input
+                id="full_name"
+                value={formData.full_name}
+                onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                value={formData.username}
+                onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+              />
+            </div>
           </div>
-          <div className="grid gap-2">
+
+          <div>
             <Label htmlFor="email">Email</Label>
             <Input
-              type="email"
               id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={!!user} // Disable email editing for existing users
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              disabled={!!user} // Can't change email for existing users
+              required
             />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="username">Username</Label>
-            <Input
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="role">Função</Label>
-            <Select value={role} onValueChange={(value) => setRole(value as 'admin' | 'user' | 'business_manager')}>
-              <SelectTrigger id="role">
-                <SelectValue placeholder="Selecione uma função" />
+
+          <div>
+            <Label htmlFor="role">Role</Label>
+            <Select value={formData.role} onValueChange={(value: AppRole) => setFormData(prev => ({ ...prev, role: value }))}>
+              <SelectTrigger>
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="user">User</SelectItem>
-                <SelectItem value="business_manager">Business Manager</SelectItem>
+                <SelectItem value="user">Usuário</SelectItem>
+                <SelectItem value="business_manager">Gestor de Negócios</SelectItem>
+                <SelectItem value="admin">Administrador</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
           <div>
             <Label>Permissões de Página</Label>
-            <div className="grid gap-2 mt-2">
-              {PAGES.map(page => (
-                <div key={page.id} className="flex items-center space-x-2">
+            <div className="grid grid-cols-2 gap-3 mt-2">
+              {PAGES.map((page) => (
+                <div key={page} className="flex items-center space-x-2">
                   <Checkbox
-                    id={page.id}
-                    checked={permissions.find(p => p.page === page.id)?.can_access || false}
+                    id={page}
+                    checked={formData.permissions[page] || false}
                     onCheckedChange={(checked) => {
-                      setPermissions(prev => {
-                        const newPermissions = [...prev];
-                        const permissionIndex = newPermissions.findIndex(p => p.page === page.id);
-                        if (permissionIndex !== -1) {
-                          newPermissions[permissionIndex] = { ...newPermissions[permissionIndex], can_access: checked || false };
-                        } else {
-                          newPermissions.push({ page: page.id, can_access: checked || false });
+                      setFormData(prev => ({
+                        ...prev,
+                        permissions: {
+                          ...prev.permissions,
+                          [page]: checked === true
                         }
-                        return newPermissions;
-                      });
+                      }));
                     }}
                   />
-                  <Label htmlFor={page.id}>{page.label}</Label>
+                  <Label htmlFor={page} className="capitalize text-sm">
+                    {page.replace('-', ' ')}
+                  </Label>
                 </div>
               ))}
             </div>
           </div>
-          <Button type="submit" disabled={loading}>
-            {loading ? "Salvando..." : "Salvar"}
-          </Button>
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Salvando...' : user ? 'Atualizar' : 'Criar'}
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

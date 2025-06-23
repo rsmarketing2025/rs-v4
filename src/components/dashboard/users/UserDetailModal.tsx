@@ -1,94 +1,90 @@
+
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { UserWithPermissions } from './types';
 
-export interface UserDetailModalProps {
+interface UserDetailModalProps {
   user?: UserWithPermissions;
   isOpen: boolean;
   onClose: () => void;
-  onUserUpdate?: () => void;
 }
 
 export const UserDetailModal: React.FC<UserDetailModalProps> = ({ 
   user, 
   isOpen, 
-  onClose,
-  onUserUpdate
+  onClose 
 }) => {
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
+
+  const getRoleBadge = (role: string) => {
+    const colors = {
+      admin: "bg-red-600 hover:bg-red-700",
+      business_manager: "bg-blue-600 hover:bg-blue-700",
+      user: "bg-green-600 hover:bg-green-700"
+    };
+    return <Badge className={colors[role as keyof typeof colors] || "bg-gray-600"}>{role}</Badge>;
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Detalhes do Usuário</DialogTitle>
         </DialogHeader>
-
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <label htmlFor="name" className="text-right text-slate-300">
-              Nome
-            </label>
-            <Input
-              type="text"
-              id="name"
-              value={user.full_name || 'N/A'}
-              className="col-span-3 bg-neutral-700 border-neutral-700 text-slate-300"
-              readOnly
-            />
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label>Nome Completo</Label>
+            <Input value={user.full_name || 'N/A'} readOnly />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <label htmlFor="email" className="text-right text-slate-300">
-              Email
-            </label>
-            <Input
-              type="email"
-              id="email"
-              value={user.email || 'N/A'}
-              className="col-span-3 bg-neutral-700 border-neutral-700 text-slate-300"
-              readOnly
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <label htmlFor="username" className="text-right text-slate-300">
-              Username
-            </label>
-            <Input
-              type="text"
-              id="username"
-              value={user.username || 'N/A'}
-              className="col-span-3 bg-neutral-700 border-neutral-700 text-slate-300"
-              readOnly
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <label htmlFor="role" className="text-right text-slate-300">
-              Função
-            </label>
-            <Input
-              type="text"
-              id="role"
-              value={user.role || 'N/A'}
-              className="col-span-3 bg-neutral-700 border-neutral-700 text-slate-300"
-              readOnly
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <label className="text-right text-slate-300">
-              Permissões
-            </label>
-            <div className="col-span-3 space-y-2">
-              {user.user_page_permissions.map((permission) => (
-                <div key={permission.page} className="flex items-center space-x-2">
-                  <Badge className={permission.can_access ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}>
-                    {permission.page}
-                  </Badge>
-                </div>
-              ))}
+          
+          <div>
+            <Label>Role</Label>
+            <div className="pt-2">
+              {getRoleBadge(user.role)}
             </div>
+          </div>
+          
+          <div>
+            <Label>Email</Label>
+            <Input value={user.email || 'N/A'} readOnly />
+          </div>
+          
+          <div>
+            <Label>Username</Label>
+            <Input value={user.username || 'N/A'} readOnly />
+          </div>
+          
+          <div>
+            <Label>Criado em</Label>
+            <Input value={user.created_at ? new Date(user.created_at).toLocaleDateString('pt-BR') : 'N/A'} readOnly />
+          </div>
+          
+          <div>
+            <Label>Atualizado em</Label>
+            <Input value={user.updated_at ? new Date(user.updated_at).toLocaleDateString('pt-BR') : 'N/A'} readOnly />
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <Label>Permissões de Página</Label>
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            {user.user_page_permissions?.map((permission) => (
+              <div key={permission.page} className="flex items-center justify-between p-2 border rounded">
+                <span className="capitalize">{permission.page.replace('-', ' ')}</span>
+                <Badge variant={permission.can_access ? "default" : "destructive"}>
+                  {permission.can_access ? 'Permitido' : 'Negado'}
+                </Badge>
+              </div>
+            ))}
           </div>
         </div>
       </DialogContent>

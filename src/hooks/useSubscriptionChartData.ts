@@ -54,7 +54,7 @@ export const useSubscriptionChartData = (
           let query = supabase
             .from('subscription_status')
             .select('plan')
-            .eq('status', 'active');
+            .eq('subscription_status', 'active');
 
           if (filters.plan !== 'all') {
             query = query.eq('plan', filters.plan);

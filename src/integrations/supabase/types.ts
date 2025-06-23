@@ -345,9 +345,9 @@ export type Database = {
           frequency: string | null
           id: string
           plan: string
-          status: string
           subscription_id: string
           subscription_number: number | null
+          subscription_status: string
           updated_at: string
         }
         Insert: {
@@ -361,9 +361,9 @@ export type Database = {
           frequency?: string | null
           id?: string
           plan: string
-          status: string
           subscription_id: string
           subscription_number?: number | null
+          subscription_status: string
           updated_at?: string
         }
         Update: {
@@ -377,9 +377,9 @@ export type Database = {
           frequency?: string | null
           id?: string
           plan?: string
-          status?: string
           subscription_id?: string
           subscription_number?: number | null
+          subscription_status?: string
           updated_at?: string
         }
         Relationships: []
