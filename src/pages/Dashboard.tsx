@@ -185,8 +185,8 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Updated top cards layout - removed ROI card */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
+          {/* Updated top cards layout - now with 4 cards including Ticket Médio */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
             <KPICard
               title="Total Investido"
               value={kipsLoading ? "Carregando..." : `R$ ${kpis.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
@@ -202,6 +202,14 @@ const Dashboard = () => {
               icon={TrendingUp}
               trend="up"
               variant="success"
+            />
+            <KPICard
+              title="Ticket Médio"
+              value={kipsLoading ? "Carregando..." : `R$ ${kpis.avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+              change={kipsLoading ? "..." : "+8.3%"}
+              icon={Target}
+              trend="up"
+              variant="info"
             />
             <KPICard
               title="Total de Pedidos"
