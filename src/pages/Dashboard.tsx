@@ -205,18 +205,18 @@ const Dashboard = () => {
               variant="success"
             />
             <KPICard
-              title="Ticket Médio"
-              value={kpisLoading ? "Carregando..." : `R$ ${(kpis.totalRevenue / Math.max(kpis.totalOrders, 1)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              change={kpisLoading ? "..." : "-2.1%"}
-              icon={ShoppingCart}
-              trend="down"
+              title="ROI Médio"
+              value={kpisLoading ? "Carregando..." : `${kpis.avgROI.toFixed(2)}x`}
+              change={kpisLoading ? "..." : "+15.3%"}
+              icon={Target}
+              trend="up"
               variant="warning"
             />
             <KPICard
               title="Total de Pedidos"
               value={kpisLoading ? "Carregando..." : kpis.totalOrders.toLocaleString()}
               change={kpisLoading ? "..." : "+15.6%"}
-              icon={Target}
+              icon={ShoppingCart}
               trend="up"
               variant="purple"
             />

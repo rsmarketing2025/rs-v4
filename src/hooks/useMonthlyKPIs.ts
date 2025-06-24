@@ -72,12 +72,14 @@ export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
       // Limitado a 2 casas decimais
       const avgROI = totalSpent > 0 ? Number(((totalRevenue - totalSpent) / totalSpent).toFixed(2)) : 0;
 
-      console.log('KPI Calculation:', {
+      console.log('🔍 KPI ROI Calculation Debug:', {
         totalSpent,
         totalRevenue,
         totalOrders,
         avgROI,
         roiFormula: `(${totalRevenue} - ${totalSpent}) / ${totalSpent} = ${avgROI}`,
+        rawROI: totalSpent > 0 ? (totalRevenue - totalSpent) / totalSpent : 0,
+        formattedROI: totalSpent > 0 ? ((totalRevenue - totalSpent) / totalSpent).toFixed(2) : '0.00',
         campaignDataLength: campaignData?.length,
         salesDataLength: salesData?.length
       });
