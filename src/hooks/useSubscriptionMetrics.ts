@@ -1,5 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { format, startOfDay, endOfDay } from 'date-fns';
 
 interface SubscriptionMetrics {
   activeSubscriptions: number;
@@ -48,13 +50,22 @@ export const useSubscriptionMetrics = (
       try {
         setLoading(true);
         console.log('📊 [SUBSCRIPTION METRICS] Starting to fetch subscription metrics...');
-        console.log('📊 [SUBSCRIPTION METRICS] Date range:', {
-          from: dateRange.from.toISOString(),
-          to: dateRange.to.toISOString(),
+
+        // Use the same date formatting approach as the KPI hook for consistency
+        const startDate = startOfDay(dateRange.from);
+        const endDate = endOfDay(dateRange.to);
+        const startDateStr = format(startDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        const endDateStr = format(endDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+
+        console.log('📊 [SUBSCRIPTION METRICS] Date range (formatted like KPIs):', {
+          from: startDateStr,
+          to: endDateStr,
+          originalFrom: dateRange.from.toISOString(),
+          originalTo: dateRange.to.toISOString(),
           filters
         });
 
-        // 1. Get active subscriptions from subscription_status table (using "Ativo")
+        // 1. Get active subscriptions from subscription_status table
         let activeQuery = supabase
           .from('subscription_status')
           .select('*', { count: 'exact' })
@@ -72,19 +83,19 @@ export const useSubscriptionMetrics = (
           console.log('✅ [SUBSCRIPTION METRICS] Active subscriptions found:', activeCount);
         }
 
-        // Calculate MRR ONLY from active subscriptions
+        // Calculate MRR from active subscriptions
         const totalMRR = (activeSubscriptions || []).reduce((sum, sub) => {
           return sum + (Number(sub.amount) || 0);
         }, 0);
 
         console.log('💰 [SUBSCRIPTION METRICS] Total MRR calculated:', totalMRR);
 
-        // 2. Get new subscriptions created in the period from subscription_status table
+        // 2. Get new subscriptions created in the period
         let newSubsQuery = supabase
           .from('subscription_status')
           .select('*', { count: 'exact' })
-          .gte('created_at', dateRange.from.toISOString())
-          .lte('created_at', dateRange.to.toISOString());
+          .gte('created_at', startDateStr)
+          .lte('created_at', endDateStr);
 
         if (filters.plan !== 'all') {
           newSubsQuery = newSubsQuery.eq('plan', filters.plan);
@@ -98,69 +109,123 @@ export const useSubscriptionMetrics = (
           console.log('🆕 [SUBSCRIPTION METRICS] New subscriptions found:', newSubscriptionsCount);
         }
 
-        // 3. ENHANCED CANCELLATIONS ANALYSIS
-        console.log('🔍 [CANCELLATIONS] Starting enhanced cancellations analysis...');
+        // 3. FIXED CANCELLATIONS ANALYSIS WITH MULTIPLE APPROACHES
+        console.log('🔍 [CANCELLATIONS] Starting FIXED cancellations analysis...');
         
-        // First, let's check ALL cancellations regardless of date
+        // Get sample of all canceled subscriptions to understand the data structure
         const { data: allCancellations, error: allCancError } = await supabase
           .from('subscription_status')
           .select('*')
-          .eq('subscription_status', 'Cancelado');
+          .eq('subscription_status', 'Cancelado')
+          .limit(5);
 
         if (allCancError) {
-          console.error('❌ [CANCELLATIONS] Error fetching all cancellations:', allCancError);
+          console.error('❌ [CANCELLATIONS] Error fetching sample cancellations:', allCancError);
         } else {
-          console.log('📊 [CANCELLATIONS] Total cancellations in database:', allCancellations?.length || 0);
-          if (allCancellations && allCancellations.length > 0) {
-            console.log('📅 [CANCELLATIONS] Sample cancellation dates:', 
-              allCancellations.slice(0, 3).map(c => ({
-                updated_at: c.updated_at,
-                created_at: c.created_at,
-                canceled_at: c.canceled_at,
-                customer_name: c.customer_name
-              }))
-            );
-          }
+          console.log('📊 [CANCELLATIONS] Sample cancellations for analysis:', 
+            allCancellations?.map(c => ({
+              id: c.id,
+              customer_name: c.customer_name,
+              created_at: c.created_at,
+              updated_at: c.updated_at,
+              canceled_at: c.canceled_at,
+              subscription_status: c.subscription_status
+            }))
+          );
         }
 
-        // Now check cancellations in the selected date range using updated_at
-        let cancellationsQuery = supabase
+        // Approach 1: Query by updated_at (when status was changed to canceled)
+        let cancellationsQuery1 = supabase
           .from('subscription_status')
           .select('*', { count: 'exact' })
           .eq('subscription_status', 'Cancelado')
-          .gte('updated_at', dateRange.from.toISOString())
-          .lte('updated_at', dateRange.to.toISOString());
+          .gte('updated_at', startDateStr)
+          .lte('updated_at', endDateStr);
 
         if (filters.plan !== 'all') {
-          cancellationsQuery = cancellationsQuery.eq('plan', filters.plan);
+          cancellationsQuery1 = cancellationsQuery1.eq('plan', filters.plan);
         }
 
-        const { count: cancellationsCount, data: cancellationsData, error: cancellationsError } = await cancellationsQuery;
+        const { count: cancellationsCount1, data: cancellationsData1, error: cancellationsError1 } = await cancellationsQuery1;
 
-        console.log('🎯 [CANCELLATIONS] Updated_at filter results:', {
-          count: cancellationsCount || 0,
-          error: cancellationsError?.message || 'none',
-          sampleData: cancellationsData?.slice(0, 2)
+        console.log('🎯 [CANCELLATIONS] Approach 1 (updated_at):', {
+          count: cancellationsCount1 || 0,
+          error: cancellationsError1?.message || 'none',
+          dateRange: `${startDateStr} to ${endDateStr}`,
+          sampleData: cancellationsData1?.slice(0, 2)?.map(c => ({
+            customer_name: c.customer_name,
+            updated_at: c.updated_at,
+            subscription_status: c.subscription_status
+          }))
         });
 
-        // Also try with canceled_at field if it exists
-        const { data: canceledAtData, count: canceledAtCount, error: canceledAtError } = await supabase
+        // Approach 2: Query by canceled_at if it exists
+        let cancellationsQuery2 = supabase
           .from('subscription_status')
           .select('*', { count: 'exact' })
           .eq('subscription_status', 'Cancelado')
-          .gte('canceled_at', dateRange.from.toISOString())
-          .lte('canceled_at', dateRange.to.toISOString());
+          .not('canceled_at', 'is', null)
+          .gte('canceled_at', startDateStr)
+          .lte('canceled_at', endDateStr);
 
-        console.log('📅 [CANCELLATIONS] Canceled_at filter results:', {
-          count: canceledAtCount || 0,
-          error: canceledAtError?.message || 'none',
-          sampleData: canceledAtData?.slice(0, 2)
+        if (filters.plan !== 'all') {
+          cancellationsQuery2 = cancellationsQuery2.eq('plan', filters.plan);
+        }
+
+        const { count: cancellationsCount2, data: cancellationsData2, error: cancellationsError2 } = await cancellationsQuery2;
+
+        console.log('📅 [CANCELLATIONS] Approach 2 (canceled_at):', {
+          count: cancellationsCount2 || 0,
+          error: cancellationsError2?.message || 'none',
+          dateRange: `${startDateStr} to ${endDateStr}`,
+          sampleData: cancellationsData2?.slice(0, 2)?.map(c => ({
+            customer_name: c.customer_name,
+            canceled_at: c.canceled_at,
+            subscription_status: c.subscription_status
+          }))
         });
 
-        // Use the higher count between the two approaches
-        const finalCancellationsCount = Math.max(cancellationsCount || 0, canceledAtCount || 0);
+        // Approach 3: Also check subscription_events table for cancellation events
+        let cancellationEventsQuery = supabase
+          .from('subscription_events')
+          .select('*', { count: 'exact' })
+          .in('event_type', ['cancellation', 'cancelled', 'canceled'])
+          .gte('event_date', startDateStr)
+          .lte('event_date', endDateStr);
 
-        console.log('✅ [CANCELLATIONS] Final cancellations count:', finalCancellationsCount);
+        if (filters.plan !== 'all') {
+          cancellationEventsQuery = cancellationEventsQuery.eq('plan', filters.plan);
+        }
+
+        const { count: cancellationEventsCount, data: cancellationEventsData, error: cancellationEventsError } = await cancellationEventsQuery;
+
+        console.log('🔄 [CANCELLATIONS] Approach 3 (subscription_events):', {
+          count: cancellationEventsCount || 0,
+          error: cancellationEventsError?.message || 'none',
+          dateRange: `${startDateStr} to ${endDateStr}`,
+          sampleData: cancellationEventsData?.slice(0, 2)?.map(e => ({
+            subscription_id: e.subscription_id,
+            event_type: e.event_type,
+            event_date: e.event_date,
+            customer_name: e.customer_name
+          }))
+        });
+
+        // Use the maximum count from all approaches to ensure we don't miss any cancellations
+        const finalCancellationsCount = Math.max(
+          cancellationsCount1 || 0,
+          cancellationsCount2 || 0,
+          cancellationEventsCount || 0
+        );
+
+        console.log('✅ [CANCELLATIONS] FINAL cancellations count decision:', {
+          approach1_updated_at: cancellationsCount1 || 0,
+          approach2_canceled_at: cancellationsCount2 || 0,
+          approach3_events: cancellationEventsCount || 0,
+          finalCount: finalCancellationsCount,
+          selectedApproach: finalCancellationsCount === (cancellationsCount1 || 0) ? 'updated_at' :
+                           finalCancellationsCount === (cancellationsCount2 || 0) ? 'canceled_at' : 'events'
+        });
 
         // 4. Calculate churn rate
         const churnRate = (activeCount || 0) > 0 
@@ -180,12 +245,13 @@ export const useSubscriptionMetrics = (
           churnRateChange: -2.1 // Placeholder for growth calculation
         };
 
-        console.log('📈 [SUBSCRIPTION METRICS] Final metrics calculated:', {
+        console.log('📈 [SUBSCRIPTION METRICS] FINAL metrics calculated:', {
           activeSubscriptions: finalMetrics.activeSubscriptions,
           newSubscriptions: finalMetrics.newSubscriptions,
           cancellations: finalMetrics.cancellations,
           mrr: finalMetrics.mrr.toFixed(2),
-          churnRate: finalMetrics.churnRate + '%'
+          churnRate: finalMetrics.churnRate + '%',
+          dateRangeUsed: `${startDateStr} to ${endDateStr}`
         });
 
         setMetrics(finalMetrics);

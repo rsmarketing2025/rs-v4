@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -23,6 +22,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   const [tempFromDate, setTempFromDate] = React.useState<Date | undefined>(undefined);
   const [hoverDate, setHoverDate] = React.useState<Date | undefined>(undefined);
 
+  // Fixed predefined ranges with consistent date handling
   const predefinedRanges = [
     {
       label: "Hoje",
@@ -62,6 +62,14 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   ];
 
   const handlePredefinedRange = (range: { from: Date; to: Date }) => {
+    console.log('📅 [DATE PICKER] Selected predefined range:', {
+      label: predefinedRanges.find(r => r.range.from.getTime() === range.from.getTime())?.label,
+      from: range.from.toISOString(),
+      to: range.to.toISOString(),
+      fromFormatted: format(range.from, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
+      toFormatted: format(range.to, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+    });
+    
     onDateRangeChange(range);
     setIsOpen(false);
   };
