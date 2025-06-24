@@ -189,7 +189,7 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
             <KPICard
               title="Total Investido"
-              value={kpisLoading ? "Carregando..." : `R$ ${kpis.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+              value={kipsLoading ? "Carregando..." : `R$ ${kpis.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
               change={kipsLoading ? "..." : "+12.5%"}
               icon={DollarSign}
               trend="up"
@@ -197,7 +197,7 @@ const Dashboard = () => {
             />
             <KPICard
               title="Receita"
-              value={kpisLoading ? "Carregando..." : `R$ ${kpis.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+              value={kipsLoading ? "Carregando..." : `R$ ${kpis.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
               change={kipsLoading ? "..." : "+23.8%"}
               icon={TrendingUp}
               trend="up"
