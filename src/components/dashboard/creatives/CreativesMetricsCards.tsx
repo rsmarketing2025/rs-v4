@@ -31,9 +31,9 @@ export const CreativesMetricsCards: React.FC<CreativesMetricsCardsProps> = ({
       <MetricsCard
         title="ROI Médio"
         value={loading ? "Carregando..." : formatROI(avgROI)}
-        change="+8.3%"
+        change="+15.3%"
         icon={TrendingUp}
-        variant="success"
+        variant="warning"
       />
     </div>
   );

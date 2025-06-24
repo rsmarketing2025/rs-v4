@@ -10,9 +10,20 @@ import { useCreativesData } from "@/hooks/useCreativesData";
 
 interface CreativesTabProps {
   dateRange: { from: Date; to: Date };
+  globalKPIs: {
+    totalSpent: number;
+    totalRevenue: number;
+    totalOrders: number;
+    avgROI: number;
+  };
+  globalKPIsLoading: boolean;
 }
 
-export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
+export const CreativesTab: React.FC<CreativesTabProps> = ({ 
+  dateRange, 
+  globalKPIs, 
+  globalKPIsLoading 
+}) => {
   const [creativesFilter, setCreativesFilter] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState("all");
   
@@ -32,8 +43,8 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({ dateRange }) => {
     <div className="space-y-6">
       <CreativesMetricsCards 
         totalSpent={totalMetrics.spent}
-        avgROI={avgROI}
-        loading={loading}
+        avgROI={globalKPIs.avgROI}
+        loading={globalKPIsLoading}
       />
       
       <ImprovedMetricsOverviewCharts 

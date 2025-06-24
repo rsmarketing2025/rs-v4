@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -51,7 +50,7 @@ const Dashboard = () => {
   
   const [dateRange, setDateRange] = useState(getTodayRange);
 
-  const { kpis, loading: kpisLoading } = useMonthlyKPIs(dateRange);
+  const { kpis, loading: kipsLoading } = useMonthlyKPIs(dateRange);
 
   React.useEffect(() => {
     if (activeTab === "users") {
@@ -186,12 +185,12 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Updated top cards layout to match the image */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
+          {/* Updated top cards layout - removed ROI card */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
             <KPICard
               title="Total Investido"
               value={kpisLoading ? "Carregando..." : `R$ ${kpis.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              change={kpisLoading ? "..." : "+12.5%"}
+              change={kipsLoading ? "..." : "+12.5%"}
               icon={DollarSign}
               trend="up"
               variant="black"
@@ -199,23 +198,15 @@ const Dashboard = () => {
             <KPICard
               title="Receita"
               value={kpisLoading ? "Carregando..." : `R$ ${kpis.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              change={kpisLoading ? "..." : "+23.8%"}
+              change={kipsLoading ? "..." : "+23.8%"}
               icon={TrendingUp}
               trend="up"
               variant="success"
             />
             <KPICard
-              title="ROI Médio"
-              value={kpisLoading ? "Carregando..." : `${kpis.avgROI.toFixed(2)}x`}
-              change={kpisLoading ? "..." : "+15.3%"}
-              icon={Target}
-              trend="up"
-              variant="warning"
-            />
-            <KPICard
               title="Total de Pedidos"
-              value={kpisLoading ? "Carregando..." : kpis.totalOrders.toLocaleString()}
-              change={kpisLoading ? "..." : "+15.6%"}
+              value={kipsLoading ? "Carregando..." : kpis.totalOrders.toLocaleString()}
+              change={kipsLoading ? "..." : "+15.6%"}
               icon={ShoppingCart}
               trend="up"
               variant="purple"
@@ -282,7 +273,7 @@ const Dashboard = () => {
               <CardContent className="p-3 md:p-6">
                 <PermissionWrapper requirePage="creatives">
                   <div className={activeTab === "creatives" ? "block" : "hidden"}>
-                    <CreativesTab dateRange={dateRange} />
+                    <CreativesTab dateRange={dateRange} globalKPIs={kpis} globalKPIsLoading={kipsLoading} />
                   </div>
                 </PermissionWrapper>
                 
