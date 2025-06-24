@@ -68,8 +68,9 @@ export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
       const totalRevenue = salesData?.reduce((acc, sale) => acc + (sale.net_value || 0), 0) || 0;
       const totalOrders = salesData?.length || 0;
       
-      // Calcular ROI correto: (Receita Total - Investimento Total) / Investimento Total
-      const avgROI = totalSpent > 0 ? (totalRevenue - totalSpent) / totalSpent : 0;
+      // Calcular ROI usando a fórmula: (Receita Total - Total Investido) / Total Investido
+      // Limitado a 2 casas decimais
+      const avgROI = totalSpent > 0 ? Number(((totalRevenue - totalSpent) / totalSpent).toFixed(2)) : 0;
 
       console.log('KPI Calculation:', {
         totalSpent,
