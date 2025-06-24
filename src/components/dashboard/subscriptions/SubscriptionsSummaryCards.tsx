@@ -22,6 +22,13 @@ export const SubscriptionsSummaryCards: React.FC<SubscriptionsSummaryCardsProps>
 }) => {
   const { metrics, loading } = useSubscriptionMetrics(dateRange, filters);
 
+  // Debug log for the component
+  console.log('🎯 [SUMMARY CARDS] Rendering with metrics:', {
+    loading,
+    cancellations: metrics.cancellations,
+    allMetrics: metrics
+  });
+
   const cards = [
     {
       title: "Assinaturas Ativas",
@@ -59,6 +66,10 @@ export const SubscriptionsSummaryCards: React.FC<SubscriptionsSummaryCardsProps>
       variant: 'warning' as const
     }
   ];
+
+  // Debug specific cancellation card
+  const cancellationCard = cards.find(card => card.title === "Cancelamento");
+  console.log('🎯 [SUMMARY CARDS] Cancelamento card data:', cancellationCard);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4">
