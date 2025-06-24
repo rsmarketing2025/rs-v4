@@ -15,7 +15,8 @@ import {
   BarChart3,
   Settings,
   Calendar,
-  ShoppingCart
+  ShoppingCart,
+  AlertTriangle
 } from "lucide-react";
 import { CreativesTab } from "@/components/dashboard/CreativesTab";
 import { SalesTab } from "@/components/dashboard/SalesTab";
@@ -185,8 +186,8 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Updated top cards layout - now with 4 cards including Ticket Médio */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
+          {/* Updated top cards layout - now with 5 cards including Cancelamentos */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-6 md:mb-8">
             <KPICard
               title="Total Investido"
               value={kipsLoading ? "Carregando..." : `R$ ${kpis.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
@@ -218,6 +219,14 @@ const Dashboard = () => {
               icon={ShoppingCart}
               trend="up"
               variant="purple"
+            />
+            <KPICard
+              title="Cancelamento"
+              value={kipsLoading ? "Carregando..." : kips.totalCancellations.toLocaleString()}
+              change={kipsLoading ? "..." : "-5.3%"}
+              icon={AlertTriangle}
+              trend="down"
+              variant="warning"
             />
           </div>
 
