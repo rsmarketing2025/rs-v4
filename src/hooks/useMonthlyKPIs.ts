@@ -10,7 +10,6 @@ interface MonthlyKPIs {
   totalOrders: number;
   avgROI: number;
   avgTicket: number;
-  totalCancellations: number;
 }
 
 export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
@@ -19,8 +18,7 @@ export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
     totalRevenue: 0,
     totalOrders: 0,
     avgROI: 0,
-    avgTicket: 0,
-    totalCancellations: 0
+    avgTicket: 0
   });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -63,19 +61,7 @@ export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
         throw salesError;
       }
 
-      // Buscar cancelamentos no período selecionado usando subscription_status
-      const { data: cancellationsData, error: cancellationsError } = await supabase
-        .from('subscription_status')
-        .select('id, subscription_status, updated_at')
-        .eq('subscription_status', 'Cancelado')
-        .gte('updated_at', startDateStr)
-        .lte('updated_at', endDateStr);
-
-      if (cancellationsError) {
-        throw cancellationsError;
-      }
-
-      console.log('KPI Campaign data:', campaignData?.length, 'KPI Sales data:', salesData?.length, 'KPI Cancellations data:', cancellationsData?.length);
+      console.log('KPI Campaign data:', campaignData?.length, 'KPI Sales data:', salesData?.length);
 
       // Calcular métricas
       const totalSpent = campaignData?.reduce((acc, campaign) => acc + (campaign.amount_spent || 0), 0) || 0;
@@ -87,26 +73,21 @@ export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
       // Calcular ticket médio
       const avgTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
       
-      // Calcular total de cancelamentos
-      const totalCancellations = cancellationsData?.length || 0;
-      
       // Calcular ROI usando a fórmula: (Receita Total - Total Investido) / Total Investido
       // Limitado a 2 casas decimais
       const avgROI = totalSpent > 0 ? Number(((totalRevenue - totalSpent) / totalSpent).toFixed(2)) : 0;
 
-      console.log('🔍 KPI Calculation Debug:', {
+      console.log('🔍 KPI ROI Calculation Debug:', {
         totalSpent,
         totalRevenue,
         totalOrders,
         avgROI,
         avgTicket,
-        totalCancellations,
         roiFormula: `(${totalRevenue} - ${totalSpent}) / ${totalSpent} = ${avgROI}`,
         rawROI: totalSpent > 0 ? (totalRevenue - totalSpent) / totalSpent : 0,
         formattedROI: totalSpent > 0 ? ((totalRevenue - totalSpent) / totalSpent).toFixed(2) : '0.00',
         campaignDataLength: campaignData?.length,
-        salesDataLength: salesData?.length,
-        cancellationsDataLength: cancellationsData?.length
+        salesDataLength: salesData?.length
       });
 
       setKpis({
@@ -114,8 +95,7 @@ export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
         totalRevenue,
         totalOrders,
         avgROI,
-        avgTicket,
-        totalCancellations
+        avgTicket
       });
     } catch (error) {
       console.error('Error fetching monthly KPIs:', error);
