@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,7 +33,21 @@ export const AgentChat: React.FC<AgentChatProps> = ({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editTitleValue, setEditTitleValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  // Função de scroll suave e confiável
+  const scrollToBottom = useCallback(() => {
+    // Usar requestAnimationFrame para garantir que o DOM foi atualizado
+    requestAnimationFrame(() => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ 
+          behavior: "smooth", 
+          block: "end" 
+        });
+      }
+    });
+  }, []);
 
   useEffect(() => {
     if (conversationId) {
@@ -45,13 +59,19 @@ export const AgentChat: React.FC<AgentChatProps> = ({
     }
   }, [conversationId]);
 
+  // Scroll automático sempre que mensagens ou loading mudam
   useEffect(() => {
     scrollToBottom();
-  }, [messages, loading]);
+  }, [messages, loading, scrollToBottom]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  // Scroll adicional após um pequeno delay para garantir renderização completa
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [messages, scrollToBottom]);
 
   const loadMessages = async () => {
     if (!conversationId) return;
@@ -454,8 +474,8 @@ export const AgentChat: React.FC<AgentChatProps> = ({
           </Button>
         </CardHeader>
         <CardContent className="flex flex-col flex-1 p-0 overflow-hidden bg-neutral-950">
-          <ScrollArea className="flex-1 px-6">
-            <div className="space-y-4 py-4">
+          <ScrollArea className="flex-1 px-6" ref={scrollAreaRef}>
+            <div className="space-y-4 py-4 min-h-full">
               {messages.length === 0 ? (
                 <div className="text-center text-neutral-400 py-8">
                   <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -470,7 +490,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
                 ))
               )}
               {loading && <TypingIndicator />}
-              <div ref={messagesEndRef} />
+              <div ref={messagesEndRef} className="h-1" />
             </div>
           </ScrollArea>
           

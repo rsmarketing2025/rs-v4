@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,10 +44,34 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
     conversationTitle: ''
   });
   const { toast } = useToast();
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const conversationsEndRef = useRef<HTMLDivElement>(null);
+
+  // Função para scroll automático suave
+  const scrollToTop = useCallback(() => {
+    requestAnimationFrame(() => {
+      if (scrollAreaRef.current) {
+        const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+        if (scrollElement) {
+          scrollElement.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        }
+      }
+    });
+  }, []);
 
   useEffect(() => {
     loadConversations();
   }, [refreshTrigger]);
+
+  // Scroll automático quando conversas são carregadas ou filtradas
+  useEffect(() => {
+    if (!loading && conversations.length > 0) {
+      scrollToTop();
+    }
+  }, [conversations, showArchived, loading, scrollToTop]);
 
   const loadConversations = async () => {
     try {
@@ -298,7 +321,7 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
         </CardHeader>
         
         <CardContent className="flex-1 overflow-hidden p-0">
-          <ScrollArea className="h-full">
+          <ScrollArea className="h-full" ref={scrollAreaRef}>
             <div className="p-4">
               {filteredConversations.length === 0 ? (
                 <div className="text-center text-neutral-400 py-12">
@@ -440,6 +463,7 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
                       )}
                     </div>
                   ))}
+                  <div ref={conversationsEndRef} className="h-1" />
                 </div>
               )}
             </div>
