@@ -4,6 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SalesFilters } from "./sales/SalesFilters";
 import { SalesTable } from "./sales/SalesTable";
+import { SalesChart } from "./SalesChart";
+import { CountrySalesChart } from "./sales/CountrySalesChart";
+import { StateSalesChart } from "./sales/StateSalesChart";
 import { format, startOfDay, endOfDay } from "date-fns";
 
 interface Sale {
@@ -36,6 +39,7 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [countryFilter, setCountryFilter] = useState("all");
   const [stateFilter, setStateFilter] = useState("all");
+  const [chartCountryFilter, setChartCountryFilter] = useState("all");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -110,6 +114,29 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   const uniqueCountries = [...new Set(sales.map(sale => sale.country).filter(Boolean))].sort();
   const uniqueStates = [...new Set(sales.map(sale => sale.state).filter(Boolean))].sort();
 
+  // Prepare state data for StateSalesChart
+  const stateData = sales.reduce((acc, sale) => {
+    if (!sale.state || (chartCountryFilter !== "all" && sale.country !== chartCountryFilter)) return acc;
+    
+    const existing = acc.find(item => item.state === sale.state);
+    if (existing) {
+      existing.total_sales += 1;
+      if (sale.status === 'completed' || sale.status === 'Unfulfilled') {
+        existing.total_revenue += (sale.net_value || 0);
+      }
+    } else {
+      acc.push({
+        state: sale.state,
+        total_sales: 1,
+        total_revenue: (sale.status === 'completed' || sale.status === 'Unfulfilled') ? (sale.net_value || 0) : 0
+      });
+    }
+    return acc;
+  }, [] as Array<{ state: string; total_sales: number; total_revenue: number }>);
+
+  // Filter state data for chart
+  const filteredStateData = stateData.sort((a, b) => b.total_revenue - a.total_revenue);
+
   const handleClearFilters = () => {
     setSearchTerm("");
     setStatusFilter("all");
@@ -170,6 +197,28 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
 
   return (
     <div className="space-y-6">
+      {/* Charts Section */}
+      <div className="space-y-6">
+        {/* Revenue and Status Charts */}
+        <SalesChart sales={sales} dateRange={dateRange} />
+        
+        {/* Regional Analysis Charts */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <CountrySalesChart 
+            sales={sales} 
+            countryFilter={chartCountryFilter}
+          />
+          <StateSalesChart
+            stateData={stateData}
+            countryFilter={chartCountryFilter}
+            onCountryFilterChange={setChartCountryFilter}
+            uniqueCountries={uniqueCountries}
+            filteredStateData={filteredStateData}
+          />
+        </div>
+      </div>
+
+      {/* Filters and Table Section */}
       <SalesFilters
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
