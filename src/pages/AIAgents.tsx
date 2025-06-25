@@ -119,7 +119,7 @@ const AIAgents = () => {
 
   return (
     <SidebarInset>
-      <div className="min-h-screen bg-neutral-950">
+      <div className="min-h-screen bg-black">
         <div className="container mx-auto p-3 md:p-6">
           <div className="flex flex-col space-y-2 mb-4">
             <div className="flex items-center gap-2">
