@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -254,9 +253,9 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
 
   if (loading) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700 h-full">
+      <Card className="bg-neutral-950 border-neutral-800 h-full">
         <CardContent className="p-6">
-          <div className="text-center text-slate-400">
+          <div className="text-center text-neutral-400">
             Carregando conversas...
           </div>
         </CardContent>
@@ -266,8 +265,8 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
 
   return (
     <>
-      <Card className="bg-slate-800/50 border-slate-700 h-full flex flex-col overflow-hidden">
-        <CardHeader className="flex-shrink-0">
+      <Card className="bg-neutral-950 border-neutral-800 h-full flex flex-col overflow-hidden">
+        <CardHeader className="flex-shrink-0 bg-neutral-900 border-b border-neutral-800">
           <div className="flex items-center justify-between">
             <CardTitle className="text-white flex items-center gap-2">
               <MessageSquare className="w-5 h-5" />
@@ -277,8 +276,8 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
               variant="outline"
               size="sm"
               onClick={() => setShowArchived(!showArchived)}
-              className={`border-slate-600 text-slate-300 hover:bg-slate-700 ${
-                showArchived ? 'bg-slate-700' : ''
+              className={`border-neutral-600 text-neutral-300 hover:bg-neutral-800 ${
+                showArchived ? 'bg-neutral-800' : ''
               }`}
             >
               {showArchived ? (
@@ -295,10 +294,10 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="flex-1 overflow-hidden">
+        <CardContent className="flex-1 overflow-hidden p-4">
           <ScrollArea className="h-full">
             {filteredConversations.length === 0 ? (
-              <div className="text-center text-slate-400 py-8">
+              <div className="text-center text-neutral-400 py-8">
                 <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
                 <p>
                   {showArchived 
@@ -313,7 +312,7 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
                 {filteredConversations.map((conversation) => (
                   <div
                     key={conversation.id}
-                    className="p-4 bg-slate-700/50 border border-slate-600 rounded-lg hover:bg-slate-700/70 transition-colors"
+                    className="p-4 bg-neutral-900 border border-neutral-700 rounded-lg hover:bg-neutral-800 transition-colors"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
@@ -324,7 +323,7 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
                                 value={editTitleValue}
                                 onChange={(e) => setEditTitleValue(e.target.value)}
                                 onKeyDown={(e) => handleKeyPress(e, conversation.id)}
-                                className="bg-slate-600 border-slate-500 text-white text-sm"
+                                className="bg-neutral-800 border-neutral-600 text-white text-sm"
                                 autoFocus
                               />
                               <Button
@@ -356,7 +355,7 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
                                 onClick={() => handleEditTitle(conversation.id, conversation.title)}
                                 size="sm"
                                 variant="ghost"
-                                className="text-slate-400 hover:text-white h-6 w-6 p-0"
+                                className="text-neutral-400 hover:text-white h-6 w-6 p-0"
                                 title="Editar título"
                               >
                                 <Pen className="w-3 h-3" />
@@ -370,7 +369,7 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
                             </>
                           )}
                         </div>
-                        <div className="flex items-center gap-4 text-xs text-slate-400">
+                        <div className="flex items-center gap-4 text-xs text-neutral-400">
                           <span className="flex items-center gap-1">
                             <MessageSquare className="w-3 h-3" />
                             {conversation.message_count} {conversation.message_count === 1 ? 'mensagem' : 'mensagens'}
@@ -387,7 +386,7 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
                             variant="ghost"
                             size="sm"
                             onClick={() => toggleArchive(conversation.id, conversation.status)}
-                            className="text-slate-400 hover:text-white h-8 w-8 p-0"
+                            className="text-neutral-400 hover:text-white h-8 w-8 p-0"
                             title={conversation.status === 'active' ? 'Arquivar' : 'Desarquivar'}
                           >
                             <Archive className="w-4 h-4" />
@@ -396,7 +395,7 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
                             variant="ghost"
                             size="sm"
                             onClick={() => openDeleteDialog(conversation.id, conversation.title)}
-                            className="text-slate-400 hover:text-red-400 h-8 w-8 p-0"
+                            className="text-neutral-400 hover:text-red-400 h-8 w-8 p-0"
                             title="Excluir"
                           >
                             <Trash2 className="w-4 h-4" />

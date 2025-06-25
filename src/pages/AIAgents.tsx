@@ -15,6 +15,7 @@ const AIAgents = () => {
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -64,7 +65,7 @@ const AIAgents = () => {
   const handleConversationChange = (conversationId: string) => {
     console.log('Conversa alterada/criada:', conversationId);
     setActiveConversation(conversationId);
-    loadConversations(); // Recarregar lista de conversas
+    setRefreshTrigger(prev => prev + 1);
   };
 
   const handleDeleteConversation = async (conversationId: string) => {
@@ -101,7 +102,7 @@ const AIAgents = () => {
       }
       
       // Reload conversations
-      await loadConversations();
+      setRefreshTrigger(prev => prev + 1);
       
       toast({
         title: "Sucesso",
@@ -138,11 +139,8 @@ const AIAgents = () => {
             {/* Conversation History - Left Sidebar */}
             <div className="lg:col-span-1">
               <ConversationHistory
-                conversations={conversations}
-                activeConversation={activeConversation}
-                onConversationSelect={handleConversationSelect}
-                onDeleteConversation={handleDeleteConversation}
-                loading={loading}
+                onSelectConversation={handleConversationSelect}
+                refreshTrigger={refreshTrigger}
               />
             </div>
 
