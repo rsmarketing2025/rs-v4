@@ -14,12 +14,12 @@ const AIAgents = () => {
   return (
     <SidebarInset>
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-        <div className="container mx-auto p-6">
+        <div className="container mx-auto p-6 h-screen flex flex-col">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="text-white" />
               <div>
-                <h1 className="text-5xl font-bold text-white mb-2">Agentes de IA</h1>
+                <h1 className="text-5xl font-bold text-white mb-2">Agente de IA Copy Chief</h1>
                 <p className="text-slate-400 text-lg">Automação inteligente para otimização de campanhas</p>
               </div>
             </div>
@@ -28,9 +28,9 @@ const AIAgents = () => {
             </div>
           </div>
 
-          <div className="bg-slate-900/50 border border-slate-700 backdrop-blur-sm rounded-lg p-6">
-            <Tabs defaultValue="chat" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 bg-slate-800 border-slate-700">
+          <div className="bg-slate-900/50 border border-slate-700 backdrop-blur-sm rounded-lg flex-1 flex flex-col overflow-hidden">
+            <Tabs defaultValue="chat" className="w-full h-full flex flex-col">
+              <TabsList className="grid w-full grid-cols-3 bg-slate-800 border-slate-700 flex-shrink-0">
                 <TabsTrigger value="chat" className="flex items-center gap-2">
                   <MessageSquare className="w-4 h-4" />
                   Chat
@@ -45,20 +45,20 @@ const AIAgents = () => {
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="chat" className="mt-6">
+              <TabsContent value="chat" className="flex-1 p-6 overflow-hidden">
                 <AgentChat 
                   conversationId={selectedConversationId}
                   onConversationChange={setSelectedConversationId}
                 />
               </TabsContent>
               
-              <TabsContent value="history" className="mt-6">
+              <TabsContent value="history" className="flex-1 p-6 overflow-hidden">
                 <ConversationHistory 
                   onSelectConversation={setSelectedConversationId}
                 />
               </TabsContent>
               
-              <TabsContent value="training" className="mt-6">
+              <TabsContent value="training" className="flex-1 p-6 overflow-hidden">
                 <TrainingData />
               </TabsContent>
             </Tabs>

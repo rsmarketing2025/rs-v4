@@ -116,6 +116,32 @@ export const AgentChat: React.FC<AgentChatProps> = ({
     }
   };
 
+  const sendToWebhook = async (message: string) => {
+    try {
+      const response = await fetch('https://webhook-automatios-rsmtk.abbadigital.com.br/webhook/agente-copy-rs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: message,
+          timestamp: new Date().toISOString(),
+          conversationId: conversationId
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error sending to webhook:', error);
+      throw error;
+    }
+  };
+
   const sendMessage = async () => {
     if (!input.trim()) return;
 
@@ -164,13 +190,22 @@ export const AgentChat: React.FC<AgentChatProps> = ({
       };
       setMessages(prev => [...prev, newUserMessage]);
 
-      // TODO: Call webhook to get AI response
-      // For now, we'll add a placeholder response
-      setTimeout(async () => {
+      // Send to webhook
+      try {
+        const webhookResponse = await sendToWebhook(messageContent);
+        console.log('Webhook response:', webhookResponse);
+        
+        // Check if webhook returned a response message
+        let aiResponseContent = 'Olá! Sou seu assistente Copy Chief. Como posso ajudá-lo hoje?';
+        if (webhookResponse && webhookResponse.response) {
+          aiResponseContent = webhookResponse.response;
+        }
+
+        // Add AI response
         const aiResponse = {
           id: (Date.now() + 1).toString(),
           role: 'assistant' as const,
-          content: 'Olá! Sou seu assistente de IA para otimização de campanhas. Como posso ajudá-lo hoje?',
+          content: aiResponseContent,
           created_at: new Date().toISOString()
         };
 
@@ -184,8 +219,29 @@ export const AgentChat: React.FC<AgentChatProps> = ({
           });
 
         setMessages(prev => [...prev, aiResponse]);
-        setLoading(false);
-      }, 1000);
+      } catch (webhookError) {
+        console.error('Webhook error:', webhookError);
+        
+        // Fallback response if webhook fails
+        const fallbackResponse = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant' as const,
+          content: 'Desculpe, houve um problema de conexão. Tente novamente em alguns instantes.',
+          created_at: new Date().toISOString()
+        };
+
+        await supabase
+          .from('agent_messages')
+          .insert({
+            conversation_id: currentConversationId,
+            role: 'assistant',
+            content: fallbackResponse.content
+          });
+
+        setMessages(prev => [...prev, fallbackResponse]);
+      }
+
+      setLoading(false);
 
     } catch (error) {
       console.error('Error sending message:', error);
@@ -206,11 +262,11 @@ export const AgentChat: React.FC<AgentChatProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-[600px]">
-      <Card className="flex-1 bg-slate-800/50 border-slate-700">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+    <div className="flex flex-col h-full">
+      <Card className="flex-1 bg-slate-800/50 border-slate-700 flex flex-col overflow-hidden">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 flex-shrink-0">
           <CardTitle className="text-white">
-            {conversationTitle || 'Chat com IA'}
+            {conversationTitle || 'Chat com Copy Chief'}
           </CardTitle>
           <Button
             onClick={createNewConversation}
@@ -222,13 +278,13 @@ export const AgentChat: React.FC<AgentChatProps> = ({
             Nova Conversa
           </Button>
         </CardHeader>
-        <CardContent className="flex flex-col h-full p-0">
+        <CardContent className="flex flex-col flex-1 p-0 overflow-hidden">
           <ScrollArea className="flex-1 px-6">
             <div className="space-y-4 py-4">
               {messages.length === 0 ? (
                 <div className="text-center text-slate-400 py-8">
                   <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Inicie uma conversa com seu assistente de IA!</p>
+                  <p>Inicie uma conversa com seu Copy Chief!</p>
                 </div>
               ) : (
                 messages.map((message) => (
@@ -241,14 +297,14 @@ export const AgentChat: React.FC<AgentChatProps> = ({
               {loading && (
                 <div className="flex items-center gap-2 text-slate-400">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Assistente está pensando...</span>
+                  <span>Copy Chief está pensando...</span>
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
           
-          <div className="p-6 border-t border-slate-700">
+          <div className="p-6 border-t border-slate-700 flex-shrink-0">
             <div className="flex gap-2">
               <Textarea
                 value={input}
