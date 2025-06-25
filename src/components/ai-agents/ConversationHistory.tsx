@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,10 +21,12 @@ interface Conversation {
 
 interface ConversationHistoryProps {
   onSelectConversation: (id: string) => void;
+  refreshTrigger?: number;
 }
 
 export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
-  onSelectConversation
+  onSelectConversation,
+  refreshTrigger = 0
 }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,11 +44,21 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
 
   useEffect(() => {
     loadConversations();
-  }, []);
+  }, [refreshTrigger]);
 
   const loadConversations = async () => {
     try {
       setLoading(true);
+      console.log('Carregando conversas...');
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('Usuário não autenticado');
+        return;
+      }
+
+      console.log('Usuário autenticado:', user.id);
+
       const { data, error } = await supabase
         .from('agent_conversations')
         .select(`
@@ -57,22 +68,36 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
           created_at,
           updated_at
         `)
+        .eq('user_id', user.id)
         .order('updated_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao carregar conversas:', error);
+        throw error;
+      }
+
+      console.log('Conversas carregadas:', data);
 
       // Get message counts for each conversation
       const conversationsWithCounts = await Promise.all(
         (data || []).map(async (conv) => {
-          const { count } = await supabase
-            .from('agent_messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('conversation_id', conv.id);
+          try {
+            const { count } = await supabase
+              .from('agent_messages')
+              .select('*', { count: 'exact', head: true })
+              .eq('conversation_id', conv.id);
 
-          return {
-            ...conv,
-            message_count: count || 0
-          };
+            return {
+              ...conv,
+              message_count: count || 0
+            };
+          } catch (error) {
+            console.warn('Erro ao contar mensagens para conversa', conv.id, ':', error);
+            return {
+              ...conv,
+              message_count: 0
+            };
+          }
         })
       );
 

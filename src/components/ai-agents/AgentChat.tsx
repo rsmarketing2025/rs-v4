@@ -55,13 +55,20 @@ export const AgentChat: React.FC<AgentChatProps> = ({
     if (!conversationId) return;
 
     try {
+      console.log('Carregando mensagens para conversa:', conversationId);
+      
       const { data, error } = await supabase
         .from('agent_messages')
         .select('*')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao carregar mensagens:', error);
+        throw error;
+      }
+      
+      console.log('Mensagens carregadas:', data);
       setMessages(data || []);
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -97,6 +104,8 @@ export const AgentChat: React.FC<AgentChatProps> = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      console.log('Criando nova conversa para usuário:', user.id);
+
       const { data, error } = await supabase
         .from('agent_conversations')
         .insert({
@@ -106,7 +115,12 @@ export const AgentChat: React.FC<AgentChatProps> = ({
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao criar conversa:', error);
+        throw error;
+      }
+      
+      console.log('Nova conversa criada:', data);
       onConversationChange(data.id);
       setMessages([]);
     } catch (error) {
@@ -176,6 +190,8 @@ export const AgentChat: React.FC<AgentChatProps> = ({
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
+        console.log('Criando nova conversa automaticamente...');
+
         const { data, error } = await supabase
           .from('agent_conversations')
           .insert({
@@ -185,7 +201,12 @@ export const AgentChat: React.FC<AgentChatProps> = ({
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Erro ao criar conversa:', error);
+          throw error;
+        }
+        
+        console.log('Conversa criada automaticamente:', data);
         currentConversationId = data.id;
         onConversationChange(currentConversationId);
       }
@@ -199,15 +220,22 @@ export const AgentChat: React.FC<AgentChatProps> = ({
       };
       setMessages(prev => [...prev, newUserMessage]);
 
-      // Try to save user message to database (ignore RLS errors for now)
+      // Save user message to database
       try {
-        await supabase
+        console.log('Salvando mensagem do usuário...');
+        const { error: userMsgError } = await supabase
           .from('agent_messages')
           .insert({
             conversation_id: currentConversationId,
             role: 'user',
             content: messageContent
           });
+
+        if (userMsgError) {
+          console.error('Erro ao salvar mensagem do usuário:', userMsgError);
+        } else {
+          console.log('Mensagem do usuário salva com sucesso');
+        }
       } catch (dbError) {
         console.warn('Could not save user message to database:', dbError);
       }
@@ -217,14 +245,12 @@ export const AgentChat: React.FC<AgentChatProps> = ({
         const webhookResponse = await sendToWebhook(messageContent, currentConversationId);
         console.log('Resposta completa do webhook:', webhookResponse);
         
-        // Extract AI response from webhook - melhorar a lógica de extração
+        // Extract AI response from webhook
         let aiResponseContent = 'Olá! Sou seu assistente Copy Chief. Como posso ajudá-lo hoje?';
         
         if (typeof webhookResponse === 'string') {
-          // Se a resposta for uma string simples
           aiResponseContent = webhookResponse;
         } else if (webhookResponse && typeof webhookResponse === 'object') {
-          // Se for um objeto, verificar diferentes campos possíveis
           if (webhookResponse.resposta) {
             aiResponseContent = webhookResponse.resposta;
           } else if (webhookResponse.response) {
@@ -234,7 +260,6 @@ export const AgentChat: React.FC<AgentChatProps> = ({
           } else if (webhookResponse.answer) {
             aiResponseContent = webhookResponse.answer;
           } else {
-            // Se não encontrar nenhum campo conhecido, usar a primeira propriedade string
             const firstStringValue = Object.values(webhookResponse).find(value => typeof value === 'string');
             if (firstStringValue) {
               aiResponseContent = firstStringValue as string;
@@ -254,15 +279,22 @@ export const AgentChat: React.FC<AgentChatProps> = ({
 
         setMessages(prev => [...prev, aiResponse]);
 
-        // Try to save AI response to database (ignore RLS errors for now)
+        // Save AI response to database
         try {
-          await supabase
+          console.log('Salvando resposta da IA...');
+          const { error: aiMsgError } = await supabase
             .from('agent_messages')
             .insert({
               conversation_id: currentConversationId,
               role: 'assistant',
               content: aiResponse.content
             });
+
+          if (aiMsgError) {
+            console.error('Erro ao salvar resposta da IA:', aiMsgError);
+          } else {
+            console.log('Resposta da IA salva com sucesso');
+          }
         } catch (dbError) {
           console.warn('Could not save AI response to database:', dbError);
         }
@@ -280,7 +312,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
 
         setMessages(prev => [...prev, fallbackResponse]);
 
-        // Try to save fallback response to database
+        // Save fallback response to database
         try {
           await supabase
             .from('agent_messages')

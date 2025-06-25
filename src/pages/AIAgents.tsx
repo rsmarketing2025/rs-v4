@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +10,20 @@ import { TrainingData } from "@/components/ai-agents/TrainingData";
 
 const AIAgents = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("chat");
+  const [refreshHistory, setRefreshHistory] = useState(0);
+
+  // Função para atualizar o histórico quando uma nova conversa é criada ou modificada
+  const handleConversationChange = (id: string) => {
+    setSelectedConversationId(id);
+    setRefreshHistory(prev => prev + 1);
+  };
+
+  // Função para selecionar uma conversa do histórico
+  const handleSelectConversation = (id: string) => {
+    setSelectedConversationId(id);
+    setActiveTab("chat"); // Mudar para a tab do chat quando selecionar uma conversa
+  };
 
   return (
     <SidebarInset>
@@ -29,7 +43,7 @@ const AIAgents = () => {
           </div>
 
           <div className="bg-slate-900/50 border border-slate-700 backdrop-blur-sm rounded-lg flex-1 flex flex-col overflow-hidden">
-            <Tabs defaultValue="chat" className="w-full h-full flex flex-col">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full flex flex-col">
               <TabsList className="grid w-full grid-cols-3 bg-slate-800 border-slate-700 flex-shrink-0">
                 <TabsTrigger value="chat" className="flex items-center gap-2">
                   <MessageSquare className="w-4 h-4" />
@@ -48,13 +62,14 @@ const AIAgents = () => {
               <TabsContent value="chat" className="flex-1 p-6 overflow-hidden">
                 <AgentChat 
                   conversationId={selectedConversationId}
-                  onConversationChange={setSelectedConversationId}
+                  onConversationChange={handleConversationChange}
                 />
               </TabsContent>
               
               <TabsContent value="history" className="flex-1 p-6 overflow-hidden">
                 <ConversationHistory 
-                  onSelectConversation={setSelectedConversationId}
+                  onSelectConversation={handleSelectConversation}
+                  refreshTrigger={refreshHistory}
                 />
               </TabsContent>
               
