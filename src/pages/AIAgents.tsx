@@ -2,81 +2,157 @@
 import React, { useState, useEffect } from 'react';
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, BookOpen, Bot } from "lucide-react";
-import { AgentChat } from "@/components/ai-agents/AgentChat";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Plus, MessageSquare } from "lucide-react";
 import { ConversationHistory } from "@/components/ai-agents/ConversationHistory";
+import { AgentChat } from "@/components/ai-agents/AgentChat";
 import { TrainingData } from "@/components/ai-agents/TrainingData";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const AIAgents = () => {
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("chat");
-  const [refreshHistory, setRefreshHistory] = useState(0);
+  const [activeConversation, setActiveConversation] = useState<string | null>(null);
+  const [conversations, setConversations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  // Função para atualizar o histórico quando uma nova conversa é criada ou modificada
-  const handleConversationChange = (id: string) => {
-    setSelectedConversationId(id);
-    setRefreshHistory(prev => prev + 1);
+  useEffect(() => {
+    loadConversations();
+  }, []);
+
+  const loadConversations = async () => {
+    try {
+      console.log('Carregando conversas...');
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('Usuário não autenticado');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('agent_conversations')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao carregar conversas:', error);
+        throw error;
+      }
+      
+      console.log('Conversas carregadas:', data);
+      setConversations(data || []);
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar as conversas.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Função para selecionar uma conversa do histórico
-  const handleSelectConversation = (id: string) => {
-    setSelectedConversationId(id);
-    setActiveTab("chat"); // Mudar para a tab do chat quando selecionar uma conversa
+  const handleConversationSelect = (conversationId: string) => {
+    console.log('Conversa selecionada:', conversationId);
+    setActiveConversation(conversationId);
+  };
+
+  const handleConversationChange = (conversationId: string) => {
+    console.log('Conversa alterada/criada:', conversationId);
+    setActiveConversation(conversationId);
+    loadConversations(); // Recarregar lista de conversas
+  };
+
+  const handleDeleteConversation = async (conversationId: string) => {
+    try {
+      console.log('Deletando conversa:', conversationId);
+      
+      // Delete messages first
+      const { error: messagesError } = await supabase
+        .from('agent_messages')
+        .delete()
+        .eq('conversation_id', conversationId);
+
+      if (messagesError) {
+        console.error('Erro ao deletar mensagens:', messagesError);
+        throw messagesError;
+      }
+
+      // Then delete conversation
+      const { error: conversationError } = await supabase
+        .from('agent_conversations')
+        .delete()
+        .eq('id', conversationId);
+
+      if (conversationError) {
+        console.error('Erro ao deletar conversa:', conversationError);
+        throw conversationError;
+      }
+
+      console.log('Conversa deletada com sucesso');
+      
+      // If this was the active conversation, clear it
+      if (activeConversation === conversationId) {
+        setActiveConversation(null);
+      }
+      
+      // Reload conversations
+      await loadConversations();
+      
+      toast({
+        title: "Sucesso",
+        description: "Conversa deletada com sucesso.",
+      });
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível deletar a conversa.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
     <SidebarInset>
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-        <div className="container mx-auto p-6 h-screen flex flex-col">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
-            <div className="flex items-center gap-4">
+      <div className="min-h-screen bg-neutral-950">
+        <div className="container mx-auto p-3 md:p-6">
+          <div className="flex flex-col space-y-2 mb-4">
+            <div className="flex items-center gap-2">
               <SidebarTrigger className="text-white" />
-              <div>
-                <h1 className="text-5xl font-bold text-white mb-2">Agente de IA Copy Chief</h1>
-                <p className="text-slate-400 text-lg">Agente de IA copywriter</p>
+              <div className="flex-1">
+                <h1 className="text-lg md:text-2xl font-bold text-white">Agente de IA - Copy</h1>
+                <p className="text-gray-400 text-xs md:text-sm">Chat inteligente com seu assistente Copy Chief</p>
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex justify-end">
               <ThemeToggle />
             </div>
           </div>
 
-          <div className="bg-slate-900/50 border border-slate-700 backdrop-blur-sm rounded-lg flex-1 flex flex-col overflow-hidden">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full flex flex-col">
-              <TabsList className="grid w-full grid-cols-3 bg-slate-800 border-slate-700 flex-shrink-0">
-                <TabsTrigger value="chat" className="flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4" />
-                  Chat
-                </TabsTrigger>
-                <TabsTrigger value="history" className="flex items-center gap-2">
-                  <Bot className="w-4 h-4" />
-                  Histórico
-                </TabsTrigger>
-                <TabsTrigger value="training" className="flex items-center gap-2">
-                  <BookOpen className="w-4 h-4" />
-                  Treinamento
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="chat" className="flex-1 p-6 overflow-hidden">
-                <AgentChat 
-                  conversationId={selectedConversationId}
-                  onConversationChange={handleConversationChange}
-                />
-              </TabsContent>
-              
-              <TabsContent value="history" className="flex-1 p-6 overflow-hidden">
-                <ConversationHistory 
-                  onSelectConversation={handleSelectConversation}
-                  refreshTrigger={refreshHistory}
-                />
-              </TabsContent>
-              
-              <TabsContent value="training" className="flex-1 p-6 overflow-hidden">
-                <TrainingData />
-              </TabsContent>
-            </Tabs>
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
+            {/* Conversation History - Left Sidebar */}
+            <div className="lg:col-span-1">
+              <ConversationHistory
+                conversations={conversations}
+                activeConversation={activeConversation}
+                onConversationSelect={handleConversationSelect}
+                onDeleteConversation={handleDeleteConversation}
+                loading={loading}
+              />
+            </div>
+
+            {/* Main Chat Area */}
+            <div className="lg:col-span-3">
+              <AgentChat
+                conversationId={activeConversation}
+                onConversationChange={handleConversationChange}
+              />
+            </div>
           </div>
         </div>
       </div>
