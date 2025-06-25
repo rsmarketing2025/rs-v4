@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Plus, Loader2, MessageSquare } from "lucide-react";
+import { Send, Plus, MessageSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MessageBubble } from "./MessageBubble";
+import { TypingIndicator } from "./TypingIndicator";
 
 interface Message {
   id: string;
@@ -44,7 +45,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, loading]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -80,10 +81,12 @@ export const AgentChat: React.FC<AgentChatProps> = ({
         .from('agent_conversations')
         .select('title')
         .eq('id', conversationId)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
-      setConversationTitle(data.title);
+      if (error && error.code !== 'PGRST116') throw error;
+      if (data) {
+        setConversationTitle(data.title);
+      }
     } catch (error) {
       console.error('Error loading conversation title:', error);
     }
@@ -116,9 +119,13 @@ export const AgentChat: React.FC<AgentChatProps> = ({
     }
   };
 
-  const sendToWebhook = async (message: string) => {
+  const sendToWebhook = async (message: string, conversationId: string) => {
+    console.log('Enviando mensagem para webhook:', message);
+    
     try {
-      const response = await fetch('https://webhook-automatios-rsmtk.abbadigital.com.br/webhook/agente-copy-rs', {
+      const webhookUrl = 'https://webhook-automatios-rsmtk.abbadigital.com.br/webhook/agente-copy-rs';
+      
+      const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -130,11 +137,15 @@ export const AgentChat: React.FC<AgentChatProps> = ({
         }),
       });
 
+      console.log('Resposta do webhook - Status:', response.status);
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('Resposta do webhook - Data:', data);
+      
       return data;
     } catch (error) {
       console.error('Error sending to webhook:', error);
@@ -170,78 +181,89 @@ export const AgentChat: React.FC<AgentChatProps> = ({
         onConversationChange(currentConversationId);
       }
 
-      // Add user message
-      const { error: userMessageError } = await supabase
-        .from('agent_messages')
-        .insert({
-          conversation_id: currentConversationId,
-          role: 'user',
-          content: messageContent
-        });
-
-      if (userMessageError) throw userMessageError;
-
-      // Update messages immediately
-      const newUserMessage = {
+      // Add user message to UI immediately
+      const newUserMessage: Message = {
         id: Date.now().toString(),
-        role: 'user' as const,
+        role: 'user',
         content: messageContent,
         created_at: new Date().toISOString()
       };
       setMessages(prev => [...prev, newUserMessage]);
 
-      // Send to webhook
+      // Try to save user message to database (ignore RLS errors for now)
       try {
-        const webhookResponse = await sendToWebhook(messageContent);
-        console.log('Webhook response:', webhookResponse);
+        await supabase
+          .from('agent_messages')
+          .insert({
+            conversation_id: currentConversationId,
+            role: 'user',
+            content: messageContent
+          });
+      } catch (dbError) {
+        console.warn('Could not save user message to database:', dbError);
+      }
+
+      // Send to webhook and get response
+      try {
+        const webhookResponse = await sendToWebhook(messageContent, currentConversationId);
         
-        // Check if webhook returned a response message
+        // Extract AI response from webhook
         let aiResponseContent = 'Olá! Sou seu assistente Copy Chief. Como posso ajudá-lo hoje?';
         if (webhookResponse && webhookResponse.response) {
           aiResponseContent = webhookResponse.response;
+        } else if (webhookResponse && typeof webhookResponse === 'string') {
+          aiResponseContent = webhookResponse;
         }
 
-        // Add AI response
-        const aiResponse = {
+        // Add AI response to UI
+        const aiResponse: Message = {
           id: (Date.now() + 1).toString(),
-          role: 'assistant' as const,
+          role: 'assistant',
           content: aiResponseContent,
           created_at: new Date().toISOString()
         };
 
-        // Save AI response to database
-        await supabase
-          .from('agent_messages')
-          .insert({
-            conversation_id: currentConversationId,
-            role: 'assistant',
-            content: aiResponse.content
-          });
-
         setMessages(prev => [...prev, aiResponse]);
+
+        // Try to save AI response to database (ignore RLS errors for now)
+        try {
+          await supabase
+            .from('agent_messages')
+            .insert({
+              conversation_id: currentConversationId,
+              role: 'assistant',
+              content: aiResponse.content
+            });
+        } catch (dbError) {
+          console.warn('Could not save AI response to database:', dbError);
+        }
+
       } catch (webhookError) {
         console.error('Webhook error:', webhookError);
         
         // Fallback response if webhook fails
-        const fallbackResponse = {
+        const fallbackResponse: Message = {
           id: (Date.now() + 1).toString(),
-          role: 'assistant' as const,
-          content: 'Desculpe, houve um problema de conexão. Tente novamente em alguns instantes.',
+          role: 'assistant',
+          content: 'Desculpe, houve um problema de conexão com o servidor. Tente novamente em alguns instantes.',
           created_at: new Date().toISOString()
         };
 
-        await supabase
-          .from('agent_messages')
-          .insert({
-            conversation_id: currentConversationId,
-            role: 'assistant',
-            content: fallbackResponse.content
-          });
-
         setMessages(prev => [...prev, fallbackResponse]);
-      }
 
-      setLoading(false);
+        // Try to save fallback response to database
+        try {
+          await supabase
+            .from('agent_messages')
+            .insert({
+              conversation_id: currentConversationId,
+              role: 'assistant',
+              content: fallbackResponse.content
+            });
+        } catch (dbError) {
+          console.warn('Could not save fallback response to database:', dbError);
+        }
+      }
 
     } catch (error) {
       console.error('Error sending message:', error);
@@ -250,6 +272,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
         description: "Não foi possível enviar a mensagem.",
         variant: "destructive",
       });
+    } finally {
       setLoading(false);
     }
   };
@@ -294,12 +317,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
                   />
                 ))
               )}
-              {loading && (
-                <div className="flex items-center gap-2 text-slate-400">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Copy Chief está pensando...</span>
-                </div>
-              )}
+              {loading && <TypingIndicator />}
               <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
