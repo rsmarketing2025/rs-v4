@@ -1,4 +1,3 @@
-
 import {
   Sidebar,
   SidebarContent,
@@ -23,7 +22,7 @@ const menuItems = [
     icon: BarChart3,
   },
   {
-    title: "Agentes de IA",
+    title: "Agente de IA - Copy",
     url: "/ai-agents",
     icon: Bot,
   },

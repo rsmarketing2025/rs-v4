@@ -19,7 +19,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   return (
     <div className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
       {!isUser && (
-        <div className="flex-shrink-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+        <div className="flex-shrink-0 w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center">
           <Bot className="w-4 h-4 text-white" />
         </div>
       )}
@@ -28,7 +28,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
         <div
           className={`p-3 rounded-lg ${
             isUser
-              ? 'bg-blue-600 text-white ml-auto'
+              ? 'bg-slate-800 text-white ml-auto'
               : 'bg-slate-700 text-slate-100'
           }`}
         >

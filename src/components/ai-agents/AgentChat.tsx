@@ -487,7 +487,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
               <Button
                 onClick={sendMessage}
                 disabled={!input.trim() || loading}
-                className="h-[60px] px-4 bg-blue-600 hover:bg-blue-700 flex-shrink-0"
+                className="h-[60px] px-4 bg-slate-800 hover:bg-slate-700 flex-shrink-0"
               >
                 <Send className="w-4 h-4" />
               </Button>
