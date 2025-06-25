@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Plus, MessageSquare } from "lucide-react";
+import { Send, Plus, MessageSquare, Pen, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MessageBubble } from "./MessageBubble";
@@ -30,6 +30,8 @@ export const AgentChat: React.FC<AgentChatProps> = ({
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [conversationTitle, setConversationTitle] = useState('');
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editTitleValue, setEditTitleValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -96,6 +98,52 @@ export const AgentChat: React.FC<AgentChatProps> = ({
       }
     } catch (error) {
       console.error('Error loading conversation title:', error);
+    }
+  };
+
+  const handleEditTitle = () => {
+    setEditTitleValue(conversationTitle);
+    setIsEditingTitle(true);
+  };
+
+  const handleSaveTitle = async () => {
+    if (!conversationId || !editTitleValue.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from('agent_conversations')
+        .update({ title: editTitleValue.trim() })
+        .eq('id', conversationId);
+
+      if (error) throw error;
+
+      setConversationTitle(editTitleValue.trim());
+      setIsEditingTitle(false);
+      
+      toast({
+        title: "Sucesso",
+        description: "Título da conversa atualizado com sucesso.",
+      });
+    } catch (error) {
+      console.error('Error updating title:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o título da conversa.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingTitle(false);
+    setEditTitleValue('');
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSaveTitle();
+    } else if (e.key === 'Escape') {
+      handleCancelEdit();
     }
   };
 
@@ -338,7 +386,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleInputKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -349,14 +397,57 @@ export const AgentChat: React.FC<AgentChatProps> = ({
     <div className="flex flex-col h-full">
       <Card className="flex-1 bg-slate-800/50 border-slate-700 flex flex-col overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 flex-shrink-0">
-          <CardTitle className="text-white">
-            {conversationTitle || 'Chat com Copy Chief'}
-          </CardTitle>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {isEditingTitle ? (
+              <div className="flex items-center gap-2 flex-1">
+                <Input
+                  value={editTitleValue}
+                  onChange={(e) => setEditTitleValue(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  className="bg-slate-700 border-slate-600 text-white flex-1"
+                  autoFocus
+                />
+                <Button
+                  onClick={handleSaveTitle}
+                  size="sm"
+                  variant="ghost"
+                  className="text-green-400 hover:text-green-300 h-8 w-8 p-0"
+                >
+                  <Check className="w-4 h-4" />
+                </Button>
+                <Button
+                  onClick={handleCancelEdit}
+                  size="sm"
+                  variant="ghost"
+                  className="text-red-400 hover:text-red-300 h-8 w-8 p-0"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <>
+                <CardTitle className="text-white truncate">
+                  {conversationTitle || 'Chat com Copy Chief'}
+                </CardTitle>
+                {conversationId && (
+                  <Button
+                    onClick={handleEditTitle}
+                    size="sm"
+                    variant="ghost"
+                    className="text-slate-400 hover:text-white h-8 w-8 p-0"
+                    title="Editar título"
+                  >
+                    <Pen className="w-4 h-4" />
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
           <Button
             onClick={createNewConversation}
             variant="outline"
             size="sm"
-            className="border-slate-600 text-slate-300 hover:bg-slate-700"
+            className="border-slate-600 text-slate-300 hover:bg-slate-700 flex-shrink-0 ml-4"
           >
             <Plus className="w-4 h-4 mr-2" />
             Nova Conversa
@@ -388,7 +479,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
+                onKeyPress={handleInputKeyPress}
                 placeholder="Digite sua mensagem..."
                 className="flex-1 min-h-[60px] max-h-[120px] bg-slate-700 border-slate-600 text-white placeholder-slate-400 resize-none"
                 disabled={loading}

@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, Archive, Trash2, Clock, Eye, EyeOff } from "lucide-react";
+import { MessageSquare, Archive, Trash2, Clock, Eye, EyeOff, Pen, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from 'date-fns';
@@ -31,6 +33,8 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitleValue, setEditTitleValue] = useState('');
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
     conversationId: string;
@@ -147,6 +151,60 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
     }
   };
 
+  const handleEditTitle = (conversationId: string, currentTitle: string) => {
+    setEditingId(conversationId);
+    setEditTitleValue(currentTitle);
+  };
+
+  const handleSaveTitle = async (conversationId: string) => {
+    if (!editTitleValue.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from('agent_conversations')
+        .update({ title: editTitleValue.trim() })
+        .eq('id', conversationId);
+
+      if (error) throw error;
+
+      setConversations(prev =>
+        prev.map(conv =>
+          conv.id === conversationId
+            ? { ...conv, title: editTitleValue.trim() }
+            : conv
+        )
+      );
+
+      setEditingId(null);
+      setEditTitleValue('');
+      
+      toast({
+        title: "Sucesso",
+        description: "Título da conversa atualizado com sucesso.",
+      });
+    } catch (error) {
+      console.error('Error updating title:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o título da conversa.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditTitleValue('');
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent, conversationId: string) => {
+    if (e.key === 'Enter') {
+      handleSaveTitle(conversationId);
+    } else if (e.key === 'Escape') {
+      handleCancelEdit();
+    }
+  };
+
   const openDeleteDialog = (conversationId: string, conversationTitle: string) => {
     setDeleteDialog({
       isOpen: true,
@@ -260,18 +318,57 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
-                          <h3 
-                            className="font-medium text-white truncate cursor-pointer hover:text-blue-400"
-                            onClick={() => onSelectConversation(conversation.id)}
-                          >
-                            {conversation.title}
-                          </h3>
-                          <Badge 
-                            variant={conversation.status === 'active' ? 'default' : 'secondary'}
-                            className="text-xs"
-                          >
-                            {conversation.status === 'active' ? 'Ativa' : 'Arquivada'}
-                          </Badge>
+                          {editingId === conversation.id ? (
+                            <div className="flex items-center gap-2 flex-1">
+                              <Input
+                                value={editTitleValue}
+                                onChange={(e) => setEditTitleValue(e.target.value)}
+                                onKeyDown={(e) => handleKeyPress(e, conversation.id)}
+                                className="bg-slate-600 border-slate-500 text-white text-sm"
+                                autoFocus
+                              />
+                              <Button
+                                onClick={() => handleSaveTitle(conversation.id)}
+                                size="sm"
+                                variant="ghost"
+                                className="text-green-400 hover:text-green-300 h-6 w-6 p-0"
+                              >
+                                <Check className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                onClick={handleCancelEdit}
+                                size="sm"
+                                variant="ghost"
+                                className="text-red-400 hover:text-red-300 h-6 w-6 p-0"
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <>
+                              <h3 
+                                className="font-medium text-white truncate cursor-pointer hover:text-blue-400 flex-1"
+                                onClick={() => onSelectConversation(conversation.id)}
+                              >
+                                {conversation.title}
+                              </h3>
+                              <Button
+                                onClick={() => handleEditTitle(conversation.id, conversation.title)}
+                                size="sm"
+                                variant="ghost"
+                                className="text-slate-400 hover:text-white h-6 w-6 p-0"
+                                title="Editar título"
+                              >
+                                <Pen className="w-3 h-3" />
+                              </Button>
+                              <Badge 
+                                variant={conversation.status === 'active' ? 'default' : 'secondary'}
+                                className="text-xs"
+                              >
+                                {conversation.status === 'active' ? 'Ativa' : 'Arquivada'}
+                              </Badge>
+                            </>
+                          )}
                         </div>
                         <div className="flex items-center gap-4 text-xs text-slate-400">
                           <span className="flex items-center gap-1">
@@ -284,26 +381,28 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
                           </span>
                         </div>
                       </div>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleArchive(conversation.id, conversation.status)}
-                          className="text-slate-400 hover:text-white h-8 w-8 p-0"
-                          title={conversation.status === 'active' ? 'Arquivar' : 'Desarquivar'}
-                        >
-                          <Archive className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openDeleteDialog(conversation.id, conversation.title)}
-                          className="text-slate-400 hover:text-red-400 h-8 w-8 p-0"
-                          title="Excluir"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                      {editingId !== conversation.id && (
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleArchive(conversation.id, conversation.status)}
+                            className="text-slate-400 hover:text-white h-8 w-8 p-0"
+                            title={conversation.status === 'active' ? 'Arquivar' : 'Desarquivar'}
+                          >
+                            <Archive className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openDeleteDialog(conversation.id, conversation.title)}
+                            className="text-slate-400 hover:text-red-400 h-8 w-8 p-0"
+                            title="Excluir"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
