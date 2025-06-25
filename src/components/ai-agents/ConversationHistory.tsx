@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -254,9 +255,10 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
   if (loading) {
     return (
       <Card className="bg-neutral-950 border-neutral-800 h-full">
-        <CardContent className="p-6">
+        <CardContent className="flex items-center justify-center h-full">
           <div className="text-center text-neutral-400">
-            Carregando conversas...
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-400 mx-auto mb-3"></div>
+            <p className="text-sm">Carregando conversas...</p>
           </div>
         </CardContent>
       </Card>
@@ -266,147 +268,181 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
   return (
     <>
       <Card className="bg-neutral-950 border-neutral-800 h-full flex flex-col overflow-hidden">
-        <CardHeader className="flex-shrink-0 bg-neutral-900 border-b border-neutral-800">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-white flex items-center gap-2">
-              <MessageSquare className="w-5 h-5" />
+        <CardHeader className="flex-shrink-0 bg-neutral-900/50 border-b border-neutral-800 p-4">
+          <div className="space-y-3">
+            <CardTitle className="text-white flex items-center gap-2 text-lg font-semibold">
+              <MessageSquare className="w-5 h-5 text-blue-400" />
               Histórico de Conversas
             </CardTitle>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowArchived(!showArchived)}
-              className={`border-neutral-600 text-neutral-300 hover:bg-neutral-800 ${
-                showArchived ? 'bg-neutral-800' : ''
+              className={`w-full border-neutral-700 text-neutral-300 hover:bg-neutral-800 hover:text-white transition-all duration-200 ${
+                showArchived ? 'bg-neutral-800 text-white' : ''
               }`}
             >
               {showArchived ? (
                 <>
                   <EyeOff className="w-4 h-4 mr-2" />
-                  Ocultar Arquivadas
+                  <span className="text-sm">Ocultar Arquivadas</span>
                 </>
               ) : (
                 <>
                   <Eye className="w-4 h-4 mr-2" />
-                  Mostrar Arquivadas
+                  <span className="text-sm">Mostrar Arquivadas</span>
                 </>
               )}
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="flex-1 overflow-hidden p-4">
+        
+        <CardContent className="flex-1 overflow-hidden p-0">
           <ScrollArea className="h-full">
-            {filteredConversations.length === 0 ? (
-              <div className="text-center text-neutral-400 py-8">
-                <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>
-                  {showArchived 
-                    ? "Nenhuma conversa arquivada encontrada." 
-                    : "Nenhuma conversa encontrada."
-                  }
-                </p>
-                {!showArchived && <p className="text-sm">Inicie um chat para começar!</p>}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredConversations.map((conversation) => (
-                  <div
-                    key={conversation.id}
-                    className="p-4 bg-neutral-900 border border-neutral-700 rounded-lg hover:bg-neutral-800 transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          {editingId === conversation.id ? (
-                            <div className="flex items-center gap-2 flex-1">
-                              <Input
-                                value={editTitleValue}
-                                onChange={(e) => setEditTitleValue(e.target.value)}
-                                onKeyDown={(e) => handleKeyPress(e, conversation.id)}
-                                className="bg-neutral-800 border-neutral-600 text-white text-sm"
-                                autoFocus
-                              />
+            <div className="p-4">
+              {filteredConversations.length === 0 ? (
+                <div className="text-center text-neutral-400 py-12">
+                  <MessageSquare className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                  <h3 className="text-lg font-medium mb-2">
+                    {showArchived 
+                      ? "Nenhuma conversa arquivada" 
+                      : "Nenhuma conversa encontrada"
+                    }
+                  </h3>
+                  {!showArchived && (
+                    <p className="text-sm text-neutral-500">
+                      Inicie um chat para começar!
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredConversations.map((conversation) => (
+                    <div
+                      key={conversation.id}
+                      className="group relative bg-neutral-900/50 border border-neutral-800 rounded-xl p-4 hover:bg-neutral-800/50 hover:border-neutral-700 transition-all duration-200 cursor-pointer"
+                      onClick={() => editingId !== conversation.id && onSelectConversation(conversation.id)}
+                    >
+                      {/* Status Badge */}
+                      <div className="absolute top-3 right-3">
+                        <Badge 
+                          variant={conversation.status === 'active' ? 'default' : 'secondary'}
+                          className={`text-xs px-2 py-1 ${
+                            conversation.status === 'active' 
+                              ? 'bg-green-500/20 text-green-400 border-green-500/30' 
+                              : 'bg-neutral-700 text-neutral-300 border-neutral-600'
+                          }`}
+                        >
+                          {conversation.status === 'active' ? 'Ativa' : 'Arquivada'}
+                        </Badge>
+                      </div>
+
+                      {/* Title Section */}
+                      <div className="mb-3 pr-16">
+                        {editingId === conversation.id ? (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={editTitleValue}
+                              onChange={(e) => setEditTitleValue(e.target.value)}
+                              onKeyDown={(e) => handleKeyPress(e, conversation.id)}
+                              className="bg-neutral-800 border-neutral-600 text-white text-sm focus:border-blue-500"
+                              autoFocus
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <div className="flex gap-1">
                               <Button
-                                onClick={() => handleSaveTitle(conversation.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSaveTitle(conversation.id);
+                                }}
                                 size="sm"
                                 variant="ghost"
-                                className="text-green-400 hover:text-green-300 h-6 w-6 p-0"
+                                className="text-green-400 hover:text-green-300 hover:bg-green-500/20 h-8 w-8 p-0"
                               >
-                                <Check className="w-3 h-3" />
+                                <Check className="w-4 h-4" />
                               </Button>
                               <Button
-                                onClick={handleCancelEdit}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCancelEdit();
+                                }}
                                 size="sm"
                                 variant="ghost"
-                                className="text-red-400 hover:text-red-300 h-6 w-6 p-0"
+                                className="text-red-400 hover:text-red-300 hover:bg-red-500/20 h-8 w-8 p-0"
                               >
-                                <X className="w-3 h-3" />
+                                <X className="w-4 h-4" />
                               </Button>
                             </div>
-                          ) : (
-                            <>
-                              <h3 
-                                className="font-medium text-white truncate cursor-pointer hover:text-blue-400 flex-1"
-                                onClick={() => onSelectConversation(conversation.id)}
-                              >
-                                {conversation.title}
-                              </h3>
-                              <Button
-                                onClick={() => handleEditTitle(conversation.id, conversation.title)}
-                                size="sm"
-                                variant="ghost"
-                                className="text-neutral-400 hover:text-white h-6 w-6 p-0"
-                                title="Editar título"
-                              >
-                                <Pen className="w-3 h-3" />
-                              </Button>
-                              <Badge 
-                                variant={conversation.status === 'active' ? 'default' : 'secondary'}
-                                className="text-xs"
-                              >
-                                {conversation.status === 'active' ? 'Ativa' : 'Arquivada'}
-                              </Badge>
-                            </>
-                          )}
+                          </div>
+                        ) : (
+                          <div className="flex items-start gap-2">
+                            <h3 className="font-medium text-white text-sm leading-5 line-clamp-2 hover:text-blue-400 transition-colors duration-200 flex-1">
+                              {conversation.title}
+                            </h3>
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditTitle(conversation.id, conversation.title);
+                              }}
+                              size="sm"
+                              variant="ghost"
+                              className="opacity-0 group-hover:opacity-100 text-neutral-400 hover:text-white hover:bg-neutral-700 h-6 w-6 p-0 transition-all duration-200"
+                              title="Editar título"
+                            >
+                              <Pen className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Metadata Section */}
+                      <div className="flex items-center justify-between text-xs text-neutral-400 mb-3">
+                        <div className="flex items-center gap-1">
+                          <MessageSquare className="w-3 h-3" />
+                          <span>{conversation.message_count} {conversation.message_count === 1 ? 'mensagem' : 'mensagens'}</span>
                         </div>
-                        <div className="flex items-center gap-4 text-xs text-neutral-400">
-                          <span className="flex items-center gap-1">
-                            <MessageSquare className="w-3 h-3" />
-                            {conversation.message_count} {conversation.message_count === 1 ? 'mensagem' : 'mensagens'}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {format(new Date(conversation.updated_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                          </span>
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          <span>{format(new Date(conversation.updated_at), 'dd/MM/yy HH:mm', { locale: ptBR })}</span>
                         </div>
                       </div>
+
+                      {/* Action Buttons */}
                       {editingId !== conversation.id && (
-                        <div className="flex gap-1">
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => toggleArchive(conversation.id, conversation.status)}
-                            className="text-neutral-400 hover:text-white h-8 w-8 p-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleArchive(conversation.id, conversation.status);
+                            }}
+                            className="text-neutral-400 hover:text-blue-400 hover:bg-blue-500/20 h-8 px-3 text-xs transition-all duration-200"
                             title={conversation.status === 'active' ? 'Arquivar' : 'Desarquivar'}
                           >
-                            <Archive className="w-4 h-4" />
+                            <Archive className="w-3 h-3 mr-1" />
+                            {conversation.status === 'active' ? 'Arquivar' : 'Desarquivar'}
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => openDeleteDialog(conversation.id, conversation.title)}
-                            className="text-neutral-400 hover:text-red-400 h-8 w-8 p-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openDeleteDialog(conversation.id, conversation.title);
+                            }}
+                            className="text-neutral-400 hover:text-red-400 hover:bg-red-500/20 h-8 px-3 text-xs transition-all duration-200"
                             title="Excluir"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3 h-3 mr-1" />
+                            Excluir
                           </Button>
                         </div>
                       )}
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </ScrollArea>
         </CardContent>
       </Card>
