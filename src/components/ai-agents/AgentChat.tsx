@@ -215,17 +215,34 @@ export const AgentChat: React.FC<AgentChatProps> = ({
       // Send to webhook and get response
       try {
         const webhookResponse = await sendToWebhook(messageContent, currentConversationId);
+        console.log('Resposta completa do webhook:', webhookResponse);
         
-        // Extract AI response from webhook
+        // Extract AI response from webhook - melhorar a lógica de extração
         let aiResponseContent = 'Olá! Sou seu assistente Copy Chief. Como posso ajudá-lo hoje?';
         
         if (typeof webhookResponse === 'string') {
+          // Se a resposta for uma string simples
           aiResponseContent = webhookResponse;
-        } else if (webhookResponse && webhookResponse.response) {
-          aiResponseContent = webhookResponse.response;
-        } else if (webhookResponse && webhookResponse.message) {
-          aiResponseContent = webhookResponse.message;
+        } else if (webhookResponse && typeof webhookResponse === 'object') {
+          // Se for um objeto, verificar diferentes campos possíveis
+          if (webhookResponse.resposta) {
+            aiResponseContent = webhookResponse.resposta;
+          } else if (webhookResponse.response) {
+            aiResponseContent = webhookResponse.response;
+          } else if (webhookResponse.message) {
+            aiResponseContent = webhookResponse.message;
+          } else if (webhookResponse.answer) {
+            aiResponseContent = webhookResponse.answer;
+          } else {
+            // Se não encontrar nenhum campo conhecido, usar a primeira propriedade string
+            const firstStringValue = Object.values(webhookResponse).find(value => typeof value === 'string');
+            if (firstStringValue) {
+              aiResponseContent = firstStringValue as string;
+            }
+          }
         }
+
+        console.log('Conteúdo extraído da resposta:', aiResponseContent);
 
         // Add AI response to UI
         const aiResponse: Message = {
