@@ -1,11 +1,16 @@
 
-import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
+import React, { useState } from 'react';
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Bot, Clock } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MessageSquare, BookOpen, Bot } from "lucide-react";
+import { AgentChat } from "@/components/ai-agents/AgentChat";
+import { ConversationHistory } from "@/components/ai-agents/ConversationHistory";
+import { TrainingData } from "@/components/ai-agents/TrainingData";
 
 const AIAgents = () => {
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+
   return (
     <SidebarInset>
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
@@ -23,26 +28,40 @@ const AIAgents = () => {
             </div>
           </div>
 
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <Card className="bg-slate-900/50 border-slate-700 backdrop-blur-sm max-w-lg w-full">
-              <CardContent className="p-12 text-center">
-                <div className="flex justify-center mb-6">
-                  <div className="relative">
-                    <Bot className="w-24 h-24 text-blue-400" />
-                    <Clock className="w-8 h-8 text-orange-400 absolute -bottom-2 -right-2 bg-slate-900 rounded-full p-1" />
-                  </div>
-                </div>
-                <h2 className="text-3xl font-bold text-white mb-4">Em Breve</h2>
-                <p className="text-slate-400 text-lg leading-relaxed">
-                  Nossos agentes de IA inteligentes estão sendo desenvolvidos para automatizar e otimizar suas campanhas de marketing digital.
-                </p>
-                <div className="mt-8 p-4 bg-blue-950/30 border border-blue-800/30 rounded-lg">
-                  <p className="text-blue-300 text-sm">
-                    🚀 Funcionalidades que virão: análise de criativos, modelagem de copy, modelagem de VSL, otimização de budget, sugestões de targeting e muito mais
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="bg-slate-900/50 border border-slate-700 backdrop-blur-sm rounded-lg p-6">
+            <Tabs defaultValue="chat" className="w-full">
+              <TabsList className="grid w-full grid-cols-3 bg-slate-800 border-slate-700">
+                <TabsTrigger value="chat" className="flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4" />
+                  Chat
+                </TabsTrigger>
+                <TabsTrigger value="history" className="flex items-center gap-2">
+                  <Bot className="w-4 h-4" />
+                  Histórico
+                </TabsTrigger>
+                <TabsTrigger value="training" className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4" />
+                  Treinamento
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="chat" className="mt-6">
+                <AgentChat 
+                  conversationId={selectedConversationId}
+                  onConversationChange={setSelectedConversationId}
+                />
+              </TabsContent>
+              
+              <TabsContent value="history" className="mt-6">
+                <ConversationHistory 
+                  onSelectConversation={setSelectedConversationId}
+                />
+              </TabsContent>
+              
+              <TabsContent value="training" className="mt-6">
+                <TrainingData />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>

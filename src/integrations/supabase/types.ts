@@ -9,6 +9,101 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      agent_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          status: Database["public"]["Enums"]["agent_conversation_status"]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["agent_conversation_status"]
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["agent_conversation_status"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      agent_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["agent_message_role"]
+          webhook_response: Json | null
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["agent_message_role"]
+          webhook_response?: Json | null
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["agent_message_role"]
+          webhook_response?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "agent_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_training_data: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          question: string
+          status: Database["public"]["Enums"]["training_data_status"]
+          updated_at: string
+          user_id: string
+          webhook_response: Json | null
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          id?: string
+          question: string
+          status?: Database["public"]["Enums"]["training_data_status"]
+          updated_at?: string
+          user_id: string
+          webhook_response?: Json | null
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          question?: string
+          status?: Database["public"]["Enums"]["training_data_status"]
+          updated_at?: string
+          user_id?: string
+          webhook_response?: Json | null
+        }
+        Relationships: []
+      }
       business_manager_accounts: {
         Row: {
           access_token: string
@@ -489,6 +584,8 @@ export type Database = {
       }
     }
     Enums: {
+      agent_conversation_status: "active" | "archived"
+      agent_message_role: "user" | "assistant"
       app_role: "admin" | "user" | "business_manager"
       subscription_event_type:
         | "subscription"
@@ -496,6 +593,7 @@ export type Database = {
         | "upgrade"
         | "downgrade"
       subscription_plan: "basic" | "premium" | "enterprise"
+      training_data_status: "pending" | "processing" | "completed" | "failed"
       user_page:
         | "creatives"
         | "sales"
@@ -619,6 +717,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      agent_conversation_status: ["active", "archived"],
+      agent_message_role: ["user", "assistant"],
       app_role: ["admin", "user", "business_manager"],
       subscription_event_type: [
         "subscription",
@@ -627,6 +727,7 @@ export const Constants = {
         "downgrade",
       ],
       subscription_plan: ["basic", "premium", "enterprise"],
+      training_data_status: ["pending", "processing", "completed", "failed"],
       user_page: [
         "creatives",
         "sales",
