@@ -125,16 +125,17 @@ export const AgentChat: React.FC<AgentChatProps> = ({
     try {
       const webhookUrl = 'https://webhook-automatios-rsmtk.abbadigital.com.br/webhook/agente-copy-rs';
       
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
+      // Construir URL com parâmetros de query para GET
+      const url = new URL(webhookUrl);
+      url.searchParams.append('message', message);
+      url.searchParams.append('timestamp', new Date().toISOString());
+      url.searchParams.append('conversationId', conversationId);
+      
+      const response = await fetch(url.toString(), {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          message: message,
-          timestamp: new Date().toISOString(),
-          conversationId: conversationId
-        }),
       });
 
       console.log('Resposta do webhook - Status:', response.status);
@@ -143,8 +144,16 @@ export const AgentChat: React.FC<AgentChatProps> = ({
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log('Resposta do webhook - Data:', data);
+      // Tentar fazer parse JSON primeiro, se falhar, usar como texto
+      let data;
+      try {
+        data = await response.json();
+        console.log('Resposta do webhook - Data (JSON):', data);
+      } catch (jsonError) {
+        // Se não for JSON válido, usar como texto
+        data = await response.text();
+        console.log('Resposta do webhook - Data (Text):', data);
+      }
       
       return data;
     } catch (error) {
@@ -209,10 +218,13 @@ export const AgentChat: React.FC<AgentChatProps> = ({
         
         // Extract AI response from webhook
         let aiResponseContent = 'Olá! Sou seu assistente Copy Chief. Como posso ajudá-lo hoje?';
-        if (webhookResponse && webhookResponse.response) {
-          aiResponseContent = webhookResponse.response;
-        } else if (webhookResponse && typeof webhookResponse === 'string') {
+        
+        if (typeof webhookResponse === 'string') {
           aiResponseContent = webhookResponse;
+        } else if (webhookResponse && webhookResponse.response) {
+          aiResponseContent = webhookResponse.response;
+        } else if (webhookResponse && webhookResponse.message) {
+          aiResponseContent = webhookResponse.message;
         }
 
         // Add AI response to UI
@@ -323,19 +335,19 @@ export const AgentChat: React.FC<AgentChatProps> = ({
           </ScrollArea>
           
           <div className="p-6 border-t border-slate-700 flex-shrink-0">
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-end">
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Digite sua mensagem..."
-                className="flex-1 min-h-[60px] bg-slate-700 border-slate-600 text-white placeholder-slate-400 resize-none"
+                className="flex-1 min-h-[60px] max-h-[120px] bg-slate-700 border-slate-600 text-white placeholder-slate-400 resize-none"
                 disabled={loading}
               />
               <Button
                 onClick={sendMessage}
                 disabled={!input.trim() || loading}
-                className="px-4 bg-blue-600 hover:bg-blue-700"
+                className="h-[60px] px-4 bg-blue-600 hover:bg-blue-700 flex-shrink-0"
               >
                 <Send className="w-4 h-4" />
               </Button>

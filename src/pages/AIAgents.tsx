@@ -20,7 +20,7 @@ const AIAgents = () => {
               <SidebarTrigger className="text-white" />
               <div>
                 <h1 className="text-5xl font-bold text-white mb-2">Agente de IA Copy Chief</h1>
-                <p className="text-slate-400 text-lg">Automação inteligente para otimização de campanhas</p>
+                <p className="text-slate-400 text-lg">Agente de IA copywriter</p>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">

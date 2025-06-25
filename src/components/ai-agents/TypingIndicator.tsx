@@ -12,8 +12,7 @@ export const TypingIndicator: React.FC = () => {
       <div className="max-w-[70%]">
         <div className="bg-slate-700 text-slate-100 p-3 rounded-lg">
           <div className="flex items-center gap-1">
-            <span className="text-slate-300">Copy Chief está escrevendo</span>
-            <div className="flex gap-1 ml-2">
+            <div className="flex gap-1">
               <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
               <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
               <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
