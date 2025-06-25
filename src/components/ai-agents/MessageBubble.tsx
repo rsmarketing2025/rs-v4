@@ -19,7 +19,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   return (
     <div className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
       {!isUser && (
-        <div className="flex-shrink-0 w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center">
+        <div className="flex-shrink-0 w-8 h-8 bg-neutral-800 rounded-full flex items-center justify-center">
           <Bot className="w-4 h-4 text-white" />
         </div>
       )}
@@ -28,19 +28,19 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
         <div
           className={`p-3 rounded-lg ${
             isUser
-              ? 'bg-slate-800 text-white ml-auto'
-              : 'bg-slate-700 text-slate-100'
+              ? 'bg-neutral-800 text-white ml-auto'
+              : 'bg-neutral-700 text-neutral-100'
           }`}
         >
           <p className="whitespace-pre-wrap break-words">{message.content}</p>
         </div>
-        <p className={`text-xs text-slate-400 mt-1 ${isUser ? 'text-right' : 'text-left'}`}>
+        <p className={`text-xs text-neutral-400 mt-1 ${isUser ? 'text-right' : 'text-left'}`}>
           {format(new Date(message.created_at), 'HH:mm', { locale: ptBR })}
         </p>
       </div>
       
       {isUser && (
-        <div className="flex-shrink-0 w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center order-2">
+        <div className="flex-shrink-0 w-8 h-8 bg-neutral-600 rounded-full flex items-center justify-center order-2">
           <User className="w-4 h-4 text-white" />
         </div>
       )}
