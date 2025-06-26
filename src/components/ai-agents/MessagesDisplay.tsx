@@ -69,66 +69,20 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
   }, [loading, scrollToBottom]);
 
   return (
-    <ScrollArea ref={scrollAreaRef} className="flex-1">
-      <div className="px-6 py-6">
-        {/* Container principal com altura flexível */}
-        <div className={`space-y-6 ${messages.length === 0 ? 'h-full flex flex-col' : ''}`}>
-          {messages.length === 0 ? (
-            /* Estado vazio - Centralização vertical e horizontal perfeita */
-            <div className="flex-1 flex flex-col items-center justify-center text-center">
-              <div className="max-w-lg mx-auto space-y-8">
-                {/* Ícone centralizado com design aprimorado */}
-                <div className="flex justify-center">
-                  <div className="p-8 bg-gradient-to-br from-neutral-900/60 to-neutral-800/40 rounded-2xl border border-neutral-700/50 shadow-xl">
-                    <MessageSquare className="w-16 h-16 text-neutral-300" />
-                  </div>
-                </div>
-                
-                {/* Mensagem de boas-vindas centralizada */}
-                <div className="space-y-4">
-                  <h3 className="text-2xl font-bold text-neutral-100">
-                    Chat com Copy Chief
-                  </h3>
-                  <p className="text-neutral-400 text-lg leading-relaxed">
-                    Inicie uma conversa com seu Copy Chief!<br />
-                    Envie uma mensagem para começar.
-                  </p>
-                </div>
-                
-                {/* Sugestões visuais melhoradas */}
-                <div className="grid grid-cols-1 gap-4 mt-10">
-                  <div className="px-6 py-4 bg-gradient-to-r from-blue-900/20 to-blue-800/10 rounded-xl border border-blue-800/30 text-neutral-300 hover:bg-blue-900/30 transition-all duration-200 cursor-default">
-                    <span className="text-blue-400 text-lg mr-3">💡</span>
-                    Peça ajuda com copywriting
-                  </div>
-                  <div className="px-6 py-4 bg-gradient-to-r from-green-900/20 to-green-800/10 rounded-xl border border-green-800/30 text-neutral-300 hover:bg-green-900/30 transition-all duration-200 cursor-default">
-                    <span className="text-green-400 text-lg mr-3">📝</span>
-                    Solicite criação de conteúdo
-                  </div>
-                  <div className="px-6 py-4 bg-gradient-to-r from-purple-900/20 to-purple-800/10 rounded-xl border border-purple-800/30 text-neutral-300 hover:bg-purple-900/30 transition-all duration-200 cursor-default">
-                    <span className="text-purple-400 text-lg mr-3">🎯</span>
-                    Analise suas campanhas
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* Lista de mensagens - Espaçamento otimizado */
-            <div className="space-y-6">
-              {messages.map((message) => (
-                <MessageBubble key={message.id} message={message} />
-              ))}
-              {loading && (
-                <div className="py-2">
-                  <TypingIndicator />
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* Marcador para scroll automático */}
-          <div ref={messagesEndRef} className="h-1" />
-        </div>
+    <ScrollArea ref={scrollAreaRef} className="flex-1 px-6 py-4">
+      <div className="space-y-4 min-h-full">
+        {messages.length === 0 ? (
+          <div className="text-center text-neutral-400 py-8">
+            <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p>Inicie uma conversa com seu Copy Chief!</p>
+          </div>
+        ) : (
+          messages.map((message) => (
+            <MessageBubble key={message.id} message={message} />
+          ))
+        )}
+        {loading && <TypingIndicator />}
+        <div ref={messagesEndRef} className="h-1" />
       </div>
     </ScrollArea>
   );
