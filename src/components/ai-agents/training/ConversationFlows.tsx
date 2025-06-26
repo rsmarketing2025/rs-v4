@@ -56,7 +56,9 @@ export const ConversationFlows: React.FC = () => {
         id: flow.id,
         flow_name: flow.flow_name,
         flow_description: flow.flow_description,
-        flow_steps: Array.isArray(flow.flow_steps) ? flow.flow_steps : [],
+        flow_steps: Array.isArray(flow.flow_steps) 
+          ? flow.flow_steps.map(step => String(step)) 
+          : [],
         conditions: flow.conditions && typeof flow.conditions === 'object' && !Array.isArray(flow.conditions) 
           ? flow.conditions as Record<string, any> 
           : {},
@@ -134,7 +136,9 @@ export const ConversationFlows: React.FC = () => {
         id: data.id,
         flow_name: data.flow_name,
         flow_description: data.flow_description,
-        flow_steps: Array.isArray(data.flow_steps) ? data.flow_steps : [],
+        flow_steps: Array.isArray(data.flow_steps) 
+          ? data.flow_steps.map(step => String(step)) 
+          : [],
         conditions: data.conditions && typeof data.conditions === 'object' && !Array.isArray(data.conditions) 
           ? data.conditions as Record<string, any> 
           : {},
