@@ -1,125 +1,217 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Link, FileText, Trash2, Plus } from "lucide-react";
+import { Save, FileText } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { TrainingFiles } from "../training/TrainingFiles";
+import { ReferenceLinks } from "../training/ReferenceLinks";
+import { AGENT_ID } from "./GeneralTab";
+
+interface TrainingFile {
+  id: string;
+  file_name: string;
+  file_url?: string;
+  file_content?: string;
+}
+
+interface ReferenceLink {
+  id: string;
+  link_title: string;
+  link_url: string;
+  link_description?: string;
+}
 
 export const TrainingTab: React.FC = () => {
-  const [files, setFiles] = useState<string[]>([]);
-  const [links, setLinks] = useState<string[]>(['']);
   const [manualText, setManualText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const { toast } = useToast();
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    // TODO: Implementar upload de arquivos
-    console.log('Upload de arquivos:', event.target.files);
+  useEffect(() => {
+    loadManualText();
+  }, []);
+
+  const loadManualText = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('agent_manual_contexts')
+        .select('context_content')
+        .eq('user_id', user.id)
+        .eq('context_title', 'Training Manual Text')
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading manual text:', error);
+        return;
+      }
+
+      if (data) {
+        setManualText(data.context_content || '');
+      }
+    } catch (error) {
+      console.error('Error loading manual text:', error);
+    }
   };
 
-  const addLink = () => {
-    setLinks([...links, '']);
+  const saveManualText = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('agent_manual_contexts')
+        .upsert({
+          user_id: user.id,
+          context_title: 'Training Manual Text',
+          context_content: manualText,
+          status: 'active'
+        }, {
+          onConflict: 'user_id,context_title'
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error saving manual text:', error);
+      throw error;
+    }
   };
 
-  const updateLink = (index: number, value: string) => {
-    const newLinks = [...links];
-    newLinks[index] = value;
-    setLinks(newLinks);
+  const collectTrainingData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Get training files
+      const { data: files, error: filesError } = await supabase
+        .from('agent_training_files')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'active');
+
+      if (filesError) throw filesError;
+
+      // Get reference links
+      const { data: links, error: linksError } = await supabase
+        .from('agent_reference_links')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'active');
+
+      if (linksError) throw linksError;
+
+      return {
+        files: files || [],
+        links: links || [],
+        manualText
+      };
+    } catch (error) {
+      console.error('Error collecting training data:', error);
+      throw error;
+    }
   };
 
-  const removeLink = (index: number) => {
-    setLinks(links.filter((_, i) => i !== index));
-  };
+  const handleSave = async () => {
+    setIsLoading(true);
+    
+    try {
+      console.log('Salvando dados de treinamento...');
+      
+      // Save manual text first
+      await saveManualText();
+      
+      // Collect all training data
+      const trainingData = await collectTrainingData();
+      
+      // Prepare data for webhook
+      const webhookData = {
+        agent_id: AGENT_ID,
+        files: trainingData.files.map(file => ({
+          id: file.id,
+          name: file.file_name,
+          type: file.file_type,
+          url: file.file_url,
+          content: file.file_content
+        })),
+        links: trainingData.links.map(link => ({
+          id: link.id,
+          title: link.link_title,
+          url: link.link_url,
+          description: link.link_description
+        })),
+        manual_text: trainingData.manualText
+      };
 
-  const handleSave = () => {
-    // TODO: Implementar integração com backend
-    console.log('Salvando dados de treinamento:', { files, links, manualText });
+      console.log('Enviando dados para o webhook:', webhookData);
+
+      const response = await fetch('https://webhook-automatios-rsmtk.abbadigital.com.br/webhook/rag-midia-rs-copy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro na requisição: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('Resposta do webhook:', result);
+
+      toast({
+        title: "Sucesso",
+        description: "Dados de treinamento salvos e enviados com sucesso!",
+      });
+
+      // Refresh components to show updated data
+      setRefreshKey(prev => prev + 1);
+
+    } catch (error) {
+      console.error('Erro ao salvar dados de treinamento:', error);
+      
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar os dados de treinamento. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium text-white">Dados de Treinamento</h3>
-        <p className="text-sm text-neutral-400">
-          Adicione materiais para treinar e personalizar seu agente
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-medium text-white">Dados de Treinamento</h3>
+          <p className="text-sm text-neutral-400">
+            Adicione materiais para treinar e personalizar seu agente
+          </p>
+        </div>
+        <Badge variant="outline" className="text-neutral-300 border-neutral-600">
+          {AGENT_ID}
+        </Badge>
       </div>
 
-      {/* Upload de Arquivos */}
-      <Card className="bg-neutral-900 border-neutral-800">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-white flex items-center gap-2">
-            <Upload className="w-4 h-4" />
-            Upload de Arquivos
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="border-2 border-dashed border-neutral-700 rounded-lg p-6 text-center hover:border-neutral-600 transition-colors">
-              <Upload className="w-8 h-8 mx-auto mb-2 text-neutral-400" />
-              <p className="text-sm text-neutral-400 mb-2">
-                Arraste arquivos aqui ou clique para selecionar
-              </p>
-              <input
-                type="file"
-                multiple
-                onChange={handleFileUpload}
-                className="hidden"
-                id="file-upload"
-                accept=".pdf,.txt,.doc,.docx"
-              />
-              <label htmlFor="file-upload">
-                <Button variant="outline" className="cursor-pointer">
-                  Selecionar Arquivos
-                </Button>
-              </label>
-            </div>
-            <p className="text-xs text-neutral-500">
-              Formatos suportados: PDF, TXT, DOC, DOCX (máx. 10MB cada)
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Training Files */}
+      <div key={`files-${refreshKey}`}>
+        <TrainingFiles />
+      </div>
 
-      {/* Links de Referência */}
-      <Card className="bg-neutral-900 border-neutral-800">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-white flex items-center gap-2">
-            <Link className="w-4 h-4" />
-            Links de Referência
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {links.map((link, index) => (
-              <div key={index} className="flex gap-2">
-                <Input
-                  value={link}
-                  onChange={(e) => updateLink(index, e.target.value)}
-                  placeholder="https://exemplo.com"
-                  className="bg-neutral-800 border-neutral-700 text-white"
-                />
-                <Button
-                  onClick={() => removeLink(index)}
-                  variant="outline"
-                  size="sm"
-                  className="px-3"
-                  disabled={links.length <= 1}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            ))}
-            <Button onClick={addLink} variant="outline" size="sm">
-              <Plus className="w-4 h-4 mr-2" />
-              Adicionar Link
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Reference Links */}
+      <div key={`links-${refreshKey}`}>
+        <ReferenceLinks />
+      </div>
 
-      {/* Texto Manual */}
+      {/* Manual Text */}
       <Card className="bg-neutral-900 border-neutral-800">
         <CardHeader className="pb-3">
           <CardTitle className="text-white flex items-center gap-2">
@@ -128,20 +220,34 @@ export const TrainingTab: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Textarea
-            value={manualText}
-            onChange={(e) => setManualText(e.target.value)}
-            placeholder="Adicione informações específicas, instruções especiais, ou conhecimento que o agente deve ter..."
-            className="bg-neutral-800 border-neutral-700 text-white resize-none"
-            rows={6}
-          />
+          <div className="space-y-2">
+            <Label htmlFor="manual-text" className="text-white">
+              Instruções e Conhecimento Específico
+            </Label>
+            <Textarea
+              id="manual-text"
+              value={manualText}
+              onChange={(e) => setManualText(e.target.value)}
+              placeholder="Adicione informações específicas, instruções especiais, ou conhecimento que o agente deve ter..."
+              className="bg-neutral-800 border-neutral-700 text-white resize-none"
+              rows={6}
+            />
+            <p className="text-xs text-neutral-500">
+              Este texto será usado como conhecimento base para treinar o agente
+            </p>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Botão de Salvar */}
+      {/* Save Button */}
       <div className="flex justify-end pt-4 border-t border-neutral-800">
-        <Button onClick={handleSave} className="bg-slate-50 text-black hover:bg-slate-200">
-          Salvar Treinamento
+        <Button 
+          onClick={handleSave} 
+          disabled={isLoading}
+          className="bg-slate-50 text-black hover:bg-slate-200"
+        >
+          <Save className="w-4 h-4 mr-2" />
+          {isLoading ? 'Salvando e Enviando...' : 'Salvar e Enviar Treinamento'}
         </Button>
       </div>
     </div>

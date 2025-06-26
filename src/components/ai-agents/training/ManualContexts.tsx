@@ -5,17 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Plus, Trash2, Tag, X } from "lucide-react";
+import { FileText, Plus, Trash2, Edit2 } from "lucide-react";
 
 interface ManualContext {
   id: string;
   context_title: string;
   context_content: string;
-  tags: string[];
-  status: string;
+  tags?: string[];
   created_at: string;
 }
 
@@ -23,12 +21,12 @@ export const ManualContexts: React.FC = () => {
   const [contexts, setContexts] = useState<ManualContext[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [newContext, setNewContext] = useState({
     title: '',
     content: '',
-    tags: [] as string[]
+    tags: ''
   });
-  const [newTag, setNewTag] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -61,24 +59,6 @@ export const ManualContexts: React.FC = () => {
     }
   };
 
-  const addTag = () => {
-    const tag = newTag.trim().toLowerCase();
-    if (tag && !newContext.tags.includes(tag)) {
-      setNewContext(prev => ({
-        ...prev,
-        tags: [...prev.tags, tag]
-      }));
-      setNewTag('');
-    }
-  };
-
-  const removeTag = (tagToRemove: string) => {
-    setNewContext(prev => ({
-      ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
-    }));
-  };
-
   const addContext = async () => {
     if (!newContext.title.trim() || !newContext.content.trim()) {
       toast({
@@ -94,13 +74,17 @@ export const ManualContexts: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      const tags = newContext.tags 
+        ? newContext.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+        : [];
+
       const { data, error } = await supabase
         .from('agent_manual_contexts')
         .insert({
           user_id: user.id,
           context_title: newContext.title.trim(),
           context_content: newContext.content.trim(),
-          tags: newContext.tags,
+          tags: tags,
           status: 'active'
         })
         .select()
@@ -109,7 +93,7 @@ export const ManualContexts: React.FC = () => {
       if (error) throw error;
 
       setContexts(prev => [data, ...prev]);
-      setNewContext({ title: '', content: '', tags: [] });
+      setNewContext({ title: '', content: '', tags: '' });
       
       toast({
         title: "Sucesso",
@@ -172,59 +156,31 @@ export const ManualContexts: React.FC = () => {
                 value={newContext.title}
                 onChange={(e) => setNewContext(prev => ({ ...prev, title: e.target.value }))}
                 className="bg-neutral-700 border-neutral-600 text-white"
-                placeholder="Ex: Política de Preços"
+                placeholder="Ex: Instruções de Atendimento"
               />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="context-content" className="text-white">Conteúdo</Label>
               <Textarea
                 id="context-content"
                 value={newContext.content}
                 onChange={(e) => setNewContext(prev => ({ ...prev, content: e.target.value }))}
-                className="bg-neutral-700 border-neutral-600 text-white min-h-[120px]"
-                placeholder="Descreva o contexto detalhadamente..."
+                className="bg-neutral-700 border-neutral-600 text-white"
+                placeholder="Descreva as instruções, conhecimento ou comportamento esperado..."
+                rows={4}
               />
             </div>
-
             <div className="space-y-2">
-              <Label className="text-white">Tags</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                  className="bg-neutral-700 border-neutral-600 text-white"
-                  placeholder="Adicionar tag..."
-                />
-                <Button
-                  onClick={addTag}
-                  variant="outline"
-                  size="sm"
-                  className="border-neutral-600"
-                >
-                  <Tag className="w-4 h-4" />
-                </Button>
-              </div>
-              {newContext.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {newContext.tags.map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant="secondary"
-                      className="bg-blue-600 text-white"
-                    >
-                      {tag}
-                      <X
-                        className="w-3 h-3 ml-1 cursor-pointer"
-                        onClick={() => removeTag(tag)}
-                      />
-                    </Badge>
-                  ))}
-                </div>
-              )}
+              <Label htmlFor="context-tags" className="text-white">Tags (opcional)</Label>
+              <Input
+                id="context-tags"
+                value={newContext.tags}
+                onChange={(e) => setNewContext(prev => ({ ...prev, tags: e.target.value }))}
+                className="bg-neutral-700 border-neutral-600 text-white"
+                placeholder="tag1, tag2, tag3"
+              />
+              <p className="text-xs text-neutral-500">Separe as tags com vírgulas</p>
             </div>
-
             <Button
               onClick={addContext}
               disabled={saving || !newContext.title.trim() || !newContext.content.trim()}
@@ -241,7 +197,7 @@ export const ManualContexts: React.FC = () => {
           {loading ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="animate-pulse bg-neutral-800 rounded-lg p-4 h-32"></div>
+                <div key={i} className="animate-pulse bg-neutral-800 rounded-lg p-4 h-24"></div>
               ))}
             </div>
           ) : contexts.length === 0 ? (
@@ -256,19 +212,18 @@ export const ManualContexts: React.FC = () => {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h4 className="text-white font-medium mb-2">{context.context_title}</h4>
-                        <p className="text-neutral-300 text-sm mb-3 line-clamp-3">
+                        <p className="text-sm text-neutral-300 mb-3 whitespace-pre-wrap">
                           {context.context_content}
                         </p>
-                        {context.tags.length > 0 && (
+                        {context.tags && context.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mb-2">
-                            {context.tags.map((tag) => (
-                              <Badge
-                                key={tag}
-                                variant="secondary"
-                                className="bg-neutral-600 text-neutral-200 text-xs"
+                            {context.tags.map((tag, index) => (
+                              <span
+                                key={index}
+                                className="px-2 py-1 bg-neutral-700 text-neutral-300 text-xs rounded"
                               >
                                 {tag}
-                              </Badge>
+                              </span>
                             ))}
                           </div>
                         )}
