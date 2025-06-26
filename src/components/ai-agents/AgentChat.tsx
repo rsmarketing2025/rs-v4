@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,17 +32,21 @@ export const AgentChat: React.FC<AgentChatProps> = ({
   const [conversationTitle, setConversationTitle] = useState('');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editTitleValue, setEditTitleValue] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // Função de scroll que funciona com ScrollArea
+  // Função de scroll melhorada
   const scrollToBottom = useCallback(() => {
     if (scrollAreaRef.current) {
-      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      // Busca pelo viewport do ScrollArea
+      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
       if (viewport) {
+        // Usa requestAnimationFrame para garantir que o DOM foi atualizado
         requestAnimationFrame(() => {
-          viewport.scrollTop = viewport.scrollHeight;
+          viewport.scrollTo({
+            top: viewport.scrollHeight,
+            behavior: 'smooth'
+          });
         });
       }
     }
@@ -61,6 +64,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
 
   // Scroll automático quando mensagens ou loading mudam
   useEffect(() => {
+    // Pequeno delay para garantir que o DOM foi atualizado
     const timer = setTimeout(() => {
       scrollToBottom();
     }, 100);
@@ -445,7 +449,6 @@ export const AgentChat: React.FC<AgentChatProps> = ({
                   ))
                 )}
                 {loading && <TypingIndicator />}
-                <div ref={messagesEndRef} />
               </div>
             </ScrollArea>
           </div>
