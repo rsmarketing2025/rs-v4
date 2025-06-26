@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -128,7 +127,7 @@ const AIAgents = () => {
               <SidebarTrigger className="text-white" />
               <div className="flex-1">
                 <h1 className="text-lg md:text-2xl font-bold text-white">Agente de IA - Copy</h1>
-                <p className="text-gray-400 text-xs md:text-sm">Chat inteligente com seu assistente Copy Chief</p>
+                <p className="text-gray-400 text-xs md:text-sm">Configuração e treinamento do seu assistente Copy Chief</p>
               </div>
             </div>
             <div className="flex justify-end">
@@ -137,26 +136,17 @@ const AIAgents = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0">
-            {/* Left Column: Training Panel + Conversation History */}
-            <div className="lg:col-span-1 flex flex-col min-h-0 space-y-0">
-              {/* Agent Training Panel */}
-              <AgentTrainingPanel />
-              
-              {/* Conversation History */}
-              <div className="flex-1 min-h-0">
-                <ConversationHistory
-                  onSelectConversation={handleConversationSelect}
-                  refreshTrigger={refreshTrigger}
-                />
-              </div>
+            {/* Left Column: Conversation History */}
+            <div className="lg:col-span-1 flex flex-col min-h-0">
+              <ConversationHistory
+                onSelectConversation={handleConversationSelect}
+                refreshTrigger={refreshTrigger}
+              />
             </div>
 
-            {/* Main Chat Area */}
+            {/* Main Training Area - Replacing Chat */}
             <div className="lg:col-span-3 flex flex-col min-h-0">
-              <AgentChat
-                conversationId={activeConversation}
-                onConversationChange={handleConversationChange}
-              />
+              <AgentTrainingPanel className="flex-1" />
             </div>
           </div>
         </div>
