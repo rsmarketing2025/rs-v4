@@ -166,14 +166,16 @@ const AIAgents = () => {
                 
                 <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
                   <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="w-full h-full flex flex-col">
-                    <TabsContent value="chat" className="mt-0 h-full flex flex-col">
-                      <AgentChat
-                        conversationId={activeConversation}
-                        onConversationChange={handleConversationChange}
-                      />
+                    <TabsContent value="chat" className="mt-0 h-full flex flex-col overflow-hidden">
+                      <div className="h-full flex flex-col">
+                        <AgentChat
+                          conversationId={activeConversation}
+                          onConversationChange={handleConversationChange}
+                        />
+                      </div>
                     </TabsContent>
 
-                    <TabsContent value="config" className="mt-0 h-full flex flex-col">
+                    <TabsContent value="config" className="mt-0 h-full flex flex-col overflow-hidden">
                       <div className="h-full">
                         <AgentTrainingPanel className="h-full" />
                       </div>

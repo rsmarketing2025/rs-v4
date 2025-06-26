@@ -37,7 +37,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full max-h-full bg-neutral-950">
+    <div className="flex flex-col h-full w-full bg-neutral-950">
       <ChatHeader
         conversationId={conversationId}
         conversationTitle={conversationTitle}
@@ -48,7 +48,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
         onCreateNewConversation={handleCreateNewConversation}
       />
       
-      <div className="flex flex-col flex-1 overflow-hidden bg-neutral-950 min-h-0">
+      <div className="flex flex-col flex-1 overflow-hidden bg-neutral-950">
         <MessagesDisplay messages={messages} loading={loading} />
         <MessageInput onSendMessage={handleSendMessage} loading={loading} />
       </div>

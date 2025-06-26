@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,14 +10,12 @@ import {
   Settings, 
   Upload, 
   Brain, 
-  GitBranch, 
-  BarChart3 
+  GitBranch
 } from "lucide-react";
 import { GeneralTab } from "./training-panel/GeneralTab";
 import { TrainingTab } from "./training-panel/TrainingTab";
 import { BehaviorTab } from "./training-panel/BehaviorTab";
 import { ConversationFlowTab } from "./training-panel/ConversationFlowTab";
-import { MonitoringTab } from "./training-panel/MonitoringTab";
 
 interface AgentTrainingPanelProps {
   className?: string;
@@ -52,12 +51,6 @@ export const AgentTrainingPanel: React.FC<AgentTrainingPanelProps> = ({ classNam
       preDefinedFlows: [],
       conditions: [],
       escalationRules: []
-    },
-    monitoring: {
-      conversationHistory: [],
-      logs: [],
-      reports: [],
-      userFeedback: []
     }
   });
 
@@ -93,7 +86,7 @@ export const AgentTrainingPanel: React.FC<AgentTrainingPanelProps> = ({ classNam
   // Se não for minimal, renderiza o painel completo
   if (!isMinimal) {
     return (
-      <div className={`${className}`}>
+      <div className={`${className} h-full flex flex-col`}>
         <Card className="bg-neutral-950 border-neutral-800 h-full flex flex-col">
           <CardHeader className="bg-neutral-900/50 border-b border-neutral-800 p-4 flex-shrink-0">
             <div className="flex items-center justify-between">
@@ -116,32 +109,28 @@ export const AgentTrainingPanel: React.FC<AgentTrainingPanelProps> = ({ classNam
           
           <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full flex flex-col">
-              <TabsList className="grid grid-cols-5 bg-neutral-900 rounded-none border-b border-neutral-800 flex-shrink-0">
-                <TabsTrigger value="general" className="flex items-center gap-1 text-xs">
-                  <Settings className="w-3 h-3" />
-                  Geral
+              <TabsList className="grid grid-cols-4 bg-neutral-900 rounded-none border-b border-neutral-800 flex-shrink-0 w-full">
+                <TabsTrigger value="general" className="flex items-center gap-2 text-sm">
+                  <Settings className="w-4 h-4" />
+                  <span className="hidden sm:inline">Geral</span>
                 </TabsTrigger>
-                <TabsTrigger value="training" className="flex items-center gap-1 text-xs">
-                  <Upload className="w-3 h-3" />
-                  Treinamento
+                <TabsTrigger value="training" className="flex items-center gap-2 text-sm">
+                  <Upload className="w-4 h-4" />
+                  <span className="hidden sm:inline">Treinamento</span>
                 </TabsTrigger>
-                <TabsTrigger value="behavior" className="flex items-center gap-1 text-xs">
-                  <Brain className="w-3 h-3" />
-                  Comportamento
+                <TabsTrigger value="behavior" className="flex items-center gap-2 text-sm">
+                  <Brain className="w-4 h-4" />
+                  <span className="hidden sm:inline">Comportamento</span>
                 </TabsTrigger>
-                <TabsTrigger value="flow" className="flex items-center gap-1 text-xs">
-                  <GitBranch className="w-3 h-3" />
-                  Fluxo
-                </TabsTrigger>
-                <TabsTrigger value="monitoring" className="flex items-center gap-1 text-xs">
-                  <BarChart3 className="w-3 h-3" />
-                  Logs
+                <TabsTrigger value="flow" className="flex items-center gap-2 text-sm">
+                  <GitBranch className="w-4 h-4" />
+                  <span className="hidden sm:inline">Fluxo</span>
                 </TabsTrigger>
               </TabsList>
 
               <div className="flex-1 overflow-hidden">
                 <ScrollArea className="h-full">
-                  <div className="p-6">
+                  <div className="p-4 sm:p-6">
                     <TabsContent value="general" className="mt-0 space-y-4">
                       <GeneralTab 
                         data={formData.general}
@@ -167,13 +156,6 @@ export const AgentTrainingPanel: React.FC<AgentTrainingPanelProps> = ({ classNam
                       <ConversationFlowTab 
                         data={formData.conversationFlow}
                         onChange={(data) => updateFormData('conversationFlow', data)}
-                      />
-                    </TabsContent>
-
-                    <TabsContent value="monitoring" className="mt-0 space-y-4">
-                      <MonitoringTab 
-                        data={formData.monitoring}
-                        onChange={(data) => updateFormData('monitoring', data)}
                       />
                     </TabsContent>
                   </div>
@@ -242,26 +224,22 @@ export const AgentTrainingPanel: React.FC<AgentTrainingPanelProps> = ({ classNam
         <CardContent className="p-0">
           <div className="h-80">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full flex flex-col">
-              <TabsList className="grid grid-cols-5 bg-neutral-900 rounded-none border-b border-neutral-800 flex-shrink-0">
-                <TabsTrigger value="general" className="flex items-center gap-1 text-xs">
-                  <Settings className="w-3 h-3" />
-                  Geral
+              <TabsList className="grid grid-cols-4 bg-neutral-900 rounded-none border-b border-neutral-800 flex-shrink-0 w-full">
+                <TabsTrigger value="general" className="flex items-center gap-2 text-sm">
+                  <Settings className="w-4 h-4" />
+                  <span className="hidden sm:inline">Geral</span>
                 </TabsTrigger>
-                <TabsTrigger value="training" className="flex items-center gap-1 text-xs">
-                  <Upload className="w-3 h-3" />
-                  Treinamento
+                <TabsTrigger value="training" className="flex items-center gap-2 text-sm">
+                  <Upload className="w-4 h-4" />
+                  <span className="hidden sm:inline">Treinamento</span>
                 </TabsTrigger>
-                <TabsTrigger value="behavior" className="flex items-center gap-1 text-xs">
-                  <Brain className="w-3 h-3" />
-                  Comportamento
+                <TabsTrigger value="behavior" className="flex items-center gap-2 text-sm">
+                  <Brain className="w-4 h-4" />
+                  <span className="hidden sm:inline">Comportamento</span>
                 </TabsTrigger>
-                <TabsTrigger value="flow" className="flex items-center gap-1 text-xs">
-                  <GitBranch className="w-3 h-3" />
-                  Fluxo
-                </TabsTrigger>
-                <TabsTrigger value="monitoring" className="flex items-center gap-1 text-xs">
-                  <BarChart3 className="w-3 h-3" />
-                  Logs
+                <TabsTrigger value="flow" className="flex items-center gap-2 text-sm">
+                  <GitBranch className="w-4 h-4" />
+                  <span className="hidden sm:inline">Fluxo</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -293,13 +271,6 @@ export const AgentTrainingPanel: React.FC<AgentTrainingPanelProps> = ({ classNam
                       <ConversationFlowTab 
                         data={formData.conversationFlow}
                         onChange={(data) => updateFormData('conversationFlow', data)}
-                      />
-                    </TabsContent>
-
-                    <TabsContent value="monitoring" className="mt-0 space-y-4">
-                      <MonitoringTab 
-                        data={formData.monitoring}
-                        onChange={(data) => updateFormData('monitoring', data)}
                       />
                     </TabsContent>
                   </div>
