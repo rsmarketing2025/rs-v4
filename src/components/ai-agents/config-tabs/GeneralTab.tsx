@@ -7,18 +7,37 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Save } from "lucide-react";
+import { Save, Copy, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+// ID fixo do agente
+const AGENT_ID = 'agent-copy-chief-001';
 
 export const GeneralTab: React.FC = () => {
   const [config, setConfig] = useState({
+    id: AGENT_ID,
     name: 'Copy Chief',
     description: 'Assistente especializado em copywriting e marketing',
     language: 'pt-BR',
     tone: 'professional'
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+
+  const handleCopyId = async () => {
+    try {
+      await navigator.clipboard.writeText(AGENT_ID);
+      setCopied(true);
+      toast({
+        title: "ID copiado",
+        description: "ID do agente copiado para a área de transferência!",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('Erro ao copiar ID:', error);
+    }
+  };
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -32,6 +51,7 @@ export const GeneralTab: React.FC = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          id: config.id,
           name: config.name,
           description: config.description,
           language: config.language,
@@ -79,6 +99,32 @@ export const GeneralTab: React.FC = () => {
       </div>
 
       <div className="grid gap-6">
+        {/* ID do Agente */}
+        <div className="space-y-2">
+          <Label htmlFor="agent-id" className="text-white">
+            ID do Agente
+          </Label>
+          <div className="flex gap-2">
+            <Input
+              id="agent-id"
+              value={config.id}
+              readOnly
+              className="bg-neutral-800 border-neutral-700 text-neutral-300 cursor-not-allowed"
+            />
+            <Button
+              onClick={handleCopyId}
+              variant="outline"
+              size="sm"
+              className="border-neutral-700 hover:bg-neutral-800"
+            >
+              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            </Button>
+          </div>
+          <p className="text-xs text-neutral-500">
+            ID único e fixo do agente (somente leitura)
+          </p>
+        </div>
+
         {/* Nome do Agente */}
         <div className="space-y-2">
           <Label htmlFor="agent-name" className="text-white">
@@ -161,3 +207,6 @@ export const GeneralTab: React.FC = () => {
     </div>
   );
 };
+
+// Exportar o ID do agente para uso em outros componentes
+export { AGENT_ID };

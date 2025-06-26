@@ -54,9 +54,9 @@ export type Database = {
           agent_name: string
           created_at: string
           default_language: string
-          id: string
+          id: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
           voice_tone: string
         }
         Insert: {
@@ -64,9 +64,9 @@ export type Database = {
           agent_name?: string
           created_at?: string
           default_language?: string
-          id?: string
+          id?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
           voice_tone?: string
         }
         Update: {
@@ -74,9 +74,9 @@ export type Database = {
           agent_name?: string
           created_at?: string
           default_language?: string
-          id?: string
+          id?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           voice_tone?: string
         }
         Relationships: []
