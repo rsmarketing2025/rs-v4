@@ -123,76 +123,77 @@ const AIAgents = () => {
   return (
     <SidebarInset>
       <div className="min-h-screen bg-black">
-        {/* Header Principal - Espaçamento padronizado */}
-        <div className="container mx-auto px-6 py-4 h-screen flex flex-col">
-          <div className="flex flex-col space-y-4 mb-6 flex-shrink-0">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger className="text-white" />
-              <div className="flex-1">
-                <h1 className="text-xl md:text-3xl font-bold text-white">Agente de IA - Copy</h1>
-                <p className="text-gray-400 text-sm md:text-base mt-1">Configuração e treinamento do seu assistente Copy Chief</p>
+        {/* Container Principal - Estrutura otimizada */}
+        <div className="h-screen flex flex-col">
+          {/* Header Principal - Alinhamento centralizado */}
+          <div className="flex-shrink-0 px-6 py-4 border-b border-neutral-800 bg-neutral-950">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <SidebarTrigger className="text-white" />
+                <div>
+                  <h1 className="text-xl md:text-2xl font-bold text-white">Agente de IA - Copy</h1>
+                  <p className="text-gray-400 text-sm mt-1">Configuração e treinamento do seu assistente Copy Chief</p>
+                </div>
               </div>
               <ThemeToggle />
             </div>
           </div>
 
-          {/* Layout Principal - Grid otimizado */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 flex-1 min-h-0">
-            {/* Sidebar Esquerda: Histórico de Conversas */}
-            <div className="lg:col-span-1 flex flex-col min-h-0">
-              <ConversationHistory
-                onSelectConversation={handleConversationSelect}
-                refreshTrigger={refreshTrigger}
-              />
-            </div>
+          {/* Layout Principal - Grid responsivo otimizado */}
+          <div className="flex-1 min-h-0 px-6 py-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
+              {/* Sidebar Esquerda: Histórico de Conversas */}
+              <div className="lg:col-span-1 flex flex-col min-h-0">
+                <ConversationHistory
+                  onSelectConversation={handleConversationSelect}
+                  refreshTrigger={refreshTrigger}
+                />
+              </div>
 
-            {/* Área Principal com Tabs - Espaçamento melhorado */}
-            <div className="lg:col-span-3 flex flex-col min-h-0">
-              <Card className="bg-neutral-950 border-neutral-800 h-full flex flex-col shadow-2xl">
-                {/* Header dos Tabs Principais - Padding padronizado */}
-                <CardHeader className="bg-neutral-900/50 border-b border-neutral-800 px-6 py-4 flex-shrink-0">
-                  <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 bg-neutral-900 p-1 rounded-lg">
-                      <TabsTrigger 
-                        value="chat" 
-                        className="flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all duration-200 hover:bg-neutral-700"
-                      >
-                        <MessageSquare className="w-4 h-4" />
-                        Chat
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="config" 
-                        className="flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all duration-200 hover:bg-neutral-700"
-                      >
-                        <Settings className="w-4 h-4" />
-                        Configuração
-                      </TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </CardHeader>
-                
-                {/* Conteúdo dos Tabs - Sem padding para controle total */}
-                <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
-                  <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="w-full h-full flex flex-col">
-                    {/* Tab do Chat - Centralização otimizada */}
-                    <TabsContent value="chat" className="mt-0 h-full flex flex-col overflow-hidden">
-                      <div className="h-full flex flex-col">
+              {/* Área Principal com Tabs - Container centralizado */}
+              <div className="lg:col-span-3 flex flex-col min-h-0">
+                <Card className="bg-neutral-950 border-neutral-800 h-full flex flex-col shadow-xl">
+                  {/* Header dos Tabs Principais - Padding uniforme */}
+                  <CardHeader className="bg-neutral-900/50 border-b border-neutral-800 px-6 py-4 flex-shrink-0">
+                    <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="w-full">
+                      <TabsList className="grid w-full grid-cols-2 bg-neutral-900 p-1 rounded-lg h-12">
+                        <TabsTrigger 
+                          value="chat" 
+                          className="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 hover:bg-neutral-700 data-[state=active]:bg-neutral-700"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                          Chat
+                        </TabsTrigger>
+                        <TabsTrigger 
+                          value="config" 
+                          className="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 hover:bg-neutral-700 data-[state=active]:bg-neutral-700"
+                        >
+                          <Settings className="w-4 h-4" />
+                          Configuração
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </CardHeader>
+                  
+                  {/* Conteúdo dos Tabs - Sem padding para controle total */}
+                  <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
+                    <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="w-full h-full flex flex-col">
+                      {/* Tab do Chat - Altura completa */}
+                      <TabsContent value="chat" className="mt-0 h-full flex flex-col overflow-hidden">
                         <AgentChat
                           conversationId={activeConversation}
                           onConversationChange={handleConversationChange}
                         />
-                      </div>
-                    </TabsContent>
+                      </TabsContent>
 
-                    {/* Tab de Configuração - Alinhamento à esquerda */}
-                    <TabsContent value="config" className="mt-0 h-full flex flex-col overflow-hidden">
-                      <div className="h-full">
+                      {/* Tab de Configuração - Altura completa */}
+                      <TabsContent value="config" className="mt-0 h-full flex flex-col overflow-hidden">
                         <AgentTrainingPanel className="h-full" />
-                      </div>
-                    </TabsContent>
-                  </Tabs>
-                </CardContent>
-              </Card>
+                      </TabsContent>
+                    </Tabs>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         </div>
