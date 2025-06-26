@@ -1,13 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, MessageSquare } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, MessageSquare, Settings } from "lucide-react";
 import { ConversationHistory } from "@/components/ai-agents/ConversationHistory";
 import { AgentChat } from "@/components/ai-agents/AgentChat";
 import { AgentTrainingPanel } from "@/components/ai-agents/AgentTrainingPanel";
-import { TrainingData } from "@/components/ai-agents/TrainingData";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -16,6 +17,7 @@ const AIAgents = () => {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [activeMainTab, setActiveMainTab] = useState("chat");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -144,9 +146,41 @@ const AIAgents = () => {
               />
             </div>
 
-            {/* Main Training Area - Replacing Chat */}
+            {/* Main Area with Tabs */}
             <div className="lg:col-span-3 flex flex-col min-h-0">
-              <AgentTrainingPanel className="flex-1" />
+              <Card className="bg-neutral-950 border-neutral-800 h-full flex flex-col">
+                <CardHeader className="bg-neutral-900/50 border-b border-neutral-800 p-4 flex-shrink-0">
+                  <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 bg-neutral-900">
+                      <TabsTrigger value="chat" className="flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4" />
+                        Chat
+                      </TabsTrigger>
+                      <TabsTrigger value="config" className="flex items-center gap-2">
+                        <Settings className="w-4 h-4" />
+                        Configuração
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </CardHeader>
+                
+                <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
+                  <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="w-full h-full flex flex-col">
+                    <TabsContent value="chat" className="mt-0 h-full flex flex-col">
+                      <AgentChat
+                        conversationId={activeConversation}
+                        onConversationChange={handleConversationChange}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="config" className="mt-0 h-full flex flex-col">
+                      <div className="h-full">
+                        <AgentTrainingPanel className="h-full" />
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>

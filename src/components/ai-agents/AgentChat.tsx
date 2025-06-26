@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
 import { ChatHeader } from "./ChatHeader";
 import { MessagesDisplay } from "./MessagesDisplay";
 import { MessageInput } from "./MessageInput";
@@ -38,23 +37,21 @@ export const AgentChat: React.FC<AgentChatProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full max-h-full">
-      <Card className="flex-1 bg-neutral-950 border-neutral-800 flex flex-col overflow-hidden min-h-0">
-        <ChatHeader
-          conversationId={conversationId}
-          conversationTitle={conversationTitle}
-          isEditingTitle={isEditingTitle}
-          onStartEditTitle={() => setIsEditingTitle(true)}
-          onSaveTitle={updateConversationTitle}
-          onCancelEdit={() => setIsEditingTitle(false)}
-          onCreateNewConversation={handleCreateNewConversation}
-        />
-        
-        <CardContent className="flex flex-col flex-1 p-0 overflow-hidden bg-neutral-950 min-h-0">
-          <MessagesDisplay messages={messages} loading={loading} />
-          <MessageInput onSendMessage={handleSendMessage} loading={loading} />
-        </CardContent>
-      </Card>
+    <div className="flex flex-col h-full max-h-full bg-neutral-950">
+      <ChatHeader
+        conversationId={conversationId}
+        conversationTitle={conversationTitle}
+        isEditingTitle={isEditingTitle}
+        onStartEditTitle={() => setIsEditingTitle(true)}
+        onSaveTitle={updateConversationTitle}
+        onCancelEdit={() => setIsEditingTitle(false)}
+        onCreateNewConversation={handleCreateNewConversation}
+      />
+      
+      <div className="flex flex-col flex-1 overflow-hidden bg-neutral-950 min-h-0">
+        <MessagesDisplay messages={messages} loading={loading} />
+        <MessageInput onSendMessage={handleSendMessage} loading={loading} />
+      </div>
     </div>
   );
 };
