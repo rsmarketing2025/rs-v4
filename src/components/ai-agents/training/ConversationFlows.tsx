@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { GitBranch, Plus, Trash2, Edit, Save, X } from "lucide-react";
+import { GitBranch, Plus, Trash2, X } from "lucide-react";
 
 interface ConversationFlow {
   id: string;
@@ -193,14 +193,14 @@ export const ConversationFlows: React.FC = () => {
   };
 
   return (
-    <Card className="bg-neutral-900 border-neutral-700">
+    <Card className="bg-neutral-900 border-neutral-700 h-full">
       <CardHeader>
         <CardTitle className="text-white flex items-center gap-2">
           <GitBranch className="w-5 h-5" />
           Fluxos de Conversa
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="h-[calc(100%-80px)] flex flex-col space-y-6">
         <Card className="bg-neutral-800 border-neutral-600">
           <CardHeader>
             <CardTitle className="text-white text-lg">Criar Novo Fluxo</CardTitle>
@@ -249,29 +249,31 @@ export const ConversationFlows: React.FC = () => {
                 </Button>
               </div>
               {newFlow.steps.length > 0 && (
-                <div className="space-y-2 mt-3">
-                  {newFlow.steps.map((step, index) => (
-                    <div
-                      key={index}
-                      className="bg-neutral-700 rounded-lg p-3 flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
-                          {index + 1}
-                        </span>
-                        <span className="text-white">{step}</span>
-                      </div>
-                      <Button
-                        onClick={() => removeStep(step)}
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-400 hover:text-red-300 h-8 w-8 p-0"
+                <ScrollArea className="h-32 mt-3">
+                  <div className="space-y-2">
+                    {newFlow.steps.map((step, index) => (
+                      <div
+                        key={index}
+                        className="bg-neutral-700 rounded-lg p-3 flex items-center justify-between"
                       >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+                        <div className="flex items-center gap-3">
+                          <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+                            {index + 1}
+                          </span>
+                          <span className="text-white">{step}</span>
+                        </div>
+                        <Button
+                          onClick={() => removeStep(step)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-400 hover:text-red-300 h-8 w-8 p-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
               )}
             </div>
 
@@ -286,7 +288,7 @@ export const ConversationFlows: React.FC = () => {
           </CardContent>
         </Card>
 
-        <div className="space-y-3">
+        <div className="flex-1 flex flex-col space-y-3">
           <h3 className="text-white font-medium">Fluxos Criados</h3>
           {loading ? (
             <div className="space-y-2">
@@ -299,46 +301,48 @@ export const ConversationFlows: React.FC = () => {
               Nenhum fluxo criado ainda
             </p>
           ) : (
-            <div className="space-y-3">
-              {flows.map((flow) => (
-                <Card key={flow.id} className="bg-neutral-800 border-neutral-600">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="text-white font-medium mb-2">{flow.flow_name}</h4>
-                        {flow.flow_description && (
-                          <p className="text-neutral-400 text-sm mb-3">{flow.flow_description}</p>
-                        )}
-                        <div className="space-y-2">
-                          <p className="text-sm text-neutral-300 font-medium">Etapas:</p>
-                          <div className="space-y-1">
-                            {flow.flow_steps.map((step: string, index: number) => (
-                              <div key={index} className="flex items-center gap-2 text-sm">
-                                <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full min-w-[24px] text-center">
-                                  {index + 1}
-                                </span>
-                                <span className="text-neutral-300">{step}</span>
-                              </div>
-                            ))}
+            <ScrollArea className="flex-1">
+              <div className="space-y-3 pr-4">
+                {flows.map((flow) => (
+                  <Card key={flow.id} className="bg-neutral-800 border-neutral-600">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="text-white font-medium mb-2">{flow.flow_name}</h4>
+                          {flow.flow_description && (
+                            <p className="text-neutral-400 text-sm mb-3">{flow.flow_description}</p>
+                          )}
+                          <div className="space-y-2">
+                            <p className="text-sm text-neutral-300 font-medium">Etapas:</p>
+                            <div className="space-y-1">
+                              {flow.flow_steps.map((step: string, index: number) => (
+                                <div key={index} className="flex items-center gap-2 text-sm">
+                                  <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full min-w-[24px] text-center">
+                                    {index + 1}
+                                  </span>
+                                  <span className="text-neutral-300">{step}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
+                          <p className="text-xs text-neutral-500 mt-3">
+                            Criado em {new Date(flow.created_at).toLocaleDateString('pt-BR')}
+                          </p>
                         </div>
-                        <p className="text-xs text-neutral-500 mt-3">
-                          Criado em {new Date(flow.created_at).toLocaleDateString('pt-BR')}
-                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deleteFlow(flow.id)}
+                          className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white ml-4"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => deleteFlow(flow.id)}
-                        className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white ml-4"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
           )}
         </div>
       </CardContent>
