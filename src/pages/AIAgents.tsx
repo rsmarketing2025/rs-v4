@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -121,8 +120,8 @@ const AIAgents = () => {
   return (
     <SidebarInset>
       <div className="min-h-screen bg-black">
-        <div className="container mx-auto p-3 md:p-6">
-          <div className="flex flex-col space-y-2 mb-4">
+        <div className="container mx-auto p-3 md:p-6 h-screen flex flex-col">
+          <div className="flex flex-col space-y-2 mb-4 flex-shrink-0">
             <div className="flex items-center gap-2">
               <SidebarTrigger className="text-white" />
               <div className="flex-1">
@@ -135,9 +134,9 @@ const AIAgents = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0">
             {/* Conversation History - Left Sidebar */}
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 flex flex-col min-h-0">
               <ConversationHistory
                 onSelectConversation={handleConversationSelect}
                 refreshTrigger={refreshTrigger}
@@ -145,7 +144,7 @@ const AIAgents = () => {
             </div>
 
             {/* Main Chat Area */}
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-3 flex flex-col min-h-0">
               <AgentChat
                 conversationId={activeConversation}
                 onConversationChange={handleConversationChange}
