@@ -25,38 +25,51 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
-    // Método 1: Scroll usando scrollIntoView
+    // Primary method: Use scrollIntoView on the marker element
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ 
         behavior: 'smooth',
         block: 'end',
         inline: 'nearest'
       });
+      return;
     }
     
-    // Método 2: Scroll direto no container como fallback
+    // Fallback: Direct scroll on the viewport container
     if (scrollAreaRef.current) {
       const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
       if (scrollContainer) {
-        setTimeout(() => {
-          scrollContainer.scrollTop = scrollContainer.scrollHeight;
-        }, 100);
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
       }
     }
   }, []);
 
-  // Scroll automático quando mensagens ou loading mudam
+  // Optimized effect that only triggers on message changes
   useEffect(() => {
-    // Múltiplos timeouts para garantir que o scroll funcione
-    const timers = [
-      setTimeout(() => scrollToBottom(), 0),
-      setTimeout(() => scrollToBottom(), 50),
-      setTimeout(() => scrollToBottom(), 150),
-      setTimeout(() => scrollToBottom(), 300),
-    ];
-    
-    return () => timers.forEach(timer => clearTimeout(timer));
-  }, [messages, loading, scrollToBottom]);
+    if (messages.length > 0) {
+      // Immediate scroll attempt
+      scrollToBottom();
+      
+      // Single timeout as fallback for DOM updates
+      const timeoutId = setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [messages, scrollToBottom]);
+
+  // Separate effect for loading state changes (typing indicator)
+  useEffect(() => {
+    if (loading) {
+      // Small delay to allow typing indicator to render
+      const timeoutId = setTimeout(() => {
+        scrollToBottom();
+      }, 50);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [loading, scrollToBottom]);
 
   return (
     <ScrollArea ref={scrollAreaRef} className="flex-1 px-6 py-4">
@@ -72,7 +85,7 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
           ))
         )}
         {loading && <TypingIndicator />}
-        {/* Elemento invisível para marcar o final das mensagens */}
+        {/* Invisible marker element for scroll positioning */}
         <div ref={messagesEndRef} className="h-1" />
       </div>
     </ScrollArea>
