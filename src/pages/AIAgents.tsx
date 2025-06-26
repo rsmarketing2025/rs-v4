@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -6,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, MessageSquare } from "lucide-react";
 import { ConversationHistory } from "@/components/ai-agents/ConversationHistory";
 import { AgentChat } from "@/components/ai-agents/AgentChat";
+import { AgentConfigArea } from "@/components/ai-agents/AgentConfigArea";
 import { TrainingData } from "@/components/ai-agents/TrainingData";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -137,6 +139,9 @@ const AIAgents = () => {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0">
             {/* Conversation History - Left Sidebar */}
             <div className="lg:col-span-1 flex flex-col min-h-0">
+              {/* Área de Configuração - Acima do histórico de conversas */}
+              <AgentConfigArea />
+              
               <ConversationHistory
                 onSelectConversation={handleConversationSelect}
                 refreshTrigger={refreshTrigger}
