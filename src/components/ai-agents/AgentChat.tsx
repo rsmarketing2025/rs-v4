@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,15 +34,18 @@ export const AgentChat: React.FC<AgentChatProps> = ({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editTitleValue, setEditTitleValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // Função de scroll que funciona diretamente
+  // Função de scroll que funciona com ScrollArea
   const scrollToBottom = useCallback(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'end'
-      });
+    if (scrollAreaRef.current) {
+      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (viewport) {
+        requestAnimationFrame(() => {
+          viewport.scrollTop = viewport.scrollHeight;
+        });
+      }
     }
   }, []);
 
@@ -428,7 +432,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
         
         <CardContent className="flex flex-col flex-1 p-0 overflow-hidden bg-neutral-950">
           <div className="flex-1 overflow-hidden">
-            <ScrollArea className="h-full px-6">
+            <ScrollArea ref={scrollAreaRef} className="h-full px-6">
               <div className="space-y-4 py-4">
                 {messages.length === 0 ? (
                   <div className="text-center text-neutral-400 py-8">
