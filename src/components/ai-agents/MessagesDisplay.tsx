@@ -71,8 +71,8 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
   return (
     <ScrollArea ref={scrollAreaRef} className="flex-1">
       <div className="px-6 py-6">
-        {/* Container principal - Centralização aprimorada */}
-        <div className={`space-y-6 ${messages.length === 0 ? 'min-h-[calc(100vh-300px)] flex flex-col' : ''}`}>
+        {/* Container principal com altura flexível */}
+        <div className={`space-y-6 ${messages.length === 0 ? 'h-full flex flex-col' : ''}`}>
           {messages.length === 0 ? (
             /* Estado vazio - Centralização vertical e horizontal perfeita */
             <div className="flex-1 flex flex-col items-center justify-center text-center">

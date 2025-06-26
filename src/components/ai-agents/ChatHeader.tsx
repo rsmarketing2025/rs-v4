@@ -53,7 +53,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
   };
 
   return (
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 px-6 py-4 flex-shrink-0 bg-neutral-950 border-b border-neutral-800">
+    <div className="flex items-center justify-between px-6 py-4 bg-neutral-950 border-b border-neutral-800">
       <div className="flex items-center gap-3 flex-1 min-w-0">
         {isEditingTitle ? (
           <div className="flex items-center gap-2 flex-1">
@@ -83,9 +83,9 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           </div>
         ) : (
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <CardTitle className="text-white truncate text-lg font-semibold">
+            <h2 className="text-white truncate text-lg font-semibold">
               {conversationTitle || 'Chat com Copy Chief'}
-            </CardTitle>
+            </h2>
             {conversationId && (
               <Button
                 onClick={handleStartEdit}
@@ -112,6 +112,6 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           Nova Conversa
         </Button>
       </div>
-    </CardHeader>
+    </div>
   );
 };

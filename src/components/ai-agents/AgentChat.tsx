@@ -38,8 +38,8 @@ export const AgentChat: React.FC<AgentChatProps> = ({
 
   return (
     <div className="flex flex-col h-full w-full bg-neutral-950">
-      {/* Header do Chat - Centralizado horizontalmente */}
-      <div className="flex-shrink-0 border-b border-neutral-800 bg-neutral-900/30">
+      {/* Header do Chat */}
+      <div className="flex-shrink-0">
         <ChatHeader
           conversationId={conversationId}
           conversationTitle={conversationTitle}
@@ -51,15 +51,15 @@ export const AgentChat: React.FC<AgentChatProps> = ({
         />
       </div>
       
-      {/* Área Principal do Chat - Layout centralizado */}
-      <div className="flex flex-col flex-1 overflow-hidden bg-neutral-950">
-        {/* Display de Mensagens - Centralização vertical quando vazio */}
+      {/* Área Principal do Chat */}
+      <div className="flex flex-col flex-1 overflow-hidden">
+        {/* Display de Mensagens */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <MessagesDisplay messages={messages} loading={loading} />
         </div>
         
-        {/* Input de Mensagem - Alinhamento otimizado */}
-        <div className="flex-shrink-0 border-t border-neutral-800 bg-neutral-950">
+        {/* Input de Mensagem */}
+        <div className="flex-shrink-0 border-t border-neutral-800">
           <MessageInput onSendMessage={handleSendMessage} loading={loading} />
         </div>
       </div>

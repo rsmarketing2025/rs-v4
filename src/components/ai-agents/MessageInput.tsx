@@ -29,8 +29,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   };
 
   return (
-    /* Container principal - Padding otimizado e bordas refinadas */
-    <div className="px-6 py-5 bg-neutral-950 border-t border-neutral-800">
+    <div className="px-6 py-5 bg-neutral-950">
       {/* Layout do input - Alinhamento aprimorado */}
       <div className="flex gap-4 items-end max-w-full">
         {/* Textarea - Design aprimorado */}
