@@ -38,19 +38,30 @@ export const AgentChat: React.FC<AgentChatProps> = ({
 
   return (
     <div className="flex flex-col h-full w-full bg-neutral-950">
-      <ChatHeader
-        conversationId={conversationId}
-        conversationTitle={conversationTitle}
-        isEditingTitle={isEditingTitle}
-        onStartEditTitle={() => setIsEditingTitle(true)}
-        onSaveTitle={updateConversationTitle}
-        onCancelEdit={() => setIsEditingTitle(false)}
-        onCreateNewConversation={handleCreateNewConversation}
-      />
+      {/* Header do Chat - Centralizado horizontalmente */}
+      <div className="flex-shrink-0 border-b border-neutral-800 bg-neutral-900/30">
+        <ChatHeader
+          conversationId={conversationId}
+          conversationTitle={conversationTitle}
+          isEditingTitle={isEditingTitle}
+          onStartEditTitle={() => setIsEditingTitle(true)}
+          onSaveTitle={updateConversationTitle}
+          onCancelEdit={() => setIsEditingTitle(false)}
+          onCreateNewConversation={handleCreateNewConversation}
+        />
+      </div>
       
+      {/* Área Principal do Chat - Layout centralizado */}
       <div className="flex flex-col flex-1 overflow-hidden bg-neutral-950">
-        <MessagesDisplay messages={messages} loading={loading} />
-        <MessageInput onSendMessage={handleSendMessage} loading={loading} />
+        {/* Display de Mensagens - Centralização vertical quando vazio */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <MessagesDisplay messages={messages} loading={loading} />
+        </div>
+        
+        {/* Input de Mensagem - Alinhamento otimizado */}
+        <div className="flex-shrink-0 border-t border-neutral-800 bg-neutral-950">
+          <MessageInput onSendMessage={handleSendMessage} loading={loading} />
+        </div>
       </div>
     </div>
   );

@@ -87,19 +87,23 @@ export const AgentTrainingPanel: React.FC<AgentTrainingPanelProps> = ({ classNam
   if (!isMinimal) {
     return (
       <div className={`${className} h-full flex flex-col`}>
-        <Card className="bg-neutral-950 border-neutral-800 h-full flex flex-col">
-          <CardHeader className="bg-neutral-900/50 border-b border-neutral-800 p-4 flex-shrink-0">
+        <Card className="bg-neutral-950 border-neutral-800 h-full flex flex-col shadow-2xl">
+          {/* Header da Configuração - Alinhamento à esquerda com espaçamento padronizado */}
+          <CardHeader className="bg-neutral-900/50 border-b border-neutral-800 px-6 py-5 flex-shrink-0">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-white flex items-center gap-2">
+              {/* Título alinhado à esquerda */}
+              <CardTitle className="text-white flex items-center gap-3">
                 <Settings className="w-5 h-5 text-blue-400" />
-                Configuração do Agente
+                <span className="text-xl font-semibold">Configuração do Agente</span>
               </CardTitle>
-              <div className="flex items-center gap-2">
+              
+              {/* Botão Salvar Rascunho - Alinhado à direita com padding consistente */}
+              <div className="flex items-center">
                 <Button
                   onClick={saveAsDraft}
                   variant="outline"
                   size="sm"
-                  className="border-neutral-700 text-neutral-300 hover:bg-neutral-800"
+                  className="border-neutral-700 text-neutral-300 hover:bg-neutral-800 hover:text-white px-4 py-2 transition-all duration-200"
                 >
                   Salvar Rascunho
                 </Button>
@@ -107,52 +111,67 @@ export const AgentTrainingPanel: React.FC<AgentTrainingPanelProps> = ({ classNam
             </div>
           </CardHeader>
           
+          {/* Conteúdo Principal - Sem padding para controle total */}
           <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full flex flex-col">
-              <TabsList className="grid grid-cols-4 bg-neutral-900 rounded-none border-b border-neutral-800 flex-shrink-0 w-full">
-                <TabsTrigger value="general" className="flex items-center gap-2 text-sm">
+              {/* Tabs de Configuração - Espaçamento padronizado */}
+              <TabsList className="grid grid-cols-4 bg-neutral-900 rounded-none border-b border-neutral-800 flex-shrink-0 w-full p-1">
+                <TabsTrigger 
+                  value="general" 
+                  className="flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-neutral-700"
+                >
                   <Settings className="w-4 h-4" />
                   <span className="hidden sm:inline">Geral</span>
                 </TabsTrigger>
-                <TabsTrigger value="training" className="flex items-center gap-2 text-sm">
+                <TabsTrigger 
+                  value="training" 
+                  className="flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-neutral-700"
+                >
                   <Upload className="w-4 h-4" />
                   <span className="hidden sm:inline">Treinamento</span>
                 </TabsTrigger>
-                <TabsTrigger value="behavior" className="flex items-center gap-2 text-sm">
+                <TabsTrigger 
+                  value="behavior" 
+                  className="flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-neutral-700"
+                >
                   <Brain className="w-4 h-4" />
                   <span className="hidden sm:inline">Comportamento</span>
                 </TabsTrigger>
-                <TabsTrigger value="flow" className="flex items-center gap-2 text-sm">
+                <TabsTrigger 
+                  value="flow" 
+                  className="flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-neutral-700"
+                >
                   <GitBranch className="w-4 h-4" />
                   <span className="hidden sm:inline">Fluxo</span>
                 </TabsTrigger>
               </TabsList>
 
+              {/* Conteúdo dos Tabs - Scroll Area com padding consistente */}
               <div className="flex-1 overflow-hidden">
                 <ScrollArea className="h-full">
-                  <div className="p-4 sm:p-6">
-                    <TabsContent value="general" className="mt-0 space-y-4">
+                  <div className="px-6 py-6">
+                    <TabsContent value="general" className="mt-0 space-y-6">
                       <GeneralTab 
                         data={formData.general}
                         onChange={(data) => updateFormData('general', data)}
                       />
                     </TabsContent>
 
-                    <TabsContent value="training" className="mt-0 space-y-4">
+                    <TabsContent value="training" className="mt-0 space-y-6">
                       <TrainingTab 
                         data={formData.training}
                         onChange={(data) => updateFormData('training', data)}
                       />
                     </TabsContent>
 
-                    <TabsContent value="behavior" className="mt-0 space-y-4">
+                    <TabsContent value="behavior" className="mt-0 space-y-6">
                       <BehaviorTab 
                         data={formData.behavior}
                         onChange={(data) => updateFormData('behavior', data)}
                       />
                     </TabsContent>
 
-                    <TabsContent value="flow" className="mt-0 space-y-4">
+                    <TabsContent value="flow" className="mt-0 space-y-6">
                       <ConversationFlowTab 
                         data={formData.conversationFlow}
                         onChange={(data) => updateFormData('conversationFlow', data)}

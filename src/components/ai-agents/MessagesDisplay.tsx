@@ -70,18 +70,59 @@ export const MessagesDisplay: React.FC<MessagesDisplayProps> = ({
 
   return (
     <ScrollArea ref={scrollAreaRef} className="flex-1 px-6 py-4">
-      <div className="space-y-4 min-h-full">
+      {/* Container principal - Centralização aprimorada */}
+      <div className={`space-y-6 ${messages.length === 0 ? 'min-h-full flex flex-col' : 'min-h-full'}`}>
         {messages.length === 0 ? (
-          <div className="text-center text-neutral-400 py-8">
-            <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>Inicie uma conversa com seu Copy Chief!</p>
+          /* Estado vazio - Centralização vertical e horizontal */
+          <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
+            <div className="max-w-md mx-auto space-y-6">
+              {/* Ícone centralizado com animação sutil */}
+              <div className="flex justify-center">
+                <div className="p-6 bg-neutral-900/50 rounded-full border border-neutral-800">
+                  <MessageSquare className="w-12 h-12 text-neutral-400" />
+                </div>
+              </div>
+              
+              {/* Mensagem de boas-vindas centralizada */}
+              <div className="space-y-3">
+                <h3 className="text-xl font-semibold text-neutral-200">
+                  Chat com Copy Chief
+                </h3>
+                <p className="text-neutral-400 text-base leading-relaxed">
+                  Inicie uma conversa com seu Copy Chief!<br />
+                  Envie uma mensagem para começar.
+                </p>
+              </div>
+              
+              {/* Sugestões visuais */}
+              <div className="grid grid-cols-1 gap-3 mt-8">
+                <div className="px-4 py-3 bg-neutral-900/30 rounded-lg border border-neutral-800/50 text-sm text-neutral-300">
+                  💡 Peça ajuda com copywriting
+                </div>
+                <div className="px-4 py-3 bg-neutral-900/30 rounded-lg border border-neutral-800/50 text-sm text-neutral-300">
+                  📝 Solicite criação de conteúdo
+                </div>
+                <div className="px-4 py-3 bg-neutral-900/30 rounded-lg border border-neutral-800/50 text-sm text-neutral-300">
+                  🎯 Analise suas campanhas
+                </div>
+              </div>
+            </div>
           </div>
         ) : (
-          messages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
-          ))
+          /* Lista de mensagens - Espaçamento otimizado */
+          <div className="space-y-6">
+            {messages.map((message) => (
+              <MessageBubble key={message.id} message={message} />
+            ))}
+            {loading && (
+              <div className="py-2">
+                <TypingIndicator />
+              </div>
+            )}
+          </div>
         )}
-        {loading && <TypingIndicator />}
+        
+        {/* Marcador para scroll automático */}
         <div ref={messagesEndRef} className="h-1" />
       </div>
     </ScrollArea>
