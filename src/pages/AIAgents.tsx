@@ -2,17 +2,19 @@
 import React, { useState, useEffect } from 'react';
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, MessageSquare } from "lucide-react";
+import { MessageSquare, Settings } from "lucide-react";
 import { ConversationHistory } from "@/components/ai-agents/ConversationHistory";
 import { AgentChat } from "@/components/ai-agents/AgentChat";
 import { AgentConfigArea } from "@/components/ai-agents/AgentConfigArea";
-import { TrainingData } from "@/components/ai-agents/TrainingData";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+type ActiveView = 'chat' | 'config';
+
 const AIAgents = () => {
+  const [activeView, setActiveView] = useState<ActiveView>('chat');
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +63,7 @@ const AIAgents = () => {
   const handleConversationSelect = (conversationId: string) => {
     console.log('Conversa selecionada:', conversationId);
     setActiveConversation(conversationId);
+    setActiveView('chat'); // Automaticamente volta para o chat ao selecionar uma conversa
   };
 
   const handleConversationChange = (conversationId: string) => {
@@ -139,21 +142,57 @@ const AIAgents = () => {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0">
             {/* Conversation History - Left Sidebar */}
             <div className="lg:col-span-1 flex flex-col min-h-0">
-              {/* Área de Configuração - Acima do histórico de conversas */}
-              <AgentConfigArea />
-              
               <ConversationHistory
                 onSelectConversation={handleConversationSelect}
                 refreshTrigger={refreshTrigger}
               />
             </div>
 
-            {/* Main Chat Area */}
+            {/* Main Content Area with Tabs */}
             <div className="lg:col-span-3 flex flex-col min-h-0">
-              <AgentChat
-                conversationId={activeConversation}
-                onConversationChange={handleConversationChange}
-              />
+              {/* Main Navigation Tabs */}
+              <div className="mb-6">
+                <div className="flex space-x-1 bg-neutral-900 p-1 rounded-lg border border-neutral-800">
+                  <Button
+                    onClick={() => setActiveView('chat')}
+                    variant={activeView === 'chat' ? 'default' : 'ghost'}
+                    className={`flex-1 flex items-center gap-2 text-sm font-medium transition-all ${
+                      activeView === 'chat'
+                        ? 'bg-neutral-950 text-white shadow-sm'
+                        : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+                    }`}
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Chat
+                  </Button>
+                  <Button
+                    onClick={() => setActiveView('config')}
+                    variant={activeView === 'config' ? 'default' : 'ghost'}
+                    className={`flex-1 flex items-center gap-2 text-sm font-medium transition-all ${
+                      activeView === 'config'
+                        ? 'bg-neutral-950 text-white shadow-sm'
+                        : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+                    }`}
+                  >
+                    <Settings className="w-4 h-4" />
+                    Configuração do Agente
+                  </Button>
+                </div>
+              </div>
+
+              {/* Content Area */}
+              <div className="flex-1 min-h-0">
+                {activeView === 'chat' ? (
+                  <AgentChat
+                    conversationId={activeConversation}
+                    onConversationChange={handleConversationChange}
+                  />
+                ) : (
+                  <div className="h-full">
+                    <AgentConfigArea />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
