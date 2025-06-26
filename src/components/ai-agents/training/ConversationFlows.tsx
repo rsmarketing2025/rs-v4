@@ -13,7 +13,7 @@ interface ConversationFlow {
   id: string;
   flow_name: string;
   flow_description?: string;
-  flow_steps: any[];
+  flow_steps: string[];
   conditions: Record<string, any>;
   escalation_rules: Record<string, any>;
   status: string;
@@ -50,7 +50,24 @@ export const ConversationFlows: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setFlows(data || []);
+      
+      // Transform the data to match our interface
+      const transformedFlows = (data || []).map(flow => ({
+        id: flow.id,
+        flow_name: flow.flow_name,
+        flow_description: flow.flow_description,
+        flow_steps: Array.isArray(flow.flow_steps) ? flow.flow_steps : [],
+        conditions: flow.conditions && typeof flow.conditions === 'object' && !Array.isArray(flow.conditions) 
+          ? flow.conditions as Record<string, any> 
+          : {},
+        escalation_rules: flow.escalation_rules && typeof flow.escalation_rules === 'object' && !Array.isArray(flow.escalation_rules) 
+          ? flow.escalation_rules as Record<string, any> 
+          : {},
+        status: flow.status,
+        created_at: flow.created_at
+      }));
+      
+      setFlows(transformedFlows);
     } catch (error) {
       console.error('Error loading flows:', error);
       toast({
@@ -112,7 +129,23 @@ export const ConversationFlows: React.FC = () => {
 
       if (error) throw error;
 
-      setFlows(prev => [data, ...prev]);
+      // Transform the new flow to match our interface
+      const transformedFlow: ConversationFlow = {
+        id: data.id,
+        flow_name: data.flow_name,
+        flow_description: data.flow_description,
+        flow_steps: Array.isArray(data.flow_steps) ? data.flow_steps : [],
+        conditions: data.conditions && typeof data.conditions === 'object' && !Array.isArray(data.conditions) 
+          ? data.conditions as Record<string, any> 
+          : {},
+        escalation_rules: data.escalation_rules && typeof data.escalation_rules === 'object' && !Array.isArray(data.escalation_rules) 
+          ? data.escalation_rules as Record<string, any> 
+          : {},
+        status: data.status,
+        created_at: data.created_at
+      };
+
+      setFlows(prev => [transformedFlow, ...prev]);
       setNewFlow({ name: '', description: '', steps: [] });
       
       toast({

@@ -57,10 +57,12 @@ export const BehaviorSettings: React.FC = () => {
       if (data) {
         setSettings({
           id: data.id,
-          prohibited_words: data.prohibited_words || [],
-          default_responses: data.default_responses || {},
+          prohibited_words: Array.isArray(data.prohibited_words) ? data.prohibited_words : [],
+          default_responses: data.default_responses && typeof data.default_responses === 'object' && !Array.isArray(data.default_responses) 
+            ? data.default_responses as Record<string, string> 
+            : {},
           fallback_message: data.fallback_message || 'Desculpe, não consegui entender sua pergunta. Pode reformular?',
-          response_examples: data.response_examples || [],
+          response_examples: Array.isArray(data.response_examples) ? data.response_examples : [],
           max_response_length: data.max_response_length || 1000,
           preferred_format: data.preferred_format || 'text'
         });
