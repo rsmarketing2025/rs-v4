@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Save } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export const GeneralTab: React.FC = () => {
   const [config, setConfig] = useState({
@@ -16,10 +17,51 @@ export const GeneralTab: React.FC = () => {
     language: 'pt-BR',
     tone: 'professional'
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleSave = () => {
-    // TODO: Implementar integração com backend
-    console.log('Salvando configurações gerais:', config);
+  const handleSave = async () => {
+    setIsLoading(true);
+    
+    try {
+      console.log('Enviando configurações para o webhook:', config);
+      
+      const response = await fetch('https://webhook-automatios-rsmtk.abbadigital.com.br/webhook/rag-rs-copy-geral', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: config.name,
+          description: config.description,
+          language: config.language,
+          tone: config.tone
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro na requisição: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('Resposta do webhook:', result);
+
+      toast({
+        title: "Sucesso",
+        description: "Configurações salvas com sucesso!",
+      });
+
+    } catch (error) {
+      console.error('Erro ao salvar configurações:', error);
+      
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar as configurações. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -107,9 +149,13 @@ export const GeneralTab: React.FC = () => {
 
       {/* Botão de Salvar */}
       <div className="flex justify-end pt-4 border-t border-neutral-800">
-        <Button onClick={handleSave} className="bg-slate-50 text-black hover:bg-slate-200">
+        <Button 
+          onClick={handleSave} 
+          disabled={isLoading}
+          className="bg-slate-50 text-black hover:bg-slate-200"
+        >
           <Save className="w-4 h-4 mr-2" />
-          Salvar Configurações
+          {isLoading ? 'Salvando...' : 'Salvar Configurações'}
         </Button>
       </div>
     </div>
