@@ -7,7 +7,6 @@ import { GeneralTab } from "./config-tabs/GeneralTab";
 import { TrainingTab } from "./config-tabs/TrainingTab";
 import { BehaviorTab } from "./config-tabs/BehaviorTab";
 import { ConversationFlowTab } from "./config-tabs/ConversationFlowTab";
-import { MonitoringTab } from "./config-tabs/MonitoringTab";
 
 export const AgentConfigArea: React.FC = () => {
   const [activeTab, setActiveTab] = useState("general");
@@ -18,7 +17,7 @@ export const AgentConfigArea: React.FC = () => {
         <CardContent className="p-0 flex flex-col flex-1 overflow-hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col flex-1 min-h-0">
             <div className="border-b border-neutral-800 flex-shrink-0">
-              <TabsList className="grid w-full grid-cols-5 bg-neutral-900 rounded-none h-12">
+              <TabsList className="grid w-full grid-cols-4 bg-neutral-900 rounded-none h-12">
                 <TabsTrigger value="general" className="text-sm">
                   Geral
                 </TabsTrigger>
@@ -30,9 +29,6 @@ export const AgentConfigArea: React.FC = () => {
                 </TabsTrigger>
                 <TabsTrigger value="flow" className="text-sm">
                   Fluxo
-                </TabsTrigger>
-                <TabsTrigger value="monitoring" className="text-sm">
-                  Monitoramento
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -54,10 +50,6 @@ export const AgentConfigArea: React.FC = () => {
 
                   <TabsContent value="flow" className="mt-0 h-full">
                     <ConversationFlowTab />
-                  </TabsContent>
-
-                  <TabsContent value="monitoring" className="mt-0 h-full">
-                    <MonitoringTab />
                   </TabsContent>
                 </div>
               </ScrollArea>
