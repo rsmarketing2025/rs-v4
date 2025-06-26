@@ -33,13 +33,14 @@ export const AgentChat: React.FC<AgentChatProps> = ({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editTitleValue, setEditTitleValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const scrollAreaViewportRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // Função simplificada de scroll
+  // Função de scroll otimizada
   const scrollToBottom = useCallback(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (scrollAreaViewportRef.current) {
+      const viewport = scrollAreaViewportRef.current;
+      viewport.scrollTop = viewport.scrollHeight;
     }
   }, []);
 
@@ -426,20 +427,26 @@ export const AgentChat: React.FC<AgentChatProps> = ({
         
         <CardContent className="flex flex-col flex-1 p-0 overflow-hidden bg-neutral-950">
           <div className="flex-1 overflow-hidden">
-            <ScrollArea className="h-full px-6" ref={scrollAreaRef}>
-              <div className="space-y-4 py-4">
-                {messages.length === 0 ? (
-                  <div className="text-center text-neutral-400 py-8">
-                    <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>Inicie uma conversa com seu Copy Chief!</p>
-                  </div>
-                ) : (
-                  messages.map((message) => (
-                    <MessageBubble key={message.id} message={message} />
-                  ))
-                )}
-                {loading && <TypingIndicator />}
-                <div ref={messagesEndRef} />
+            <ScrollArea className="h-full px-6">
+              <div 
+                ref={scrollAreaViewportRef}
+                className="h-full overflow-y-auto"
+                style={{ scrollBehavior: 'smooth' }}
+              >
+                <div className="space-y-4 py-4">
+                  {messages.length === 0 ? (
+                    <div className="text-center text-neutral-400 py-8">
+                      <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Inicie uma conversa com seu Copy Chief!</p>
+                    </div>
+                  ) : (
+                    messages.map((message) => (
+                      <MessageBubble key={message.id} message={message} />
+                    ))
+                  )}
+                  {loading && <TypingIndicator />}
+                  <div ref={messagesEndRef} />
+                </div>
               </div>
             </ScrollArea>
           </div>
