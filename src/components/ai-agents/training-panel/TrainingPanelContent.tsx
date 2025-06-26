@@ -18,8 +18,8 @@ export const TrainingPanelContent: React.FC<TrainingPanelContentProps> = ({
   updateFormData,
   isMinimal = false
 }) => {
-  const contentPadding = isMinimal ? "p-4" : "px-6 py-6";
-  const spaceY = isMinimal ? "space-y-4" : "space-y-6";
+  const contentPadding = isMinimal ? "p-3 md:p-4" : "p-4 md:px-6 md:py-6";
+  const spaceY = isMinimal ? "space-y-3 md:space-y-4" : "space-y-4 md:space-y-6";
 
   return (
     <div className="flex-1 overflow-hidden">

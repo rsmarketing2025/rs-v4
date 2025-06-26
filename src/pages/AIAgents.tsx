@@ -125,23 +125,29 @@ const AIAgents = () => {
       <div className="min-h-screen bg-black">
         {/* Container Principal - Estrutura otimizada */}
         <div className="h-screen flex flex-col">
-          {/* Header Principal - Alinhamento centralizado */}
-          <div className="flex-shrink-0 px-6 py-4 border-b border-neutral-800 bg-neutral-950">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <SidebarTrigger className="text-white" />
-                <div>
-                  <h1 className="text-xl md:text-2xl font-bold text-white">Agente de IA - Copy</h1>
-                  <p className="text-gray-400 text-sm mt-1">Configuração e treinamento do seu assistente Copy Chief</p>
+          {/* Header Principal - Centralização corrigida */}
+          <div className="flex-shrink-0 px-4 md:px-6 py-4 border-b border-neutral-800 bg-neutral-950">
+            <div className="flex items-center justify-between max-w-full">
+              <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
+                <SidebarTrigger className="text-white flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-white truncate">
+                    Agente de IA - Copy
+                  </h1>
+                  <p className="text-gray-400 text-xs md:text-sm mt-1 hidden sm:block">
+                    Configuração e treinamento do seu assistente Copy Chief
+                  </p>
                 </div>
               </div>
-              <ThemeToggle />
+              <div className="flex-shrink-0 ml-2 md:ml-4">
+                <ThemeToggle />
+              </div>
             </div>
           </div>
 
           {/* Layout Principal - Grid responsivo otimizado */}
-          <div className="flex-1 min-h-0 px-6 py-6">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
+          <div className="flex-1 min-h-0 p-4 md:p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6 h-full max-w-full">
               {/* Sidebar Esquerda: Histórico de Conversas */}
               <div className="lg:col-span-1 flex flex-col min-h-0">
                 <ConversationHistory
@@ -150,26 +156,26 @@ const AIAgents = () => {
                 />
               </div>
 
-              {/* Área Principal com Tabs - Container centralizado */}
+              {/* Área Principal com Tabs - Container otimizado */}
               <div className="lg:col-span-3 flex flex-col min-h-0">
                 <Card className="bg-neutral-950 border-neutral-800 h-full flex flex-col shadow-xl">
-                  {/* Header dos Tabs Principais - Padding uniforme */}
-                  <CardHeader className="bg-neutral-900/50 border-b border-neutral-800 px-6 py-4 flex-shrink-0">
+                  {/* Header dos Tabs Principais - Espaçamento corrigido */}
+                  <CardHeader className="bg-neutral-900/50 border-b border-neutral-800 p-4 md:px-6 md:py-5 flex-shrink-0">
                     <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="w-full">
-                      <TabsList className="grid w-full grid-cols-2 bg-neutral-900 p-1 rounded-lg h-12">
+                      <TabsList className="grid w-full grid-cols-2 bg-neutral-900 p-1 rounded-lg h-11 md:h-12 gap-1">
                         <TabsTrigger 
                           value="chat" 
-                          className="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 hover:bg-neutral-700 data-[state=active]:bg-neutral-700"
+                          className="flex items-center gap-2 px-3 md:px-4 py-2 text-sm font-medium transition-all duration-200 hover:bg-neutral-700 data-[state=active]:bg-neutral-700 data-[state=active]:text-white rounded-md"
                         >
-                          <MessageSquare className="w-4 h-4" />
-                          Chat
+                          <MessageSquare className="w-4 h-4 flex-shrink-0" />
+                          <span className="hidden sm:inline">Chat</span>
                         </TabsTrigger>
                         <TabsTrigger 
                           value="config" 
-                          className="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 hover:bg-neutral-700 data-[state=active]:bg-neutral-700"
+                          className="flex items-center gap-2 px-3 md:px-4 py-2 text-sm font-medium transition-all duration-200 hover:bg-neutral-700 data-[state=active]:bg-neutral-700 data-[state=active]:text-white rounded-md"
                         >
-                          <Settings className="w-4 h-4" />
-                          Configuração
+                          <Settings className="w-4 h-4 flex-shrink-0" />
+                          <span className="hidden sm:inline">Configuração</span>
                         </TabsTrigger>
                       </TabsList>
                     </Tabs>
