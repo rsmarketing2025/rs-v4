@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,10 +37,8 @@ export const AgentChat: React.FC<AgentChatProps> = ({
   // Função de scroll para a área de mensagens
   const scrollToBottom = useCallback(() => {
     if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTo({
-        top: messagesContainerRef.current.scrollHeight,
-        behavior: 'smooth'
-      });
+      const container = messagesContainerRef.current;
+      container.scrollTop = container.scrollHeight;
     }
   }, []);
 
@@ -60,7 +57,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
     // Pequeno delay para garantir que o DOM foi atualizado
     const timer = setTimeout(() => {
       scrollToBottom();
-    }, 100);
+    }, 50);
     return () => clearTimeout(timer);
   }, [messages, loading, scrollToBottom]);
 
@@ -430,10 +427,11 @@ export const AgentChat: React.FC<AgentChatProps> = ({
         <CardContent className="flex flex-col flex-1 p-0 overflow-hidden bg-neutral-950">
           <div 
             ref={messagesContainerRef}
-            className="flex-1 overflow-y-scroll px-6 py-4 space-y-4"
+            className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
             style={{
               scrollbarWidth: 'thin',
-              scrollbarColor: '#525252 #171717'
+              scrollbarColor: '#525252 #171717',
+              scrollBehavior: 'smooth'
             }}
           >
             {messages.length === 0 ? (
