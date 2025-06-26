@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -6,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, MessageSquare } from "lucide-react";
 import { ConversationHistory } from "@/components/ai-agents/ConversationHistory";
 import { AgentChat } from "@/components/ai-agents/AgentChat";
+import { AgentTrainingPanel } from "@/components/ai-agents/AgentTrainingPanel";
 import { TrainingData } from "@/components/ai-agents/TrainingData";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -135,12 +137,18 @@ const AIAgents = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0">
-            {/* Conversation History - Left Sidebar */}
-            <div className="lg:col-span-1 flex flex-col min-h-0">
-              <ConversationHistory
-                onSelectConversation={handleConversationSelect}
-                refreshTrigger={refreshTrigger}
-              />
+            {/* Left Column: Training Panel + Conversation History */}
+            <div className="lg:col-span-1 flex flex-col min-h-0 space-y-0">
+              {/* Agent Training Panel */}
+              <AgentTrainingPanel />
+              
+              {/* Conversation History */}
+              <div className="flex-1 min-h-0">
+                <ConversationHistory
+                  onSelectConversation={handleConversationSelect}
+                  refreshTrigger={refreshTrigger}
+                />
+              </div>
             </div>
 
             {/* Main Chat Area */}
