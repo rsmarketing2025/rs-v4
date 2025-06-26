@@ -1,9 +1,9 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Plus, MessageSquare, Pen, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -430,7 +430,11 @@ export const AgentChat: React.FC<AgentChatProps> = ({
         <CardContent className="flex flex-col flex-1 p-0 overflow-hidden bg-neutral-950">
           <div 
             ref={messagesContainerRef}
-            className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
+            className="flex-1 overflow-y-scroll px-6 py-4 space-y-4"
+            style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#525252 #171717'
+            }}
           >
             {messages.length === 0 ? (
               <div className="text-center text-neutral-400 py-8">
