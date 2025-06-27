@@ -96,7 +96,7 @@ const Dashboard = () => {
                 <ThemeToggle />
               </div>
             </div>
-            <Card className="bg-neutral-900 border-neutral-700 backdrop-blur-sm">
+            <Card className="bg-neutral-900 border-transparent backdrop-blur-sm">
               <CardContent className="p-3 md:p-6 bg-slate-900">
                 <UsersTab />
               </CardContent>
