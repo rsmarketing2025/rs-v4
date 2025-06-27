@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -21,6 +22,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   const [showCustom, setShowCustom] = React.useState(false);
   const [tempFromDate, setTempFromDate] = React.useState<Date | undefined>(undefined);
   const [hoverDate, setHoverDate] = React.useState<Date | undefined>(undefined);
+  const [selectedFilterLabel, setSelectedFilterLabel] = React.useState<string>("Hoje");
 
   // Fixed predefined ranges with consistent date handling
   const predefinedRanges = [
@@ -61,15 +63,16 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
     }
   ];
 
-  const handlePredefinedRange = (range: { from: Date; to: Date }) => {
+  const handlePredefinedRange = (range: { from: Date; to: Date }, label: string) => {
     console.log('📅 [DATE PICKER] Selected predefined range:', {
-      label: predefinedRanges.find(r => r.range.from.getTime() === range.from.getTime())?.label,
+      label,
       from: range.from.toISOString(),
       to: range.to.toISOString(),
       fromFormatted: format(range.from, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
       toFormatted: format(range.to, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     });
     
+    setSelectedFilterLabel(label);
     onDateRangeChange(range);
     setIsOpen(false);
   };
@@ -91,6 +94,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           to: range.from <= range.to ? range.to : range.from
         };
         
+        setSelectedFilterLabel("Personalizado");
         onDateRangeChange(finalRange);
         setTempFromDate(undefined);
         setHoverDate(undefined);
@@ -106,6 +110,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           to: fromDate <= toDate ? toDate : fromDate
         };
         
+        setSelectedFilterLabel("Personalizado");
         onDateRangeChange(finalRange);
         setTempFromDate(undefined);
         setHoverDate(undefined);
@@ -141,6 +146,19 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
     return dateRange;
   };
 
+  // Function to get the display text for the button
+  const getDisplayText = () => {
+    if (selectedFilterLabel === "Personalizado") {
+      return (
+        <>
+          {format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })} -{" "}
+          {format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })}
+        </>
+      );
+    }
+    return selectedFilterLabel;
+  };
+
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
@@ -152,18 +170,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {dateRange?.from ? (
-            dateRange.to ? (
-              <>
-                {format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })} -{" "}
-                {format(dateRange.to, "dd/MM/yyyy", { locale: ptBR })}
-              </>
-            ) : (
-              format(dateRange.from, "dd/MM/yyyy", { locale: ptBR })
-            )
-          ) : (
-            <span>Selecionar período</span>
-          )}
+          {getDisplayText()}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-700" align="start">
@@ -173,15 +180,21 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
               <Button
                 key={item.label}
                 variant="ghost"
-                className="w-full justify-start text-slate-300 hover:bg-slate-800 hover:text-white"
-                onClick={() => handlePredefinedRange(item.range)}
+                className={cn(
+                  "w-full justify-start text-slate-300 hover:bg-slate-800 hover:text-white",
+                  selectedFilterLabel === item.label && "bg-slate-800 text-white"
+                )}
+                onClick={() => handlePredefinedRange(item.range, item.label)}
               >
                 {item.label}
               </Button>
             ))}
             <Button
               variant="ghost"
-              className="w-full justify-start text-slate-300 hover:bg-slate-800 hover:text-white"
+              className={cn(
+                "w-full justify-start text-slate-300 hover:bg-slate-800 hover:text-white",
+                selectedFilterLabel === "Personalizado" && "bg-slate-800 text-white"
+              )}
               onClick={() => setShowCustom(true)}
             >
               Personalizado
