@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Plus } from 'lucide-react';
@@ -16,7 +17,7 @@ export const BusinessManagersTab: React.FC = () => {
           <h2 className="text-2xl font-bold text-white">Gerenciamento de Business Managers</h2>
           <p className="text-slate-400">Adicione e gerencie seus Business Managers e contas de anúncio</p>
         </div>
-        <Button onClick={() => setShowCreateForm(!showCreateForm)} className="text-white bg-zinc-900 hover:bg-zinc-800">
+        <Button onClick={() => setShowCreateForm(!showCreateForm)} className="text-white bg-slate-700 hover:bg-slate-600">
           <Plus className="w-4 h-4 mr-2" />
           Nova Conta
         </Button>

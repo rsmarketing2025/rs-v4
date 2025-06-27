@@ -34,17 +34,17 @@ export function AppSidebar() {
   } = useAuth();
   const filteredMenuItems = menuItems.filter(item => !item.requireAdmin || isAdmin);
   
-  return <Sidebar className="bg-blue-950 border-blue-800">
-      <SidebarHeader className="p-6 bg-blue-900 flex items-center justify-center">
+  return <Sidebar className="bg-slate-950 border-slate-800">
+      <SidebarHeader className="p-6 bg-slate-900 flex items-center justify-center">
         <img src="/lovable-uploads/7d2bb631-1daa-4855-9350-e0d2e5a31475.png" alt="Logo da Empresa" className="h-32 w-auto max-w-[70%] object-contain" />
       </SidebarHeader>
-      <SidebarContent className="bg-blue-900">
+      <SidebarContent className="bg-slate-900">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-blue-100">Menu</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-slate-100">Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {filteredMenuItems.map(item => <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={location.pathname === item.url} className="text-blue-100 hover:text-white hover:bg-blue-800 data-[state=active]:bg-blue-700 data-[state=active]:text-white">
+                  <SidebarMenuButton asChild isActive={location.pathname === item.url} className="text-slate-100 hover:text-white hover:bg-slate-800 data-[state=active]:bg-slate-700 data-[state=active]:text-white">
                     <a href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
@@ -55,11 +55,11 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-4 bg-blue-900">
-        <div className="text-sm text-blue-100 mb-2">
+      <SidebarFooter className="p-4 bg-slate-900">
+        <div className="text-sm text-slate-100 mb-2">
           {user?.email}
         </div>
-        <Button onClick={signOut} variant="outline" size="sm" className="w-full border-blue-600 text-blue-100 hover:bg-blue-800">
+        <Button onClick={signOut} variant="outline" size="sm" className="w-full border-slate-600 text-slate-100 hover:bg-slate-800">
           <LogOut className="w-4 h-4 mr-2" />
           Sair
         </Button>
