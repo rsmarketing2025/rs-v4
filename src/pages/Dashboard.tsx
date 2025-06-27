@@ -5,18 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { 
-  TrendingUp, 
-  DollarSign, 
-  Users, 
-  Eye, 
-  MousePointer, 
-  Target,
-  BarChart3,
-  Settings,
-  Calendar,
-  ShoppingCart
-} from "lucide-react";
+import { TrendingUp, DollarSign, Users, Eye, MousePointer, Target, BarChart3, Settings, Calendar, ShoppingCart } from "lucide-react";
 import { CreativesTab } from "@/components/dashboard/CreativesTab";
 import { SalesTab } from "@/components/dashboard/SalesTab";
 import { AffiliatesTab } from "@/components/dashboard/AffiliatesTab";
@@ -31,27 +20,30 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { useMonthlyKPIs } from "@/hooks/useMonthlyKPIs";
 import { useLocation } from "react-router-dom";
 import { startOfDay, endOfDay } from "date-fns";
-
 const Dashboard = () => {
-  const { isAdmin } = useAuth();
-  const { canAccessPage } = usePermissions();
+  const {
+    isAdmin
+  } = useAuth();
+  const {
+    canAccessPage
+  } = usePermissions();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState(() => {
     if (location.pathname === '/users') return "users";
     if (location.pathname === '/business-managers') return "business-managers";
     return "creatives";
   });
-  
+
   // Função para obter o período "hoje" por padrão
   const getTodayRange = () => ({
     from: startOfDay(new Date()),
     to: endOfDay(new Date())
   });
-  
   const [dateRange, setDateRange] = useState(getTodayRange);
-
-  const { kpis, loading: kipsLoading } = useMonthlyKPIs(dateRange);
-
+  const {
+    kpis,
+    loading: kipsLoading
+  } = useMonthlyKPIs(dateRange);
   React.useEffect(() => {
     if (activeTab === "users") {
       window.history.pushState({}, '', '/users');
@@ -79,20 +71,16 @@ const Dashboard = () => {
   // Verificar acesso às páginas especiais
   if (location.pathname === '/users') {
     if (!isAdmin && !canAccessPage('users')) {
-      return (
-        <SidebarInset>
+      return <SidebarInset>
           <div className="min-h-screen bg-black flex items-center justify-center p-4">
             <div className="text-center">
               <h1 className="text-xl md:text-2xl font-bold text-white mb-4">Acesso Negado</h1>
               <p className="text-gray-400 text-sm md:text-base">Você não tem permissão para acessar esta página.</p>
             </div>
           </div>
-        </SidebarInset>
-      );
+        </SidebarInset>;
     }
-    
-    return (
-      <SidebarInset>
+    return <SidebarInset>
         <div className="min-h-screen bg-black">
           <div className="container mx-auto p-3 md:p-6">
             <div className="flex flex-col space-y-2 mb-4">
@@ -114,26 +102,20 @@ const Dashboard = () => {
             </Card>
           </div>
         </div>
-      </SidebarInset>
-    );
+      </SidebarInset>;
   }
-
   if (location.pathname === '/business-managers') {
     if (!isAdmin && !canAccessPage('business-managers')) {
-      return (
-        <SidebarInset>
+      return <SidebarInset>
           <div className="min-h-screen bg-black flex items-center justify-center p-4">
             <div className="text-center">
               <h1 className="text-xl md:text-2xl font-bold text-white mb-4">Acesso Negado</h1>
               <p className="text-gray-400 text-sm md:text-base">Você não tem permissão para acessar esta página.</p>
             </div>
           </div>
-        </SidebarInset>
-      );
+        </SidebarInset>;
     }
-
-    return (
-      <SidebarInset>
+    return <SidebarInset>
         <div className="min-h-screen bg-black">
           <div className="container mx-auto p-3 md:p-6">
             <div className="flex flex-col space-y-2 mb-4">
@@ -155,13 +137,10 @@ const Dashboard = () => {
             </Card>
           </div>
         </div>
-      </SidebarInset>
-    );
+      </SidebarInset>;
   }
-
-  return (
-    <SidebarInset>
-      <div className="min-h-screen bg-black">
+  return <SidebarInset>
+      <div className="min-h-screen bg-slate-950">
         <div className="container mx-auto p-3 md:p-6">
           <div className="flex flex-col space-y-2 mb-4">
             <div className="flex items-center gap-2">
@@ -174,10 +153,7 @@ const Dashboard = () => {
             
             <div className="flex flex-col sm:flex-row gap-2 justify-end">
               <div className="order-1">
-                <DateRangePicker 
-                  dateRange={dateRange} 
-                  onDateRangeChange={setDateRange} 
-                />
+                <DateRangePicker dateRange={dateRange} onDateRangeChange={setDateRange} />
               </div>
               <div className="order-2">
                 <ThemeToggle />
@@ -187,38 +163,16 @@ const Dashboard = () => {
 
           {/* Updated top cards layout - now with 4 cards including Ticket Médio */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
-            <KPICard
-              title="Total Investido"
-              value={kipsLoading ? "Carregando..." : `R$ ${kpis.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              change={kipsLoading ? "..." : "+12.5%"}
-              icon={DollarSign}
-              trend="up"
-              variant="black"
-            />
-            <KPICard
-              title="Receita"
-              value={kipsLoading ? "Carregando..." : `R$ ${kpis.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              change={kipsLoading ? "..." : "+23.8%"}
-              icon={TrendingUp}
-              trend="up"
-              variant="success"
-            />
-            <KPICard
-              title="Ticket Médio"
-              value={kipsLoading ? "Carregando..." : `R$ ${kpis.avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-              change={kipsLoading ? "..." : "+8.3%"}
-              icon={Target}
-              trend="up"
-              variant="info"
-            />
-            <KPICard
-              title="Total de Pedidos"
-              value={kipsLoading ? "Carregando..." : kpis.totalOrders.toLocaleString()}
-              change={kipsLoading ? "..." : "+15.6%"}
-              icon={ShoppingCart}
-              trend="up"
-              variant="purple"
-            />
+            <KPICard title="Total Investido" value={kipsLoading ? "Carregando..." : `R$ ${kpis.totalSpent.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2
+          })}`} change={kipsLoading ? "..." : "+12.5%"} icon={DollarSign} trend="up" variant="black" />
+            <KPICard title="Receita" value={kipsLoading ? "Carregando..." : `R$ ${kpis.totalRevenue.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2
+          })}`} change={kipsLoading ? "..." : "+23.8%"} icon={TrendingUp} trend="up" variant="success" />
+            <KPICard title="Ticket Médio" value={kipsLoading ? "Carregando..." : `R$ ${kpis.avgTicket.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2
+          })}`} change={kipsLoading ? "..." : "+8.3%"} icon={Target} trend="up" variant="info" />
+            <KPICard title="Total de Pedidos" value={kipsLoading ? "Carregando..." : kpis.totalOrders.toLocaleString()} change={kipsLoading ? "..." : "+15.6%"} icon={ShoppingCart} trend="up" variant="purple" />
           </div>
 
           <Card className="bg-neutral-900 border-neutral-700 backdrop-blur-sm">
@@ -227,50 +181,22 @@ const Dashboard = () => {
                 <div className="overflow-x-auto">
                   <div className="flex items-center justify-center bg-neutral-800/50 rounded-2xl p-2 min-w-[500px] sm:min-w-0 mx-auto max-w-fit">
                     <PermissionWrapper requirePage="creatives" fallback={null}>
-                      <button
-                        onClick={() => setActiveTab("creatives")}
-                        className={`px-8 py-3 rounded-xl transition-all duration-300 text-sm font-medium whitespace-nowrap flex-1 text-center ${
-                          activeTab === "creatives"
-                            ? "bg-gray-400 text-black font-semibold shadow-lg transform scale-105"
-                            : "bg-transparent text-gray-400 hover:text-gray-200 hover:bg-neutral-700/50"
-                        }`}
-                      >
+                      <button onClick={() => setActiveTab("creatives")} className={`px-8 py-3 rounded-xl transition-all duration-300 text-sm font-medium whitespace-nowrap flex-1 text-center ${activeTab === "creatives" ? "bg-gray-400 text-black font-semibold shadow-lg transform scale-105" : "bg-transparent text-gray-400 hover:text-gray-200 hover:bg-neutral-700/50"}`}>
                         Criativos
                       </button>
                     </PermissionWrapper>
                     <PermissionWrapper requirePage="sales" fallback={null}>
-                      <button
-                        onClick={() => setActiveTab("sales")}
-                        className={`px-8 py-3 rounded-xl transition-all duration-300 text-sm font-medium whitespace-nowrap flex-1 text-center ${
-                          activeTab === "sales"
-                            ? "bg-gray-400 text-black font-semibold shadow-lg transform scale-105"
-                            : "bg-transparent text-gray-400 hover:text-gray-200 hover:bg-neutral-700/50"
-                        }`}
-                      >
+                      <button onClick={() => setActiveTab("sales")} className={`px-8 py-3 rounded-xl transition-all duration-300 text-sm font-medium whitespace-nowrap flex-1 text-center ${activeTab === "sales" ? "bg-gray-400 text-black font-semibold shadow-lg transform scale-105" : "bg-transparent text-gray-400 hover:text-gray-200 hover:bg-neutral-700/50"}`}>
                         Vendas
                       </button>
                     </PermissionWrapper>
                     <PermissionWrapper requirePage="affiliates" fallback={null}>
-                      <button
-                        onClick={() => setActiveTab("affiliates")}
-                        className={`px-8 py-3 rounded-xl transition-all duration-300 text-sm font-medium whitespace-nowrap flex-1 text-center ${
-                          activeTab === "affiliates"
-                            ? "bg-gray-400 text-black font-semibold shadow-lg transform scale-105"
-                            : "bg-transparent text-gray-400 hover:text-gray-200 hover:bg-neutral-700/50"
-                        }`}
-                      >
+                      <button onClick={() => setActiveTab("affiliates")} className={`px-8 py-3 rounded-xl transition-all duration-300 text-sm font-medium whitespace-nowrap flex-1 text-center ${activeTab === "affiliates" ? "bg-gray-400 text-black font-semibold shadow-lg transform scale-105" : "bg-transparent text-gray-400 hover:text-gray-200 hover:bg-neutral-700/50"}`}>
                         Afiliados
                       </button>
                     </PermissionWrapper>
                     <PermissionWrapper requirePage="subscriptions" fallback={null}>
-                      <button
-                        onClick={() => setActiveTab("subscriptions")}
-                        className={`px-8 py-3 rounded-xl transition-all duration-300 text-sm font-medium whitespace-nowrap flex-1 text-center ${
-                          activeTab === "subscriptions"
-                            ? "bg-gray-400 text-black font-semibold shadow-lg transform scale-105"
-                            : "bg-transparent text-gray-400 hover:text-gray-200 hover:bg-neutral-700/50"
-                        }`}
-                      >
+                      <button onClick={() => setActiveTab("subscriptions")} className={`px-8 py-3 rounded-xl transition-all duration-300 text-sm font-medium whitespace-nowrap flex-1 text-center ${activeTab === "subscriptions" ? "bg-gray-400 text-black font-semibold shadow-lg transform scale-105" : "bg-transparent text-gray-400 hover:text-gray-200 hover:bg-neutral-700/50"}`}>
                         Assinaturas
                       </button>
                     </PermissionWrapper>
@@ -307,8 +233,6 @@ const Dashboard = () => {
           </Card>
         </div>
       </div>
-    </SidebarInset>
-  );
+    </SidebarInset>;
 };
-
 export default Dashboard;
