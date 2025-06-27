@@ -12,7 +12,7 @@ export function ExportButton({ onClick, label = "Exportar CSV" }: ExportButtonPr
     <Button
       onClick={onClick}
       variant="outline"
-      className="bg-neutral-900 hover:bg-neutral-800 border-neutral-600 text-white hover:text-white"
+      className="bg-blue-800 hover:bg-blue-700 border-blue-600 text-white hover:text-white"
     >
       <Download className="w-4 h-4 mr-2" />
       {label}
