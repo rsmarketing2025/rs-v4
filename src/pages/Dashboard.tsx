@@ -20,6 +20,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { useMonthlyKPIs } from "@/hooks/useMonthlyKPIs";
 import { useLocation } from "react-router-dom";
 import { startOfDay, endOfDay } from "date-fns";
+
 const Dashboard = () => {
   const {
     isAdmin
@@ -96,7 +97,7 @@ const Dashboard = () => {
               </div>
             </div>
             <Card className="bg-neutral-900 border-neutral-700 backdrop-blur-sm">
-              <CardContent className="p-3 md:p-6">
+              <CardContent className="p-3 md:p-6 bg-slate-900">
                 <UsersTab />
               </CardContent>
             </Card>
@@ -131,7 +132,7 @@ const Dashboard = () => {
               </div>
             </div>
             <Card className="bg-neutral-900 border-neutral-700 backdrop-blur-sm">
-              <CardContent className="p-3 md:p-6">
+              <CardContent className="p-3 md:p-6 bg-slate-900">
                 <BusinessManagersTab />
               </CardContent>
             </Card>
@@ -204,7 +205,7 @@ const Dashboard = () => {
                 </div>
               </CardHeader>
 
-              <CardContent className="p-3 md:p-6">
+              <CardContent className="p-3 md:p-6 bg-slate-900">
                 <PermissionWrapper requirePage="creatives">
                   <div className={activeTab === "creatives" ? "block" : "hidden"}>
                     <CreativesTab dateRange={dateRange} globalKPIs={kpis} globalKPIsLoading={kipsLoading} />
@@ -235,4 +236,5 @@ const Dashboard = () => {
       </div>
     </SidebarInset>;
 };
+
 export default Dashboard;
