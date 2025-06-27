@@ -23,7 +23,7 @@ export const BusinessManagersTab: React.FC = () => {
         </div>
         <Button 
           onClick={() => setShowCreateForm(!showCreateForm)}
-          className="bg-neutral-900 hover:bg-neutral-800"
+          className="bg-neutral-900 hover:bg-neutral-800 text-white"
         >
           <Plus className="w-4 h-4 mr-2" />
           Nova Conta
