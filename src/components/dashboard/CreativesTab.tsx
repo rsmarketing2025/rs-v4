@@ -40,7 +40,7 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-slate-900">
       <CreativesMetricsCards 
         totalSpent={totalMetrics.spent}
         avgROI={globalKPIs.avgROI}

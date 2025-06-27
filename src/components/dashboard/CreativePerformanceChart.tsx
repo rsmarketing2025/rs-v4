@@ -33,7 +33,7 @@ export const CreativePerformanceChart: React.FC<CreativePerformanceChartProps> =
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <Card className="bg-slate-800/30 border-slate-700">
+      <Card className="bg-slate-800 border-slate-700">
         <CardHeader>
           <CardTitle className="text-white">Gasto por Criativo</CardTitle>
           <CardDescription className="text-slate-400">
@@ -68,7 +68,7 @@ export const CreativePerformanceChart: React.FC<CreativePerformanceChartProps> =
         </CardContent>
       </Card>
 
-      <Card className="bg-slate-800/30 border-slate-700">
+      <Card className="bg-slate-800 border-slate-700">
         <CardHeader>
           <CardTitle className="text-white">Hook Rate vs CTR</CardTitle>
           <CardDescription className="text-slate-400">
