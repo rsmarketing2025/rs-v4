@@ -141,7 +141,7 @@ const Dashboard = () => {
   }
   return <SidebarInset>
       <div className="min-h-screen bg-slate-900">
-        <div className="container mx-auto p-3 md:p-6 bg-[#050817]">
+        <div className="container mx-auto p-3 md:p-6 bg-transparent">
           <div className="flex flex-col space-y-2 mb-4">
             <div className="flex items-center gap-2">
               <SidebarTrigger className="text-white" />
