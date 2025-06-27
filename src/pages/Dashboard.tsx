@@ -140,7 +140,7 @@ const Dashboard = () => {
       </SidebarInset>;
   }
   return <SidebarInset>
-      <div className="min-h-screen bg-slate-950">
+      <div className="min-h-screen bg-slate-900">
         <div className="container mx-auto p-3 md:p-6">
           <div className="flex flex-col space-y-2 mb-4">
             <div className="flex items-center gap-2">
