@@ -175,7 +175,7 @@ const Dashboard = () => {
             <KPICard title="Total de Pedidos" value={kipsLoading ? "Carregando..." : kpis.totalOrders.toLocaleString()} change={kipsLoading ? "..." : "+15.6%"} icon={ShoppingCart} trend="up" variant="purple" />
           </div>
 
-          <Card className="bg-neutral-900 border-neutral-700 backdrop-blur-sm">
+          <Card className="border-neutral-700 backdrop-blur-sm bg-transparent">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <CardHeader className="pb-3 md:pb-4">
                 <div className="overflow-x-auto">
