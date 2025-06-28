@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -6,7 +5,7 @@ import { SalesFilters } from "./sales/SalesFilters";
 import { SalesTable } from "./sales/SalesTable";
 import { SalesChart } from "./SalesChart";
 import { CountrySalesChart } from "./sales/CountrySalesChart";
-import { StateSalesChart } from "./sales/StateSalesChart";
+import { SubscriptionRenewalsLineChart } from "./sales/SubscriptionRenewalsLineChart";
 import { format, startOfDay, endOfDay } from "date-fns";
 
 interface Sale {
@@ -40,10 +39,17 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   const [countryFilter, setCountryFilter] = useState("all");
   const [stateFilter, setStateFilter] = useState("all");
   const [chartCountryFilter, setChartCountryFilter] = useState("all");
+  
+  // Subscription renewals chart filters
+  const [renewalPlanFilter, setRenewalPlanFilter] = useState("all");
+  const [renewalStatusFilter, setRenewalStatusFilter] = useState("all");
+  const [availablePlans, setAvailablePlans] = useState<string[]>([]);
+  
   const { toast } = useToast();
 
   useEffect(() => {
     fetchSales();
+    fetchAvailablePlans();
   }, [dateRange]);
 
   // Resetar filtro de estado quando o país mudar
@@ -96,6 +102,25 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAvailablePlans = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('subscription_renewals')
+        .select('plan')
+        .not('plan', 'is', null);
+
+      if (error) {
+        console.error('Error fetching plans:', error);
+        return;
+      }
+
+      const uniquePlans = [...new Set(data?.map(item => item.plan).filter(Boolean))].sort();
+      setAvailablePlans(uniquePlans);
+    } catch (error) {
+      console.error('Error fetching available plans:', error);
     }
   };
 
@@ -208,12 +233,13 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
             sales={sales} 
             countryFilter={chartCountryFilter}
           />
-          <StateSalesChart
-            stateData={stateData}
-            countryFilter={chartCountryFilter}
-            onCountryFilterChange={setChartCountryFilter}
-            uniqueCountries={uniqueCountries}
-            filteredStateData={filteredStateData}
+          <SubscriptionRenewalsLineChart
+            dateRange={dateRange}
+            planFilter={renewalPlanFilter}
+            onPlanFilterChange={setRenewalPlanFilter}
+            statusFilter={renewalStatusFilter}
+            onStatusFilterChange={setRenewalStatusFilter}
+            availablePlans={availablePlans}
           />
         </div>
       </div>
