@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSubscriptionRenewalsLineData } from "@/hooks/useSubscriptionRenewalsLineData";
+import { TrendingUp } from "lucide-react";
 
 interface SubscriptionRenewalsLineChartProps {
   dateRange: { from: Date; to: Date };
@@ -40,25 +41,49 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
 
   const hasData = lineData.some(item => item.quantity > 0 || item.revenue > 0);
 
+  // Calcular totais para exibição
+  const totalMetrics = lineData.reduce((acc, item) => ({
+    revenue: acc.revenue + item.revenue,
+    quantity: acc.quantity + item.quantity
+  }), { revenue: 0, quantity: 0 });
+
   console.log('📊 Chart rendering state:', { 
     loading, 
     dataLength: lineData.length,
     hasData,
+    totalMetrics,
     sampleData: lineData.slice(0, 2)
   });
 
   return (
     <Card className="bg-slate-800/30 border-slate-700">
       <CardHeader>
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div>
-            <CardTitle className="text-white">Renovações de Assinatura</CardTitle>
+            <CardTitle className="text-white flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Renovações de Assinatura
+            </CardTitle>
             <CardDescription className="text-slate-400">
               Evolução diária da quantidade e receita das renovações
             </CardDescription>
+            <div className="mt-2 flex flex-wrap gap-4">
+              <div className="text-sm text-slate-300">
+                <span className="text-slate-400">Total:</span>{' '}
+                <span className="font-semibold text-violet-400">
+                  {formatCurrency(totalMetrics.revenue)}
+                </span>
+              </div>
+              <div className="text-sm text-slate-300">
+                <span className="text-slate-400">Renovações:</span>{' '}
+                <span className="font-semibold text-green-400">
+                  {totalMetrics.quantity.toLocaleString()}
+                </span>
+              </div>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <div className="w-40">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="w-full sm:w-40">
               <Select value={planFilter} onValueChange={onPlanFilterChange}>
                 <SelectTrigger className="bg-slate-900/50 border-slate-600 text-white">
                   <SelectValue placeholder="Filtrar plano" />
@@ -73,7 +98,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
                 </SelectContent>
               </Select>
             </div>
-            <div className="w-40">
+            <div className="w-full sm:w-40">
               <Select value={statusFilter} onValueChange={onStatusFilterChange}>
                 <SelectTrigger className="bg-slate-900/50 border-slate-600 text-white">
                   <SelectValue placeholder="Filtrar status" />

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfDay, endOfDay, eachDayOfInterval, parseISO } from 'date-fns';
+import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 
 interface RenewalLineData {
   date: string;
@@ -18,6 +19,8 @@ interface Filters {
   plan: string;
   status: string;
 }
+
+const BRAZIL_TIMEZONE = 'America/Sao_Paulo';
 
 export const useSubscriptionRenewalsLineData = (
   dateRange: DateRange,
@@ -39,13 +42,23 @@ export const useSubscriptionRenewalsLineData = (
         setLoading(true);
         console.log('📊 Fetching subscription renewals line data...');
 
-        const startDate = startOfDay(dateRange.from);
-        const endDate = endOfDay(dateRange.to);
+        // Converter para timezone do Brasil
+        const startDate = toZonedTime(startOfDay(dateRange.from), BRAZIL_TIMEZONE);
+        const endDate = toZonedTime(endOfDay(dateRange.to), BRAZIL_TIMEZONE);
         
-        const startDateStr = format(startDate, "yyyy-MM-dd");
-        const endDateStr = format(endDate, "yyyy-MM-dd");
+        // Converter de volta para UTC para a query
+        const startDateUTC = fromZonedTime(startDate, BRAZIL_TIMEZONE);
+        const endDateUTC = fromZonedTime(endDate, BRAZIL_TIMEZONE);
+        
+        const startDateStr = format(startDateUTC, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        const endDateStr = format(endDateUTC, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
-        console.log('📊 Date range for renewals:', { startDateStr, endDateStr });
+        console.log('📊 Date range for renewals (Brazil timezone):', { 
+          originalStart: dateRange.from,
+          originalEnd: dateRange.to,
+          startDateStr, 
+          endDateStr 
+        });
 
         let query = supabase
           .from('subscription_renewals')
@@ -76,7 +89,10 @@ export const useSubscriptionRenewalsLineData = (
         if (!renewals || renewals.length === 0) {
           console.log('📊 No renewals data found for the period');
           // Ainda assim criar os dias com valores zero
-          const allDays = eachDayOfInterval({ start: startDate, end: endDate });
+          const allDays = eachDayOfInterval({ 
+            start: startOfDay(dateRange.from), 
+            end: endOfDay(dateRange.to) 
+          });
           const emptyData = allDays.map(day => ({
             date: format(day, 'dd/MM'),
             quantity: 0,
@@ -86,8 +102,11 @@ export const useSubscriptionRenewalsLineData = (
           return;
         }
 
-        // Generate all days in the range
-        const allDays = eachDayOfInterval({ start: startDate, end: endDate });
+        // Generate all days in the range (local time)
+        const allDays = eachDayOfInterval({ 
+          start: startOfDay(dateRange.from), 
+          end: endOfDay(dateRange.to) 
+        });
         
         // Group renewals by date
         const renewalsByDate: Record<string, { quantity: number; revenue: number }> = {};
@@ -102,8 +121,10 @@ export const useSubscriptionRenewalsLineData = (
         renewals.forEach(renewal => {
           if (renewal.created_at) {
             try {
-              const renewalDate = parseISO(renewal.created_at);
-              const dateKey = format(renewalDate, 'yyyy-MM-dd');
+              // Parse the date from database and convert to Brazil timezone
+              const renewalDateUTC = parseISO(renewal.created_at);
+              const renewalDateLocal = toZonedTime(renewalDateUTC, BRAZIL_TIMEZONE);
+              const dateKey = format(renewalDateLocal, 'yyyy-MM-dd');
               
               if (renewalsByDate[dateKey]) {
                 renewalsByDate[dateKey].quantity += 1;
