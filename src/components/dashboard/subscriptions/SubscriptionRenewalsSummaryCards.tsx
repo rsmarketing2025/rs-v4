@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RefreshCw, TrendingUp, DollarSign, BarChart3 } from 'lucide-react';
@@ -6,7 +5,7 @@ import { useSubscriptionRenewalMetrics } from "@/hooks/useSubscriptionRenewalMet
 
 interface SubscriptionRenewalsSummaryCardsProps {
   dateRange: { from: Date; to: Date };
-  filters: { plan: string; eventType: string; paymentMethod: string };
+  filters: { plan: string; eventType: string; paymentMethod: string; status: string };
 }
 
 export const SubscriptionRenewalsSummaryCards: React.FC<SubscriptionRenewalsSummaryCardsProps> = ({
