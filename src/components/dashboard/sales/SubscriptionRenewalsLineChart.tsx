@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
@@ -100,7 +99,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   });
 
   return (
-    <Card className="bg-slate-900/95 border-slate-800/50 backdrop-blur-sm">
+    <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm">
       <CardHeader>
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div>
@@ -152,7 +151,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
             </div>
           </div>
         ) : (
-          <div className="bg-slate-950/50 rounded-lg p-4 backdrop-blur-sm">
+          <div className="bg-slate-800/30 rounded-lg p-4 backdrop-blur-sm border border-slate-700/50">
             <ResponsiveContainer width="100%" height={400}>
               <AreaChart data={lineData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <defs>
