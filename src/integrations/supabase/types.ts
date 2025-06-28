@@ -677,6 +677,95 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_renewals: {
+        Row: {
+          amount: number
+          commission_value: number | null
+          created_at: string
+          currency: string
+          customer_email: string
+          customer_id: string
+          customer_name: string | null
+          discount_value: number | null
+          frequency: string | null
+          gross_value: number
+          id: string
+          metadata: Json | null
+          net_value: number
+          payment_method: string | null
+          plan: string
+          previous_renewal_id: string | null
+          renewal_date: string
+          renewal_period_end: string | null
+          renewal_period_start: string | null
+          status: string
+          subscription_id: string
+          subscription_number: number | null
+          tax_value: number | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          commission_value?: number | null
+          created_at?: string
+          currency?: string
+          customer_email: string
+          customer_id: string
+          customer_name?: string | null
+          discount_value?: number | null
+          frequency?: string | null
+          gross_value?: number
+          id?: string
+          metadata?: Json | null
+          net_value?: number
+          payment_method?: string | null
+          plan: string
+          previous_renewal_id?: string | null
+          renewal_date?: string
+          renewal_period_end?: string | null
+          renewal_period_start?: string | null
+          status?: string
+          subscription_id: string
+          subscription_number?: number | null
+          tax_value?: number | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          commission_value?: number | null
+          created_at?: string
+          currency?: string
+          customer_email?: string
+          customer_id?: string
+          customer_name?: string | null
+          discount_value?: number | null
+          frequency?: string | null
+          gross_value?: number
+          id?: string
+          metadata?: Json | null
+          net_value?: number
+          payment_method?: string | null
+          plan?: string
+          previous_renewal_id?: string | null
+          renewal_date?: string
+          renewal_period_end?: string | null
+          renewal_period_start?: string | null
+          status?: string
+          subscription_id?: string
+          subscription_number?: number | null
+          tax_value?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_renewals_previous_renewal_id_fkey"
+            columns: ["previous_renewal_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_renewals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_status: {
         Row: {
           amount: number
