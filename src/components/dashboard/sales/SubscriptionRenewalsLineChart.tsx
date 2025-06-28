@@ -38,7 +38,14 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
     return [formatCurrency(value), 'Receita'];
   };
 
-  console.log('📊 Chart rendering with data:', { loading, dataLength: lineData.length });
+  const hasData = lineData.some(item => item.quantity > 0 || item.revenue > 0);
+
+  console.log('📊 Chart rendering state:', { 
+    loading, 
+    dataLength: lineData.length,
+    hasData,
+    sampleData: lineData.slice(0, 2)
+  });
 
   return (
     <Card className="bg-slate-800/30 border-slate-700">
@@ -86,9 +93,14 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
           <div className="h-[400px] flex items-center justify-center">
             <div className="text-slate-400">Carregando dados...</div>
           </div>
-        ) : lineData.length === 0 ? (
+        ) : !hasData ? (
           <div className="h-[400px] flex items-center justify-center">
-            <div className="text-slate-400">Nenhum dado encontrado para o período selecionado</div>
+            <div className="text-center">
+              <div className="text-slate-400 text-lg mb-2">📊 Nenhuma renovação encontrada</div>
+              <div className="text-slate-500 text-sm">
+                Não há dados de renovações para o período e filtros selecionados
+              </div>
+            </div>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={400}>

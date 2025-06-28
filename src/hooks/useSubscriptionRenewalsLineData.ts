@@ -27,6 +27,13 @@ export const useSubscriptionRenewalsLineData = (
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Verificar se dateRange é válido
+    if (!dateRange.from || !dateRange.to) {
+      console.log('📊 Date range invalid, skipping fetch');
+      setLoading(false);
+      return;
+    }
+
     const fetchLineData = async () => {
       try {
         setLoading(true);
@@ -35,11 +42,10 @@ export const useSubscriptionRenewalsLineData = (
         const startDate = startOfDay(dateRange.from);
         const endDate = endOfDay(dateRange.to);
         
-        // Usar formato de data mais simples
         const startDateStr = format(startDate, "yyyy-MM-dd");
         const endDateStr = format(endDate, "yyyy-MM-dd");
 
-        console.log('Date range:', { startDateStr, endDateStr });
+        console.log('📊 Date range for renewals:', { startDateStr, endDateStr });
 
         let query = supabase
           .from('subscription_renewals')
@@ -65,7 +71,20 @@ export const useSubscriptionRenewalsLineData = (
           return;
         }
 
-        console.log('📊 Raw renewals data:', renewals);
+        console.log('📊 Raw renewals data:', renewals?.length || 0, 'records');
+
+        if (!renewals || renewals.length === 0) {
+          console.log('📊 No renewals data found for the period');
+          // Ainda assim criar os dias com valores zero
+          const allDays = eachDayOfInterval({ start: startDate, end: endDate });
+          const emptyData = allDays.map(day => ({
+            date: format(day, 'dd/MM'),
+            quantity: 0,
+            revenue: 0
+          }));
+          setLineData(emptyData);
+          return;
+        }
 
         // Generate all days in the range
         const allDays = eachDayOfInterval({ start: startDate, end: endDate });
@@ -80,12 +99,18 @@ export const useSubscriptionRenewalsLineData = (
         });
 
         // Process renewals data
-        renewals?.forEach(renewal => {
+        renewals.forEach(renewal => {
           if (renewal.created_at) {
-            const dateKey = format(parseISO(renewal.created_at), 'yyyy-MM-dd');
-            if (renewalsByDate[dateKey]) {
-              renewalsByDate[dateKey].quantity += 1;
-              renewalsByDate[dateKey].revenue += renewal.amount || 0;
+            try {
+              const renewalDate = parseISO(renewal.created_at);
+              const dateKey = format(renewalDate, 'yyyy-MM-dd');
+              
+              if (renewalsByDate[dateKey]) {
+                renewalsByDate[dateKey].quantity += 1;
+                renewalsByDate[dateKey].revenue += Number(renewal.amount) || 0;
+              }
+            } catch (error) {
+              console.warn('📊 Error parsing renewal date:', renewal.created_at, error);
             }
           }
         });
@@ -119,8 +144,11 @@ export const useSubscriptionRenewalsLineData = (
       }
     };
 
-    fetchLineData();
-  }, [dateRange, filters]);
+    // Adicionar um pequeno delay para evitar múltiplas chamadas
+    const timeoutId = setTimeout(fetchLineData, 100);
+    
+    return () => clearTimeout(timeoutId);
+  }, [dateRange.from?.getTime(), dateRange.to?.getTime(), filters.plan, filters.status]);
 
   return { lineData, loading };
 };
