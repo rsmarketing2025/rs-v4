@@ -5,29 +5,19 @@ import { format, startOfDay, endOfDay } from 'date-fns';
 
 interface SubscriptionRenewal {
   id: string;
-  subscription_id: string;
-  customer_id: string;
-  customer_email: string;
+  subscription_id: string | null;
+  customer_id: string | null;
+  customer_email: string | null;
   customer_name: string | null;
   plan: string;
   amount: number;
   currency: string;
   frequency: string | null;
-  renewal_date: string;
-  payment_method: string | null;
-  status: string;
-  gross_value: number;
-  net_value: number;
-  discount_value: number | null;
-  tax_value: number | null;
-  commission_value: number | null;
-  subscription_number: number | null;
-  renewal_period_start: string | null;
-  renewal_period_end: string | null;
-  previous_renewal_id: string | null;
-  metadata: any;
+  subscription_status: string;
   created_at: string;
   updated_at: string;
+  canceled_at: string | null;
+  subscription_number: number | null;
 }
 
 interface Filters {
@@ -67,9 +57,9 @@ export const useSubscriptionRenewals = (
         let query = supabase
           .from('subscription_renewals')
           .select('*', { count: 'exact' })
-          .gte('renewal_date', startDateStr)
-          .lte('renewal_date', endDateStr)
-          .order('renewal_date', { ascending: false })
+          .gte('created_at', startDateStr)
+          .lte('created_at', endDateStr)
+          .order('created_at', { ascending: false })
           .range((page - 1) * pageSize, page * pageSize - 1);
 
         // Apply filters
@@ -78,11 +68,7 @@ export const useSubscriptionRenewals = (
         }
 
         if (filters.status !== 'all') {
-          query = query.eq('status', filters.status);
-        }
-
-        if (filters.paymentMethod !== 'all') {
-          query = query.eq('payment_method', filters.paymentMethod);
+          query = query.eq('subscription_status', filters.status);
         }
 
         // Search filter

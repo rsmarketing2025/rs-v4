@@ -1,11 +1,13 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { format, startOfDay, endOfDay } from 'date-fns';
 
 interface ChartFilters {
   plan: string;
   eventType: string;
   paymentMethod: string;
+  status: string;
 }
 
 interface DateRange {
@@ -13,150 +15,109 @@ interface DateRange {
   to: Date;
 }
 
-interface TimelineData {
+interface ChartDataItem {
   date: string;
-  subscriptions: number;
-  cancellations: number;
+  revenue: number;
+  plan: string;
 }
-
-interface PlanData {
-  name: string;
-  value: number;
-}
-
-interface MrrData {
-  date: string;
-  mrr: number;
-}
-
-interface ChurnData {
-  date: string;
-  churnRate: number;
-}
-
-type ChartData = TimelineData[] | PlanData[] | MrrData[] | ChurnData[];
 
 export const useSubscriptionChartData = (
-  type: string,
   dateRange: DateRange,
-  filters: ChartFilters
+  filters: ChartFilters,
+  type: 'subscriptions' | 'renewals'
 ) => {
-  const [data, setData] = useState<ChartData>([]);
+  const [chartData, setChartData] = useState<ChartDataItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchChartData = async () => {
       try {
         setLoading(true);
+        console.log(`📊 Fetching ${type} chart data...`);
 
-        if (type === 'plan-distribution') {
-          // Use subscription_status table for plan distribution
+        const startDate = startOfDay(dateRange.from);
+        const endDate = endOfDay(dateRange.to);
+        const startDateStr = format(startDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        const endDateStr = format(endDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+
+        if (type === 'renewals') {
+          // Use subscription_renewals table for renewals
           let query = supabase
-            .from('subscription_status')
-            .select('plan')
-            .eq('subscription_status', 'active');
+            .from('subscription_renewals')
+            .select('*')
+            .gte('created_at', startDateStr)
+            .lte('created_at', endDateStr);
 
           if (filters.plan !== 'all') {
             query = query.eq('plan', filters.plan);
           }
 
-          const { data: subscriptions } = await query;
+          if (filters.status !== 'all') {
+            query = query.eq('subscription_status', filters.status);
+          }
 
-          if (subscriptions) {
-            const planCounts: Record<string, number> = {};
-            
-            subscriptions.forEach(sub => {
-              planCounts[sub.plan] = (planCounts[sub.plan] || 0) + 1;
-            });
+          const { data: renewals, error } = await query;
 
-            const planData: PlanData[] = Object.entries(planCounts).map(([name, value]) => ({
-              name: name.charAt(0).toUpperCase() + name.slice(1),
-              value
+          if (error) {
+            console.error('❌ Error fetching renewals:', error);
+            return;
+          }
+
+          if (renewals) {
+            const chartData: ChartDataItem[] = renewals.map(renewal => ({
+              date: renewal.created_at,
+              revenue: renewal.amount || 0,
+              plan: renewal.plan || 'Unknown'
             }));
 
-            setData(planData);
+            setChartData(chartData);
           }
         } else {
-          // Use subscription_events for other chart types
+          // Use subscription_events for subscriptions
           let query = supabase
             .from('subscription_events')
             .select('*')
-            .gte('event_date', dateRange.from.toISOString())
-            .lte('event_date', dateRange.to.toISOString());
+            .gte('event_date', startDateStr)
+            .lte('event_date', endDateStr);
 
           if (filters.plan !== 'all') {
             query = query.eq('plan', filters.plan);
           }
+
           if (filters.eventType !== 'all') {
             query = query.eq('event_type', filters.eventType);
           }
-          if (filters.paymentMethod !== 'all') {
-            query = query.eq('payment_method', filters.paymentMethod);
-          }
 
-          const { data: events } = await query;
+          const { data: events, error } = await query;
+
+          if (error) {
+            console.error('❌ Error fetching subscription events:', error);
+            return;
+          }
 
           if (events) {
-            if (type === 'timeline') {
-              const groupedByDate: Record<string, { subscriptions: number; cancellations: number }> = {};
-              
-              events.forEach(event => {
-                const date = new Date(event.event_date).toLocaleDateString('pt-BR');
-                if (!groupedByDate[date]) {
-                  groupedByDate[date] = { subscriptions: 0, cancellations: 0 };
-                }
-                if (event.event_type === 'subscription') {
-                  groupedByDate[date].subscriptions++;
-                } else if (event.event_type === 'cancellation') {
-                  groupedByDate[date].cancellations++;
-                }
-              });
+            const chartData: ChartDataItem[] = events.map(event => ({
+              date: event.event_date,
+              revenue: event.amount || 0,
+              plan: event.plan || 'Unknown'
+            }));
 
-              const timelineData: TimelineData[] = Object.entries(groupedByDate).map(([date, values]) => ({
-                date,
-                subscriptions: values.subscriptions,
-                cancellations: values.cancellations
-              }));
-
-              setData(timelineData);
-            } else if (type === 'mrr') {
-              const mrrByMonth: Record<string, number> = {};
-              
-              events
-                .filter(e => e.event_type === 'subscription')
-                .forEach(event => {
-                  const month = new Date(event.event_date).toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' });
-                  mrrByMonth[month] = (mrrByMonth[month] || 0) + (event.amount || 0);
-                });
-
-              const mrrData: MrrData[] = Object.entries(mrrByMonth).map(([date, mrr]) => ({
-                date,
-                mrr
-              }));
-
-              setData(mrrData);
-            } else if (type === 'churn-rate') {
-              const churnData: ChurnData[] = [
-                { date: 'Jan', churnRate: 5.2 },
-                { date: 'Fev', churnRate: 4.8 },
-                { date: 'Mar', churnRate: 6.1 },
-                { date: 'Abr', churnRate: 3.9 },
-                { date: 'Mai', churnRate: 4.5 }
-              ];
-
-              setData(churnData);
-            }
+            setChartData(chartData);
           }
         }
+
+        console.log(`✅ ${type} chart data loaded:`, chartData.length);
+
       } catch (error) {
-        console.error('Error fetching chart data:', error);
+        console.error(`❌ Error fetching ${type} chart data:`, error);
+        setChartData([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchChartData();
-  }, [type, dateRange, filters]);
+  }, [dateRange, filters, type]);
 
-  return { data, loading };
+  return { chartData, loading };
 };

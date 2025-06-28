@@ -17,6 +17,7 @@ interface Filters {
   plan: string;
   eventType: string;
   paymentMethod: string;
+  status: string;
 }
 
 interface DateRange {
@@ -53,16 +54,16 @@ export const useSubscriptionRenewalMetrics = (
         let query = supabase
           .from('subscription_renewals')
           .select('*')
-          .gte('renewal_date', startDateStr)
-          .lte('renewal_date', endDateStr)
-          .eq('status', 'completed');
+          .gte('created_at', startDateStr)
+          .lte('created_at', endDateStr)
+          .eq('subscription_status', 'active');
 
         if (filters.plan !== 'all') {
           query = query.eq('plan', filters.plan);
         }
 
-        if (filters.paymentMethod !== 'all') {
-          query = query.eq('payment_method', filters.paymentMethod);
+        if (filters.status !== 'all') {
+          query = query.eq('subscription_status', filters.status);
         }
 
         const { data: renewals, error } = await query;
@@ -76,7 +77,7 @@ export const useSubscriptionRenewalMetrics = (
 
         if (renewals) {
           const totalRenewals = renewals.length;
-          const totalRenewalRevenue = renewals.reduce((sum, renewal) => sum + (renewal.net_value || 0), 0);
+          const totalRenewalRevenue = renewals.reduce((sum, renewal) => sum + (renewal.amount || 0), 0);
           const averageRenewalValue = totalRenewals > 0 ? totalRenewalRevenue / totalRenewals : 0;
 
           // Group by plan
@@ -86,7 +87,7 @@ export const useSubscriptionRenewalMetrics = (
           renewals.forEach(renewal => {
             const plan = renewal.plan || 'Unknown';
             renewalsByPlan[plan] = (renewalsByPlan[plan] || 0) + 1;
-            renewalRevenueByPlan[plan] = (renewalRevenueByPlan[plan] || 0) + (renewal.net_value || 0);
+            renewalRevenueByPlan[plan] = (renewalRevenueByPlan[plan] || 0) + (renewal.amount || 0);
           });
 
           setMetrics({

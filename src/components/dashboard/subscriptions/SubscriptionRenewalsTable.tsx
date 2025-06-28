@@ -27,29 +27,25 @@ export const SubscriptionRenewalsTable: React.FC<SubscriptionRenewalsTableProps>
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case 'completed':
+      case 'active':
         return 'default';
-      case 'failed':
+      case 'canceled':
         return 'destructive';
-      case 'pending':
+      case 'suspended':
         return 'secondary';
-      case 'refunded':
-        return 'outline';
       default:
-        return 'secondary';
+        return 'outline';
     }
   };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'completed':
-        return 'Concluída';
-      case 'failed':
-        return 'Falhou';
-      case 'pending':
-        return 'Pendente';
-      case 'refunded':
-        return 'Reembolsada';
+      case 'active':
+        return 'Ativa';
+      case 'canceled':
+        return 'Cancelada';
+      case 'suspended':
+        return 'Suspensa';
       default:
         return status;
     }
@@ -93,7 +89,7 @@ export const SubscriptionRenewalsTable: React.FC<SubscriptionRenewalsTableProps>
                 <TableHead className="text-slate-300">Valor</TableHead>
                 <TableHead className="text-slate-300">Data</TableHead>
                 <TableHead className="text-slate-300">Status</TableHead>
-                <TableHead className="text-slate-300">Método</TableHead>
+                <TableHead className="text-slate-300">Número</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -115,21 +111,21 @@ export const SubscriptionRenewalsTable: React.FC<SubscriptionRenewalsTableProps>
                     </Badge>
                   </TableCell>
                   <TableCell className="text-white font-medium">
-                    R$ {renewal.net_value?.toLocaleString('pt-BR', { 
+                    R$ {renewal.amount?.toLocaleString('pt-BR', { 
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2 
                     })}
                   </TableCell>
                   <TableCell className="text-slate-300">
-                    {new Date(renewal.renewal_date).toLocaleDateString('pt-BR')}
+                    {new Date(renewal.created_at).toLocaleDateString('pt-BR')}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getStatusBadgeVariant(renewal.status)}>
-                      {getStatusLabel(renewal.status)}
+                    <Badge variant={getStatusBadgeVariant(renewal.subscription_status)}>
+                      {getStatusLabel(renewal.subscription_status)}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-slate-300">
-                    {renewal.payment_method || 'N/A'}
+                    #{renewal.subscription_number || 'N/A'}
                   </TableCell>
                 </TableRow>
               ))}

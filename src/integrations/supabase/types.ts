@@ -680,91 +680,53 @@ export type Database = {
       subscription_renewals: {
         Row: {
           amount: number
-          commission_value: number | null
+          canceled_at: string | null
           created_at: string
           currency: string
-          customer_email: string
-          customer_id: string
+          customer_email: string | null
+          customer_id: string | null
           customer_name: string | null
-          discount_value: number | null
           frequency: string | null
-          gross_value: number
           id: string
-          metadata: Json | null
-          net_value: number
-          payment_method: string | null
           plan: string
-          previous_renewal_id: string | null
-          renewal_date: string
-          renewal_period_end: string | null
-          renewal_period_start: string | null
-          status: string
-          subscription_id: string
+          subscription_id: string | null
           subscription_number: number | null
-          tax_value: number | null
+          subscription_status: string
           updated_at: string
         }
         Insert: {
           amount?: number
-          commission_value?: number | null
+          canceled_at?: string | null
           created_at?: string
           currency?: string
-          customer_email: string
-          customer_id: string
+          customer_email?: string | null
+          customer_id?: string | null
           customer_name?: string | null
-          discount_value?: number | null
           frequency?: string | null
-          gross_value?: number
           id?: string
-          metadata?: Json | null
-          net_value?: number
-          payment_method?: string | null
           plan: string
-          previous_renewal_id?: string | null
-          renewal_date?: string
-          renewal_period_end?: string | null
-          renewal_period_start?: string | null
-          status?: string
-          subscription_id: string
+          subscription_id?: string | null
           subscription_number?: number | null
-          tax_value?: number | null
+          subscription_status: string
           updated_at?: string
         }
         Update: {
           amount?: number
-          commission_value?: number | null
+          canceled_at?: string | null
           created_at?: string
           currency?: string
-          customer_email?: string
-          customer_id?: string
+          customer_email?: string | null
+          customer_id?: string | null
           customer_name?: string | null
-          discount_value?: number | null
           frequency?: string | null
-          gross_value?: number
           id?: string
-          metadata?: Json | null
-          net_value?: number
-          payment_method?: string | null
           plan?: string
-          previous_renewal_id?: string | null
-          renewal_date?: string
-          renewal_period_end?: string | null
-          renewal_period_start?: string | null
-          status?: string
-          subscription_id?: string
+          subscription_id?: string | null
           subscription_number?: number | null
-          tax_value?: number | null
+          subscription_status?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "subscription_renewals_previous_renewal_id_fkey"
-            columns: ["previous_renewal_id"]
-            isOneToOne: false
-            referencedRelation: "subscription_renewals"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       subscription_status: {
         Row: {

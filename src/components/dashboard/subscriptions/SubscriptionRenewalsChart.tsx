@@ -2,9 +2,9 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { format, parseISO, eachDayOfInterval, startOfMonth, endOfMonth } from 'date-fns';
+import { format, parseISO, eachDayOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useSubscriptionRenewals } from "@/hooks/useSubscriptionRenewals";
+import { useSubscriptionChartData } from "@/hooks/useSubscriptionChartData";
 
 interface SubscriptionRenewalsChartProps {
   dateRange: { from: Date; to: Date };
@@ -15,18 +15,11 @@ export const SubscriptionRenewalsChart: React.FC<SubscriptionRenewalsChartProps>
   dateRange,
   filters
 }) => {
-  const { renewals, loading } = useSubscriptionRenewals(
-    dateRange,
-    filters,
-    1,
-    1000, // Get more data for chart
-    ''
-  );
+  const { chartData, loading } = useSubscriptionChartData(dateRange, filters, 'renewals');
 
   // Prepare daily renewal data
   const prepareDailyData = () => {
     const dailyRevenue: Record<string, number> = {};
-    const validRenewals = renewals.filter(renewal => renewal.status === 'completed');
     
     // Get all days in the range
     const days = eachDayOfInterval({ start: dateRange.from, end: dateRange.to });
@@ -38,9 +31,9 @@ export const SubscriptionRenewalsChart: React.FC<SubscriptionRenewalsChartProps>
     });
     
     // Aggregate renewal revenue by day
-    validRenewals.forEach(renewal => {
-      const dayStr = format(parseISO(renewal.renewal_date), 'dd/MM', { locale: ptBR });
-      dailyRevenue[dayStr] = (dailyRevenue[dayStr] || 0) + (renewal.net_value || 0);
+    chartData.forEach(item => {
+      const dayStr = format(parseISO(item.date), 'dd/MM', { locale: ptBR });
+      dailyRevenue[dayStr] = (dailyRevenue[dayStr] || 0) + (item.revenue || 0);
     });
 
     return Object.entries(dailyRevenue)
@@ -51,10 +44,9 @@ export const SubscriptionRenewalsChart: React.FC<SubscriptionRenewalsChartProps>
   // Prepare plan distribution data
   const preparePlanData = () => {
     const planCounts: Record<string, number> = {};
-    const validRenewals = renewals.filter(renewal => renewal.status === 'completed');
     
-    validRenewals.forEach(renewal => {
-      const plan = renewal.plan || 'Unknown';
+    chartData.forEach(item => {
+      const plan = item.plan || 'Unknown';
       planCounts[plan] = (planCounts[plan] || 0) + 1;
     });
 
