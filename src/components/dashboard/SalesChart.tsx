@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { format, parseISO, eachDayOfInterval, eachMonthOfInterval, startOfMonth, endOfMonth, isSameDay, startOfYear, endOfYear } from 'date-fns';
+import { format, parseISO, eachDayOfInterval, eachMonthOfInterval, startOfMonth, endOfMonth, isSameDay, startOfYear, endOfYear, isSameHour, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface Sale {
@@ -52,18 +51,28 @@ export const SalesChart: React.FC<SalesChartProps> = ({ sales, dateRange }) => {
     const validSales = sales.filter(sale => sale.status === 'completed' || sale.status === 'Unfulfilled');
     
     if (chartPeriod === 'single-day') {
-      // For single day, show hourly breakdown
+      // For single day, show hourly breakdown for the specific selected day
       const hourlyRevenue: Record<string, number> = {};
       
-      // Initialize all hours
+      // Initialize all hours for the selected day
       for (let hour = 0; hour < 24; hour++) {
         const hourStr = hour.toString().padStart(2, '0') + ':00';
         hourlyRevenue[hourStr] = 0;
       }
       
+      // Filter sales for the specific selected day and aggregate by hour
+      const targetDate = dateRange?.from || new Date();
+      const dayStart = startOfDay(targetDate);
+      const dayEnd = endOfDay(targetDate);
+      
       validSales.forEach(sale => {
-        const hour = format(parseISO(sale.sale_date), 'HH:00');
-        hourlyRevenue[hour] = (hourlyRevenue[hour] || 0) + (sale.net_value || 0);
+        const saleDate = parseISO(sale.sale_date);
+        
+        // Only include sales from the specific selected day
+        if (saleDate >= dayStart && saleDate <= dayEnd) {
+          const hour = format(saleDate, 'HH:00');
+          hourlyRevenue[hour] = (hourlyRevenue[hour] || 0) + (sale.net_value || 0);
+        }
       });
 
       return Object.entries(hourlyRevenue)
