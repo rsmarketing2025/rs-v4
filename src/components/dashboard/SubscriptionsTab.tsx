@@ -50,7 +50,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
         
         <TabsContent value="subscriptions" className="space-y-6 mt-6">
           <SubscriptionsSummaryCards dateRange={dateRange} filters={filters} />
-          <SubscriptionsChart dateRange={dateRange} filters={filters} />
+          <SubscriptionsChart dateRange={dateRange} filters={filters} type="subscriptions" />
           <SubscriptionsTable 
             dateRange={dateRange} 
             filters={filters} 

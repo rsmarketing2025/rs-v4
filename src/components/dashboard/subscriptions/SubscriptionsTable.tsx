@@ -1,199 +1,138 @@
 
-import React, { useState } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Download, Search } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useSubscriptionStatusData } from "@/hooks/useSubscriptionStatusData";
 
 interface SubscriptionsTableProps {
-  dateRange: {
-    from: Date;
-    to: Date;
-  };
-  filters: {
-    plan: string;
-    eventType: string;
-    paymentMethod: string;
-    status: string;
-  };
+  dateRange: { from: Date; to: Date };
+  filters: { plan: string; eventType: string; paymentMethod: string; status: string };
+  searchTerm?: string;
 }
 
 export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = ({
   dateRange,
-  filters
+  filters,
+  searchTerm = ''
 }) => {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [searchTerm, setSearchTerm] = useState('');
-  
   const { subscriptions, loading, totalCount } = useSubscriptionStatusData(
-    dateRange, 
-    filters, 
-    page, 
-    pageSize,
+    dateRange,
+    filters,
+    1, // page
+    50, // pageSize
     searchTerm
   );
 
-  const totalPages = Math.ceil(totalCount / pageSize);
-
-  const getStatusBadge = (status: string) => {
-    if (status === 'active' || status === 'Ativo') {
-      return <Badge className="bg-green-600 hover:bg-green-700">Ativo</Badge>;
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'default';
+      case 'canceled':
+        return 'destructive';
+      case 'suspended':
+        return 'secondary';
+      default:
+        return 'outline';
     }
-    return <Badge className="bg-red-600 hover:bg-red-700">Cancelado</Badge>;
   };
 
-  const getPlanBadge = (plan: string) => {
-    const colors = {
-      basic: "bg-blue-600 hover:bg-blue-700",
-      premium: "bg-purple-600 hover:bg-purple-700", 
-      enterprise: "bg-orange-600 hover:bg-orange-700"
-    };
-    return (
-      <Badge className={colors[plan as keyof typeof colors] || "bg-gray-600"}>
-        {plan.charAt(0).toUpperCase() + plan.slice(1)}
-      </Badge>
-    );
-  };
-
-  const handlePageSizeChange = (newPageSize: string) => {
-    setPageSize(Number(newPageSize));
-    setPage(1); // Reset to first page when changing page size
-  };
-
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
-    setPage(1); // Reset to first page when searching
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'Ativa';
+      case 'canceled':
+        return 'Cancelada';
+      case 'suspended':
+        return 'Suspensa';
+      default:
+        return status;
+    }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-slate-400">Carregando assinaturas...</div>
-      </div>
+      <Card className="bg-slate-800/30 border-slate-700">
+        <CardHeader>
+          <CardTitle className="text-white">Assinaturas</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full bg-slate-700" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Search and Controls */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
-          <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-            <Input
-              placeholder="Buscar por nome, email ou ID..."
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className="pl-10 bg-slate-800 border-slate-600 text-white placeholder:text-slate-400"
-            />
+    <Card className="bg-slate-800/30 border-slate-700">
+      <CardHeader>
+        <CardTitle className="text-white">
+          Assinaturas ({totalCount})
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {subscriptions.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-slate-400">Nenhuma assinatura encontrada para o período selecionado.</p>
           </div>
-          <div className="flex items-center gap-4">
-            <p className="text-sm text-slate-400 whitespace-nowrap">
-              Mostrando {subscriptions.length} de {totalCount} assinaturas
-            </p>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-400 whitespace-nowrap">Linhas por página:</span>
-              <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
-                <SelectTrigger className="w-20 bg-slate-800 border-slate-600 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-600">
-                  <SelectItem value="10" className="text-white hover:bg-slate-700">10</SelectItem>
-                  <SelectItem value="20" className="text-white hover:bg-slate-700">20</SelectItem>
-                  <SelectItem value="50" className="text-white hover:bg-slate-700">50</SelectItem>
-                  <SelectItem value="100" className="text-white hover:bg-slate-700">100</SelectItem>
-                  <SelectItem value="1000" className="text-white hover:bg-slate-700">1000</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-        <Button variant="outline" size="sm" className="text-slate-300 border-slate-600">
-          <Download className="w-4 h-4 mr-2" />
-          Exportar
-        </Button>
-      </div>
-
-      <div className="rounded-lg border border-slate-700 overflow-hidden">
-        <div className="max-h-[600px] overflow-y-auto">
+        ) : (
           <Table>
             <TableHeader>
-              <TableRow className="border-slate-700 hover:bg-slate-800/50">
+              <TableRow className="border-slate-700">
                 <TableHead className="text-slate-300">Cliente</TableHead>
-                <TableHead className="text-slate-300">Status</TableHead>
                 <TableHead className="text-slate-300">Plano</TableHead>
                 <TableHead className="text-slate-300">Valor</TableHead>
-                <TableHead className="text-slate-300">Data Criação</TableHead>
+                <TableHead className="text-slate-300">Data</TableHead>
+                <TableHead className="text-slate-300">Status</TableHead>
                 <TableHead className="text-slate-300">Número</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {subscriptions.map((subscription) => (
-                <TableRow key={subscription.id} className="border-slate-700 hover:bg-slate-800/30">
-                  <TableCell className="text-white">
-                    <div>
-                      <div className="font-medium">{subscription.customer_name || 'N/A'}</div>
-                      <div className="text-sm text-slate-400">{subscription.customer_email}</div>
+                <TableRow key={subscription.id} className="border-slate-700 hover:bg-slate-800/50">
+                  <TableCell>
+                    <div className="text-white">
+                      <div className="font-medium">
+                        {subscription.customer_name || 'N/A'}
+                      </div>
+                      <div className="text-sm text-slate-400">
+                        {subscription.customer_email}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    {getStatusBadge(subscription.subscription_status)}
+                    <Badge variant="outline" className="text-slate-300 border-slate-600">
+                      {subscription.plan}
+                    </Badge>
                   </TableCell>
-                  <TableCell>
-                    {getPlanBadge(subscription.plan)}
-                  </TableCell>
-                  <TableCell className="text-white">
-                    R$ {(subscription.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  <TableCell className="text-white font-medium">
+                    R$ {subscription.amount?.toLocaleString('pt-BR', { 
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2 
+                    })}
                   </TableCell>
                   <TableCell className="text-slate-300">
                     {new Date(subscription.created_at).toLocaleDateString('pt-BR')}
                   </TableCell>
+                  <TableCell>
+                    <Badge variant={getStatusBadgeVariant(subscription.subscription_status)}>
+                      {getStatusLabel(subscription.subscription_status)}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-slate-300">
-                    {subscription.subscription_number || 'N/A'}
+                    #{subscription.subscription_number || 'N/A'}
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-slate-400">
-          Página {page} de {totalPages}
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="text-slate-300 border-slate-600"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            className="text-slate-300 border-slate-600"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };

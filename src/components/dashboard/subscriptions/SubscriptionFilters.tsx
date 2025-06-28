@@ -2,7 +2,8 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { RotateCcw } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { RotateCcw, Search } from "lucide-react";
 
 interface SubscriptionFiltersProps {
   filters: {
@@ -12,11 +13,15 @@ interface SubscriptionFiltersProps {
     status: string;
   };
   onFiltersChange: (filters: any) => void;
+  searchTerm: string;
+  onSearchChange: (term: string) => void;
 }
 
 export const SubscriptionFilters: React.FC<SubscriptionFiltersProps> = ({
   filters,
-  onFiltersChange
+  onFiltersChange,
+  searchTerm,
+  onSearchChange
 }) => {
   const resetFilters = () => {
     onFiltersChange({
@@ -25,10 +30,21 @@ export const SubscriptionFilters: React.FC<SubscriptionFiltersProps> = ({
       paymentMethod: 'all',
       status: 'all'
     });
+    onSearchChange('');
   };
 
   return (
     <div className="flex flex-col sm:flex-row flex-wrap gap-2 md:gap-3">
+      <div className="relative flex-1 min-w-48">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+        <Input
+          placeholder="Buscar por cliente, email ou ID..."
+          value={searchTerm}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="pl-10 bg-slate-800 border-slate-700 text-white text-xs md:text-sm"
+        />
+      </div>
+
       <Select
         value={filters.status}
         onValueChange={(value) => onFiltersChange({ ...filters, status: value })}
