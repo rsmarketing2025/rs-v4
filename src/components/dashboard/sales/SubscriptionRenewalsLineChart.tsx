@@ -99,7 +99,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   });
 
   return (
-    <Card className="bg-slate-900/50 border-slate-800 backdrop-blur-sm">
+    <Card className="bg-slate-800/30 border-slate-700">
       <CardHeader>
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div>
@@ -138,11 +138,11 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="h-[400px] flex items-center justify-center">
+          <div className="h-[300px] flex items-center justify-center">
             <div className="text-slate-400">Carregando dados...</div>
           </div>
         ) : !hasData ? (
-          <div className="h-[400px] flex items-center justify-center">
+          <div className="h-[300px] flex items-center justify-center">
             <div className="text-center">
               <div className="text-slate-400 text-lg mb-2">📊 Nenhuma renovação encontrada</div>
               <div className="text-slate-500 text-sm">
@@ -151,63 +151,44 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
             </div>
           </div>
         ) : (
-          <div className="bg-slate-800/30 rounded-lg p-4 backdrop-blur-sm border border-slate-700/50">
-            <ResponsiveContainer width="100%" height={400}>
-              <AreaChart data={lineData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <defs>
-                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid 
-                  strokeDasharray="3 3" 
-                  stroke="#334155" 
-                  strokeOpacity={0.3}
-                />
-                <XAxis 
-                  dataKey="date" 
-                  stroke="#64748b"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis 
-                  stroke="#64748b"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#0f172a', 
-                    border: '1px solid #334155',
-                    borderRadius: '12px',
-                    color: '#fff',
-                    boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
-                    backdropFilter: 'blur(16px)'
-                  }}
-                  formatter={formatTooltipValue}
-                  labelStyle={{ color: '#94a3b8' }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="#3b82f6"
-                  strokeWidth={3}
-                  fill="url(#revenueGradient)"
-                  dot={{ fill: '#3b82f6', strokeWidth: 0, r: 4 }}
-                  activeDot={{ 
-                    r: 6, 
-                    fill: '#3b82f6', 
-                    strokeWidth: 2, 
-                    stroke: '#ffffff' 
-                  }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={lineData}>
+              <defs>
+                <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+              <XAxis 
+                dataKey="date" 
+                stroke="#94a3b8"
+                fontSize={12}
+              />
+              <YAxis 
+                stroke="#94a3b8" 
+                fontSize={12}
+                tickFormatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: '#1e293b', 
+                  border: '1px solid #475569',
+                  borderRadius: '8px',
+                  color: '#fff'
+                }}
+                formatter={formatTooltipValue}
+                labelStyle={{ color: '#94a3b8' }}
+              />
+              <Area
+                type="monotone"
+                dataKey="revenue"
+                stroke="#3b82f6"
+                fill="#3b82f6"
+                fillOpacity={0.3}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
         )}
       </CardContent>
     </Card>
