@@ -5,9 +5,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { GeneralTab, AGENT_ID } from "./config-tabs/GeneralTab";
-import { TrainingTab } from "./config-tabs/TrainingTab";
-import { BehaviorTab } from "./config-tabs/BehaviorTab";
-import { ConversationFlowTab } from "./config-tabs/ConversationFlowTab";
+import { InvisibleStructureTab } from "./config-tabs/InvisibleStructureTab";
+import { AdsTab } from "./config-tabs/AdsTab";
+import { ParadoxQuestionTab } from "./config-tabs/ParadoxQuestionTab";
+import { LeadsTab } from "./config-tabs/LeadsTab";
+import { BigIdeaTab } from "./config-tabs/BigIdeaTab";
+import { StorytellingTab } from "./config-tabs/StorytellingTab";
+import { OfferTab } from "./config-tabs/OfferTab";
 
 export const AgentConfigArea: React.FC = () => {
   const [activeTab, setActiveTab] = useState("general");
@@ -31,18 +35,30 @@ export const AgentConfigArea: React.FC = () => {
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col flex-1 min-h-0">
             <div className="border-b border-neutral-800 flex-shrink-0">
-              <TabsList className="grid w-full grid-cols-4 bg-neutral-900 rounded-none h-12">
-                <TabsTrigger value="general" className="text-sm">
+              <TabsList className="grid w-full grid-cols-8 bg-neutral-900 rounded-none h-12">
+                <TabsTrigger value="general" className="text-xs">
                   Geral
                 </TabsTrigger>
-                <TabsTrigger value="training" className="text-sm">
-                  Treinamento
+                <TabsTrigger value="invisible-structure" className="text-xs">
+                  Estrutura Invisível
                 </TabsTrigger>
-                <TabsTrigger value="behavior" className="text-sm">
-                  Comportamento
+                <TabsTrigger value="ads" className="text-xs">
+                  Anúncios
                 </TabsTrigger>
-                <TabsTrigger value="flow" className="text-sm">
-                  Fluxo
+                <TabsTrigger value="paradox-question" className="text-xs">
+                  Pergunta Paradoxal
+                </TabsTrigger>
+                <TabsTrigger value="leads" className="text-xs">
+                  Leads
+                </TabsTrigger>
+                <TabsTrigger value="big-idea" className="text-xs">
+                  Big Idea
+                </TabsTrigger>
+                <TabsTrigger value="storytelling" className="text-xs">
+                  Storytelling
+                </TabsTrigger>
+                <TabsTrigger value="offer" className="text-xs">
+                  Oferta
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -54,16 +70,32 @@ export const AgentConfigArea: React.FC = () => {
                     <GeneralTab />
                   </TabsContent>
 
-                  <TabsContent value="training" className="mt-0 h-full">
-                    <TrainingTab />
+                  <TabsContent value="invisible-structure" className="mt-0 h-full">
+                    <InvisibleStructureTab />
                   </TabsContent>
 
-                  <TabsContent value="behavior" className="mt-0 h-full">
-                    <BehaviorTab />
+                  <TabsContent value="ads" className="mt-0 h-full">
+                    <AdsTab />
                   </TabsContent>
 
-                  <TabsContent value="flow" className="mt-0 h-full">
-                    <ConversationFlowTab />
+                  <TabsContent value="paradox-question" className="mt-0 h-full">
+                    <ParadoxQuestionTab />
+                  </TabsContent>
+
+                  <TabsContent value="leads" className="mt-0 h-full">
+                    <LeadsTab />
+                  </TabsContent>
+
+                  <TabsContent value="big-idea" className="mt-0 h-full">
+                    <BigIdeaTab />
+                  </TabsContent>
+
+                  <TabsContent value="storytelling" className="mt-0 h-full">
+                    <StorytellingTab />
+                  </TabsContent>
+
+                  <TabsContent value="offer" className="mt-0 h-full">
+                    <OfferTab />
                   </TabsContent>
                 </div>
               </ScrollArea>
