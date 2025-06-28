@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSubscriptionRenewalsLineData } from "@/hooks/useSubscriptionRenewalsLineData";
 import { TrendingUp } from "lucide-react";
@@ -10,8 +10,6 @@ interface SubscriptionRenewalsLineChartProps {
   dateRange: { from: Date; to: Date };
   planFilter: string;
   onPlanFilterChange: (plan: string) => void;
-  statusFilter: string;
-  onStatusFilterChange: (status: string) => void;
   availablePlans: string[];
 }
 
@@ -19,13 +17,11 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   dateRange,
   planFilter,
   onPlanFilterChange,
-  statusFilter,
-  onStatusFilterChange,
   availablePlans
 }) => {
   const { lineData, loading } = useSubscriptionRenewalsLineData(
     dateRange,
-    { plan: planFilter, status: statusFilter }
+    { plan: planFilter, status: 'all' }
   );
 
   const formatCurrency = (value: number) => {
@@ -33,25 +29,19 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   };
 
   const formatTooltipValue = (value: any, name: string) => {
-    if (name === 'quantity') {
-      return [value.toString(), 'Quantidade'];
-    }
     return [formatCurrency(value), 'Receita'];
   };
 
-  const hasData = lineData.some(item => item.quantity > 0 || item.revenue > 0);
+  const hasData = lineData.some(item => item.revenue > 0);
 
-  // Calcular totais para exibição
-  const totalMetrics = lineData.reduce((acc, item) => ({
-    revenue: acc.revenue + item.revenue,
-    quantity: acc.quantity + item.quantity
-  }), { revenue: 0, quantity: 0 });
+  // Calcular total de receita para exibição
+  const totalRevenue = lineData.reduce((acc, item) => acc + item.revenue, 0);
 
   console.log('📊 Chart rendering state:', { 
     loading, 
     dataLength: lineData.length,
     hasData,
-    totalMetrics,
+    totalRevenue,
     sampleData: lineData.slice(0, 2)
   });
 
@@ -62,54 +52,34 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
           <div>
             <CardTitle className="text-white flex items-center gap-2">
               <TrendingUp className="w-5 h-5" />
-              Renovações de Assinatura
+              Faturamento de Renovações
             </CardTitle>
             <CardDescription className="text-slate-400">
-              Evolução diária da quantidade e receita das renovações
+              Evolução diária da receita das renovações de assinatura
             </CardDescription>
-            <div className="mt-2 flex flex-wrap gap-4">
+            <div className="mt-2">
               <div className="text-sm text-slate-300">
                 <span className="text-slate-400">Total:</span>{' '}
                 <span className="font-semibold text-violet-400">
-                  {formatCurrency(totalMetrics.revenue)}
-                </span>
-              </div>
-              <div className="text-sm text-slate-300">
-                <span className="text-slate-400">Renovações:</span>{' '}
-                <span className="font-semibold text-green-400">
-                  {totalMetrics.quantity.toLocaleString()}
+                  {formatCurrency(totalRevenue)}
                 </span>
               </div>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <div className="w-full sm:w-40">
-              <Select value={planFilter} onValueChange={onPlanFilterChange}>
-                <SelectTrigger className="bg-slate-900/50 border-slate-600 text-white">
-                  <SelectValue placeholder="Filtrar plano" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-slate-700">
-                  <SelectItem value="all">Todos os planos</SelectItem>
-                  {availablePlans.map((plan) => (
-                    <SelectItem key={plan} value={plan}>
-                      {plan}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="w-full sm:w-40">
-              <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-                <SelectTrigger className="bg-slate-900/50 border-slate-600 text-white">
-                  <SelectValue placeholder="Filtrar status" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-slate-700">
-                  <SelectItem value="all">Todos os status</SelectItem>
-                  <SelectItem value="active">Ativo</SelectItem>
-                  <SelectItem value="canceled">Cancelado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="w-full sm:w-40">
+            <Select value={planFilter} onValueChange={onPlanFilterChange}>
+              <SelectTrigger className="bg-slate-900/50 border-slate-600 text-white">
+                <SelectValue placeholder="Filtrar plano" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-900 border-slate-700">
+                <SelectItem value="all">Todos os planos</SelectItem>
+                {availablePlans.map((plan) => (
+                  <SelectItem key={plan} value={plan}>
+                    {plan}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </CardHeader>
@@ -137,14 +107,6 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
                 fontSize={12}
               />
               <YAxis 
-                yAxisId="left"
-                stroke="#94a3b8"
-                fontSize={12}
-                tickFormatter={(value) => value.toString()}
-              />
-              <YAxis 
-                yAxisId="right"
-                orientation="right"
                 stroke="#94a3b8"
                 fontSize={12}
                 tickFormatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`}
@@ -159,23 +121,12 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
                 formatter={formatTooltipValue}
                 labelStyle={{ color: '#94a3b8' }}
               />
-              <Legend />
               <Line
-                yAxisId="left"
-                type="monotone"
-                dataKey="quantity"
-                stroke="#10b981"
-                strokeWidth={2}
-                dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
-                name="Quantidade"
-              />
-              <Line
-                yAxisId="right"
                 type="monotone"
                 dataKey="revenue"
                 stroke="#8b5cf6"
-                strokeWidth={2}
-                dot={{ fill: '#8b5cf6', strokeWidth: 2, r: 4 }}
+                strokeWidth={3}
+                dot={{ fill: '#8b5cf6', strokeWidth: 2, r: 5 }}
                 name="Receita"
               />
             </LineChart>

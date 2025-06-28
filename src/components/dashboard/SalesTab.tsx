@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -42,7 +43,6 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   
   // Subscription renewals chart filters
   const [renewalPlanFilter, setRenewalPlanFilter] = useState("all");
-  const [renewalStatusFilter, setRenewalStatusFilter] = useState("all");
   const [availablePlans, setAvailablePlans] = useState<string[]>([]);
   
   const { toast } = useToast();
@@ -237,8 +237,6 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
             dateRange={dateRange}
             planFilter={renewalPlanFilter}
             onPlanFilterChange={setRenewalPlanFilter}
-            statusFilter={renewalStatusFilter}
-            onStatusFilterChange={setRenewalStatusFilter}
             availablePlans={availablePlans}
           />
         </div>
