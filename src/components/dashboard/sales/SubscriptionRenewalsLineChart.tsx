@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSubscriptionRenewalsLineData } from "@/hooks/useSubscriptionRenewalsLineData";
 import { TrendingUp } from "lucide-react";
@@ -100,7 +100,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   });
 
   return (
-    <Card className="bg-slate-800/30 border-slate-700">
+    <Card className="bg-slate-900/95 border-slate-800/50 backdrop-blur-sm">
       <CardHeader>
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div>
@@ -114,7 +114,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
             <div className="mt-2">
               <div className="text-sm text-slate-300">
                 <span className="text-slate-400">Total:</span>{' '}
-                <span className="font-semibold text-violet-400">
+                <span className="font-semibold text-blue-400">
                   {formatCurrency(totalRevenue)}
                 </span>
               </div>
@@ -122,10 +122,10 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
           </div>
           <div className="w-full sm:w-40">
             <Select value={planFilter} onValueChange={onPlanFilterChange}>
-              <SelectTrigger className="bg-slate-900/50 border-slate-600 text-white">
+              <SelectTrigger className="bg-slate-800/50 border-slate-700/50 text-white backdrop-blur-sm">
                 <SelectValue placeholder="Filtrar plano" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-900 border-slate-700">
+              <SelectContent className="bg-slate-900/95 border-slate-700/50 backdrop-blur-sm">
                 <SelectItem value="all">Todos os planos</SelectItem>
                 {availablePlans.map((plan) => (
                   <SelectItem key={plan} value={plan}>
@@ -152,39 +152,63 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
             </div>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={lineData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-              <XAxis 
-                dataKey="date" 
-                stroke="#94a3b8"
-                fontSize={12}
-              />
-              <YAxis 
-                stroke="#94a3b8"
-                fontSize={12}
-                tickFormatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1e293b', 
-                  border: '1px solid #475569',
-                  borderRadius: '8px',
-                  color: '#fff'
-                }}
-                formatter={formatTooltipValue}
-                labelStyle={{ color: '#94a3b8' }}
-              />
-              <Line
-                type="monotone"
-                dataKey="revenue"
-                stroke="#8b5cf6"
-                strokeWidth={3}
-                dot={{ fill: '#8b5cf6', strokeWidth: 2, r: 5 }}
-                name="Receita"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="bg-slate-950/50 rounded-lg p-4 backdrop-blur-sm">
+            <ResponsiveContainer width="100%" height={400}>
+              <AreaChart data={lineData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <defs>
+                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid 
+                  strokeDasharray="3 3" 
+                  stroke="#334155" 
+                  strokeOpacity={0.3}
+                />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="#64748b"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis 
+                  stroke="#64748b"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#0f172a', 
+                    border: '1px solid #334155',
+                    borderRadius: '12px',
+                    color: '#fff',
+                    boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
+                    backdropFilter: 'blur(16px)'
+                  }}
+                  formatter={formatTooltipValue}
+                  labelStyle={{ color: '#94a3b8' }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#3b82f6"
+                  strokeWidth={3}
+                  fill="url(#revenueGradient)"
+                  dot={{ fill: '#3b82f6', strokeWidth: 0, r: 4 }}
+                  activeDot={{ 
+                    r: 6, 
+                    fill: '#3b82f6', 
+                    strokeWidth: 2, 
+                    stroke: '#ffffff' 
+                  }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         )}
       </CardContent>
     </Card>
