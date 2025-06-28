@@ -31,6 +31,15 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
     return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
   };
 
+  const formatTooltipValue = (value: any, name: string) => {
+    if (name === 'quantity') {
+      return [value.toString(), 'Quantidade'];
+    }
+    return [formatCurrency(value), 'Receita'];
+  };
+
+  console.log('📊 Chart rendering with data:', { loading, dataLength: lineData.length });
+
   return (
     <Card className="bg-slate-800/30 border-slate-700">
       <CardHeader>
@@ -77,9 +86,13 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
           <div className="h-[400px] flex items-center justify-center">
             <div className="text-slate-400">Carregando dados...</div>
           </div>
+        ) : lineData.length === 0 ? (
+          <div className="h-[400px] flex items-center justify-center">
+            <div className="text-slate-400">Nenhum dado encontrado para o período selecionado</div>
+          </div>
         ) : (
           <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={lineData}>
+            <LineChart data={lineData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
               <XAxis 
                 dataKey="date" 
@@ -106,10 +119,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
                   borderRadius: '8px',
                   color: '#fff'
                 }}
-                formatter={(value: any, name: string) => [
-                  name === 'quantity' ? value.toString() : formatCurrency(value),
-                  name === 'quantity' ? 'Quantidade' : 'Receita'
-                ]}
+                formatter={formatTooltipValue}
                 labelStyle={{ color: '#94a3b8' }}
               />
               <Legend />

@@ -34,8 +34,12 @@ export const useSubscriptionRenewalsLineData = (
 
         const startDate = startOfDay(dateRange.from);
         const endDate = endOfDay(dateRange.to);
-        const startDateStr = format(startDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        const endDateStr = format(endDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        
+        // Usar formato de data mais simples
+        const startDateStr = format(startDate, "yyyy-MM-dd");
+        const endDateStr = format(endDate, "yyyy-MM-dd");
+
+        console.log('Date range:', { startDateStr, endDateStr });
 
         let query = supabase
           .from('subscription_renewals')
@@ -44,12 +48,12 @@ export const useSubscriptionRenewalsLineData = (
           .lte('created_at', endDateStr)
           .order('created_at', { ascending: true });
 
-        // Apply filters
-        if (filters.plan !== 'all') {
+        // Apply filters only if they are not 'all'
+        if (filters.plan && filters.plan !== 'all') {
           query = query.eq('plan', filters.plan);
         }
 
-        if (filters.status !== 'all') {
+        if (filters.status && filters.status !== 'all') {
           query = query.eq('subscription_status', filters.status);
         }
 
@@ -57,8 +61,11 @@ export const useSubscriptionRenewalsLineData = (
 
         if (error) {
           console.error('❌ Error fetching renewals line data:', error);
+          setLineData([]);
           return;
         }
+
+        console.log('📊 Raw renewals data:', renewals);
 
         // Generate all days in the range
         const allDays = eachDayOfInterval({ start: startDate, end: endDate });
@@ -66,16 +73,20 @@ export const useSubscriptionRenewalsLineData = (
         // Group renewals by date
         const renewalsByDate: Record<string, { quantity: number; revenue: number }> = {};
         
+        // Initialize all days with zero values
         allDays.forEach(day => {
           const dateKey = format(day, 'yyyy-MM-dd');
           renewalsByDate[dateKey] = { quantity: 0, revenue: 0 };
         });
 
+        // Process renewals data
         renewals?.forEach(renewal => {
-          const dateKey = format(parseISO(renewal.created_at), 'yyyy-MM-dd');
-          if (renewalsByDate[dateKey]) {
-            renewalsByDate[dateKey].quantity += 1;
-            renewalsByDate[dateKey].revenue += renewal.amount || 0;
+          if (renewal.created_at) {
+            const dateKey = format(parseISO(renewal.created_at), 'yyyy-MM-dd');
+            if (renewalsByDate[dateKey]) {
+              renewalsByDate[dateKey].quantity += 1;
+              renewalsByDate[dateKey].revenue += renewal.amount || 0;
+            }
           }
         });
 
@@ -93,14 +104,15 @@ export const useSubscriptionRenewalsLineData = (
 
         setLineData(chartData);
 
-        console.log('✅ Renewals line data loaded:', {
+        console.log('✅ Renewals line data processed:', {
           totalDays: chartData.length,
           totalRenewals: chartData.reduce((sum, item) => sum + item.quantity, 0),
-          totalRevenue: chartData.reduce((sum, item) => sum + item.revenue, 0)
+          totalRevenue: chartData.reduce((sum, item) => sum + item.revenue, 0),
+          sampleData: chartData.slice(0, 3)
         });
 
       } catch (error) {
-        console.error('❌ Error fetching renewals line data:', error);
+        console.error('❌ Error in fetchLineData:', error);
         setLineData([]);
       } finally {
         setLoading(false);
