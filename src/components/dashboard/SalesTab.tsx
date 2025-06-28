@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -220,6 +219,14 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
     document.body.removeChild(link);
   };
 
+  // Replace subscription renewals chart filters with revenue filter
+  const [revenueFilter, setRevenueFilter] = useState("renewal");
+
+  // Calculate total sales revenue for the revenue filter calculation
+  const totalSalesRevenue = sales
+    .filter(sale => sale.status === 'completed' || sale.status === 'Unfulfilled')
+    .reduce((acc, sale) => acc + (sale.net_value || 0), 0);
+
   return (
     <div className="space-y-6">
       {/* Charts Section */}
@@ -235,9 +242,9 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
           />
           <SubscriptionRenewalsLineChart
             dateRange={dateRange}
-            planFilter={renewalPlanFilter}
-            onPlanFilterChange={setRenewalPlanFilter}
-            availablePlans={availablePlans}
+            revenueFilter={revenueFilter}
+            onRevenueFilterChange={setRevenueFilter}
+            totalSalesRevenue={totalSalesRevenue}
           />
         </div>
       </div>

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
@@ -7,20 +8,20 @@ import { TrendingUp } from "lucide-react";
 
 interface SubscriptionRenewalsLineChartProps {
   dateRange: { from: Date; to: Date };
-  planFilter: string;
-  onPlanFilterChange: (plan: string) => void;
-  availablePlans: string[];
+  revenueFilter: string;
+  onRevenueFilterChange: (filter: string) => void;
+  totalSalesRevenue: number; // New prop to receive total sales revenue
 }
 
 export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineChartProps> = ({
   dateRange,
-  planFilter,
-  onPlanFilterChange,
-  availablePlans
+  revenueFilter,
+  onRevenueFilterChange,
+  totalSalesRevenue
 }) => {
   const { lineData, loading } = useSubscriptionRenewalsLineData(
     dateRange,
-    { plan: planFilter, status: 'all' }
+    { plan: 'all', status: 'all' }
   );
 
   // Determine the chart period based on date range (same logic as SalesChart)
@@ -53,26 +54,26 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   const getChartTitle = () => {
     switch (chartPeriod) {
       case 'single-day':
-        return 'Renovações por Hora';
+        return 'Faturamento e Renovações por Hora';
       case 'weekly':
-        return 'Renovações da Semana';
+        return 'Faturamento e Renovações da Semana';
       case 'yearly':
-        return 'Renovações por Mês';
+        return 'Faturamento e Renovações por Mês';
       default:
-        return 'Faturamento de Renovações';
+        return 'Faturamento e Renovações';
     }
   };
 
   const getChartDescription = () => {
     switch (chartPeriod) {
       case 'single-day':
-        return 'Distribuição das renovações ao longo do dia';
+        return 'Distribuição do faturamento ao longo do dia';
       case 'weekly':
-        return 'Renovações de cada dia da semana';
+        return 'Faturamento de cada dia da semana';
       case 'yearly':
-        return 'Renovações mensais ao longo do ano';
+        return 'Faturamento mensal ao longo do ano';
       default:
-        return 'Evolução diária da receita das renovações de assinatura';
+        return 'Evolução diária do faturamento';
     }
   };
 
@@ -84,18 +85,40 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
     return [formatCurrency(value), 'Receita'];
   };
 
-  const hasData = lineData.some(item => item.revenue > 0);
+  // Calculate data based on revenue filter
+  const processedData = React.useMemo(() => {
+    if (revenueFilter === 'renewal') {
+      return lineData;
+    } else {
+      // For "Faturamento sem Renovação", subtract renewal revenue from total sales revenue
+      const renewalTotalRevenue = lineData.reduce((acc, item) => acc + item.revenue, 0);
+      const nonRenewalRevenue = totalSalesRevenue - renewalTotalRevenue;
+      
+      // Distribute the non-renewal revenue proportionally across the period
+      const totalDataPoints = lineData.length;
+      const avgNonRenewalRevenue = totalDataPoints > 0 ? nonRenewalRevenue / totalDataPoints : 0;
+      
+      return lineData.map(item => ({
+        ...item,
+        revenue: avgNonRenewalRevenue
+      }));
+    }
+  }, [lineData, revenueFilter, totalSalesRevenue]);
+
+  const hasData = processedData.some(item => item.revenue > 0);
 
   // Calcular total de receita para exibição
-  const totalRevenue = lineData.reduce((acc, item) => acc + item.revenue, 0);
+  const totalRevenue = processedData.reduce((acc, item) => acc + item.revenue, 0);
 
   console.log('📊 Chart rendering state:', { 
     loading, 
-    dataLength: lineData.length,
+    dataLength: processedData.length,
     hasData,
     totalRevenue,
     chartPeriod,
-    sampleData: lineData.slice(0, 2)
+    revenueFilter,
+    totalSalesRevenue,
+    sampleData: processedData.slice(0, 2)
   });
 
   return (
@@ -119,18 +142,14 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
               </div>
             </div>
           </div>
-          <div className="w-full sm:w-40">
-            <Select value={planFilter} onValueChange={onPlanFilterChange}>
+          <div className="w-full sm:w-48">
+            <Select value={revenueFilter} onValueChange={onRevenueFilterChange}>
               <SelectTrigger className="bg-slate-800/50 border-slate-700/50 text-white backdrop-blur-sm">
-                <SelectValue placeholder="Filtrar plano" />
+                <SelectValue placeholder="Filtrar receita" />
               </SelectTrigger>
               <SelectContent className="bg-slate-900/95 border-slate-700/50 backdrop-blur-sm">
-                <SelectItem value="all">Todos os planos</SelectItem>
-                {availablePlans.map((plan) => (
-                  <SelectItem key={plan} value={plan}>
-                    {plan}
-                  </SelectItem>
-                ))}
+                <SelectItem value="renewal">Renovação</SelectItem>
+                <SelectItem value="non-renewal">Faturamento sem Renovação</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -144,15 +163,15 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
         ) : !hasData ? (
           <div className="h-[300px] flex items-center justify-center">
             <div className="text-center">
-              <div className="text-slate-400 text-lg mb-2">📊 Nenhuma renovação encontrada</div>
+              <div className="text-slate-400 text-lg mb-2">📊 Nenhum dado encontrado</div>
               <div className="text-slate-500 text-sm">
-                Não há dados de renovações para o período e filtros selecionados
+                Não há dados para o período e filtros selecionados
               </div>
             </div>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={lineData}>
+            <AreaChart data={processedData}>
               <defs>
                 <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
