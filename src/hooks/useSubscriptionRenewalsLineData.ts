@@ -1,8 +1,9 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { format, startOfDay, endOfDay, eachDayOfInterval, parseISO } from 'date-fns';
+import { format, startOfDay, endOfDay, eachDayOfInterval, parseISO, eachMonthOfInterval, startOfMonth, endOfMonth, isSameDay, startOfYear, endOfYear } from 'date-fns';
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
+import { ptBR } from 'date-fns/locale';
 
 interface RenewalLineData {
   date: string;
@@ -28,6 +29,30 @@ export const useSubscriptionRenewalsLineData = (
 ) => {
   const [lineData, setLineData] = useState<RenewalLineData[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Determine the chart period based on date range (same logic as SalesChart)
+  const getChartPeriod = () => {
+    if (!dateRange.from || !dateRange.to) return 'daily';
+    
+    const daysDiff = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // If it's exactly 1 day (today or yesterday)
+    if (daysDiff <= 1) {
+      return 'single-day';
+    }
+    // If it's exactly 7 days (this week)
+    else if (daysDiff === 6 || daysDiff === 7) {
+      return 'weekly';
+    }
+    // If it's a year range (more than 300 days)
+    else if (daysDiff > 300) {
+      return 'yearly';
+    }
+    // Default to daily for other ranges
+    else {
+      return 'daily';
+    }
+  };
 
   useEffect(() => {
     // Verificar se dateRange é válido
@@ -86,71 +111,204 @@ export const useSubscriptionRenewalsLineData = (
 
         console.log('📊 Raw renewals data:', renewals?.length || 0, 'records');
 
-        if (!renewals || renewals.length === 0) {
-          console.log('📊 No renewals data found for the period');
-          // Ainda assim criar os dias com valores zero
-          const allDays = eachDayOfInterval({ 
-            start: startOfDay(dateRange.from), 
-            end: endOfDay(dateRange.to) 
-          });
-          const emptyData = allDays.map(day => ({
-            date: format(day, 'dd/MM'),
-            quantity: 0,
-            revenue: 0
-          }));
-          setLineData(emptyData);
-          return;
-        }
+        const chartPeriod = getChartPeriod();
+        console.log('📊 Chart period:', chartPeriod);
 
-        // Generate all days in the range (local time)
-        const allDays = eachDayOfInterval({ 
-          start: startOfDay(dateRange.from), 
-          end: endOfDay(dateRange.to) 
-        });
-        
-        // Group renewals by date
-        const renewalsByDate: Record<string, { quantity: number; revenue: number }> = {};
-        
-        // Initialize all days with zero values
-        allDays.forEach(day => {
-          const dateKey = format(day, 'yyyy-MM-dd');
-          renewalsByDate[dateKey] = { quantity: 0, revenue: 0 };
-        });
-
-        // Process renewals data
-        renewals.forEach(renewal => {
-          if (renewal.created_at) {
-            try {
-              // Parse the date from database and convert to Brazil timezone
-              const renewalDateUTC = parseISO(renewal.created_at);
-              const renewalDateLocal = toZonedTime(renewalDateUTC, BRAZIL_TIMEZONE);
-              const dateKey = format(renewalDateLocal, 'yyyy-MM-dd');
-              
-              if (renewalsByDate[dateKey]) {
-                renewalsByDate[dateKey].quantity += 1;
-                renewalsByDate[dateKey].revenue += Number(renewal.amount) || 0;
-              }
-            } catch (error) {
-              console.warn('📊 Error parsing renewal date:', renewal.created_at, error);
+        // Prepare data based on chart period
+        const prepareChartData = () => {
+          if (!renewals || renewals.length === 0) {
+            console.log('📊 No renewals data found for the period');
+            // Create empty data structure based on period
+            if (chartPeriod === 'single-day') {
+              return Array.from({ length: 24 }, (_, hour) => ({
+                date: hour.toString().padStart(2, '0') + ':00',
+                quantity: 0,
+                revenue: 0
+              }));
+            } else if (chartPeriod === 'weekly') {
+              const days = eachDayOfInterval({ start: dateRange.from, end: dateRange.to });
+              return days.map(day => ({
+                date: format(day, 'EEE dd/MM', { locale: ptBR }),
+                quantity: 0,
+                revenue: 0
+              }));
+            } else if (chartPeriod === 'yearly') {
+              const yearStart = startOfYear(dateRange.from);
+              const yearEnd = endOfYear(dateRange.to);
+              const months = eachMonthOfInterval({ start: yearStart, end: yearEnd });
+              return months.map(month => ({
+                date: format(month, 'MMM', { locale: ptBR }),
+                quantity: 0,
+                revenue: 0
+              }));
+            } else {
+              const allDays = eachDayOfInterval({ 
+                start: startOfDay(dateRange.from), 
+                end: endOfDay(dateRange.to) 
+              });
+              return allDays.map(day => ({
+                date: format(day, 'dd/MM'),
+                quantity: 0,
+                revenue: 0
+              }));
             }
           }
-        });
 
-        // Convert to array format for chart
-        const chartData: RenewalLineData[] = allDays.map(day => {
-          const dateKey = format(day, 'yyyy-MM-dd');
-          const displayDate = format(day, 'dd/MM');
+          if (chartPeriod === 'single-day') {
+            // For single day, show hourly breakdown
+            const hourlyRevenue: Record<string, { quantity: number; revenue: number }> = {};
+            
+            // Initialize all hours
+            for (let hour = 0; hour < 24; hour++) {
+              const hourStr = hour.toString().padStart(2, '0') + ':00';
+              hourlyRevenue[hourStr] = { quantity: 0, revenue: 0 };
+            }
+            
+            // Filter renewals for the specific selected day and aggregate by hour
+            const targetDate = dateRange.from;
+            const dayStart = startOfDay(targetDate);
+            const dayEnd = endOfDay(targetDate);
+            
+            renewals.forEach(renewal => {
+              if (renewal.created_at) {
+                try {
+                  const renewalDateUTC = parseISO(renewal.created_at);
+                  const renewalDateLocal = toZonedTime(renewalDateUTC, BRAZIL_TIMEZONE);
+                  
+                  // Only include renewals from the specific selected day
+                  if (renewalDateLocal >= dayStart && renewalDateLocal <= dayEnd) {
+                    const hour = format(renewalDateLocal, 'HH:00');
+                    if (hourlyRevenue[hour]) {
+                      hourlyRevenue[hour].quantity += 1;
+                      hourlyRevenue[hour].revenue += Number(renewal.amount) || 0;
+                    }
+                  }
+                } catch (error) {
+                  console.warn('📊 Error parsing renewal date:', renewal.created_at, error);
+                }
+              }
+            });
+
+            return Object.entries(hourlyRevenue)
+              .map(([hour, data]) => ({ 
+                date: hour, 
+                quantity: data.quantity,
+                revenue: data.revenue 
+              }))
+              .sort((a, b) => a.date.localeCompare(b.date));
+          }
           
-          return {
-            date: displayDate,
-            quantity: renewalsByDate[dateKey]?.quantity || 0,
-            revenue: renewalsByDate[dateKey]?.revenue || 0
-          };
-        });
+          else if (chartPeriod === 'weekly') {
+            // For weekly, show each day of the week
+            const days = eachDayOfInterval({ start: dateRange.from, end: dateRange.to });
+            
+            return days.map(day => {
+              const dayRenewals = renewals.filter(renewal => {
+                if (!renewal.created_at) return false;
+                try {
+                  const renewalDateUTC = parseISO(renewal.created_at);
+                  const renewalDateLocal = toZonedTime(renewalDateUTC, BRAZIL_TIMEZONE);
+                  return isSameDay(renewalDateLocal, day);
+                } catch {
+                  return false;
+                }
+              });
+              
+              const dayRevenue = dayRenewals.reduce((sum, renewal) => sum + (Number(renewal.amount) || 0), 0);
+              
+              return {
+                date: format(day, 'EEE dd/MM', { locale: ptBR }),
+                quantity: dayRenewals.length,
+                revenue: dayRevenue
+              };
+            });
+          }
+          
+          else if (chartPeriod === 'yearly') {
+            // For yearly, show each month
+            const yearStart = startOfYear(dateRange.from);
+            const yearEnd = endOfYear(dateRange.to);
+            const months = eachMonthOfInterval({ start: yearStart, end: yearEnd });
+            
+            return months.map(month => {
+              const monthStart = startOfMonth(month);
+              const monthEnd = endOfMonth(month);
+              
+              const monthRenewals = renewals.filter(renewal => {
+                if (!renewal.created_at) return false;
+                try {
+                  const renewalDateUTC = parseISO(renewal.created_at);
+                  const renewalDateLocal = toZonedTime(renewalDateUTC, BRAZIL_TIMEZONE);
+                  return renewalDateLocal >= monthStart && renewalDateLocal <= monthEnd;
+                } catch {
+                  return false;
+                }
+              });
+              
+              const monthRevenue = monthRenewals.reduce((sum, renewal) => sum + (Number(renewal.amount) || 0), 0);
+              
+              return {
+                date: format(month, 'MMM', { locale: ptBR }),
+                quantity: monthRenewals.length,
+                revenue: monthRevenue
+              };
+            });
+          }
+          
+          else {
+            // Default daily view
+            const allDays = eachDayOfInterval({ 
+              start: startOfDay(dateRange.from), 
+              end: endOfDay(dateRange.to) 
+            });
+            
+            // Group renewals by date
+            const renewalsByDate: Record<string, { quantity: number; revenue: number }> = {};
+            
+            // Initialize all days with zero values
+            allDays.forEach(day => {
+              const dateKey = format(day, 'yyyy-MM-dd');
+              renewalsByDate[dateKey] = { quantity: 0, revenue: 0 };
+            });
 
+            // Process renewals data
+            renewals.forEach(renewal => {
+              if (renewal.created_at) {
+                try {
+                  // Parse the date from database and convert to Brazil timezone
+                  const renewalDateUTC = parseISO(renewal.created_at);
+                  const renewalDateLocal = toZonedTime(renewalDateUTC, BRAZIL_TIMEZONE);
+                  const dateKey = format(renewalDateLocal, 'yyyy-MM-dd');
+                  
+                  if (renewalsByDate[dateKey]) {
+                    renewalsByDate[dateKey].quantity += 1;
+                    renewalsByDate[dateKey].revenue += Number(renewal.amount) || 0;
+                  }
+                } catch (error) {
+                  console.warn('📊 Error parsing renewal date:', renewal.created_at, error);
+                }
+              }
+            });
+
+            // Convert to array format for chart
+            return allDays.map(day => {
+              const dateKey = format(day, 'yyyy-MM-dd');
+              const displayDate = format(day, 'dd/MM');
+              
+              return {
+                date: displayDate,
+                quantity: renewalsByDate[dateKey]?.quantity || 0,
+                revenue: renewalsByDate[dateKey]?.revenue || 0
+              };
+            });
+          }
+        };
+
+        const chartData = prepareChartData();
         setLineData(chartData);
 
         console.log('✅ Renewals line data processed:', {
+          chartPeriod,
           totalDays: chartData.length,
           totalRenewals: chartData.reduce((sum, item) => sum + item.quantity, 0),
           totalRevenue: chartData.reduce((sum, item) => sum + item.revenue, 0),

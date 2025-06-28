@@ -24,6 +24,59 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
     { plan: planFilter, status: 'all' }
   );
 
+  // Determine the chart period based on date range (same logic as SalesChart)
+  const getChartPeriod = () => {
+    if (!dateRange.from || !dateRange.to) return 'daily';
+    
+    const daysDiff = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // If it's exactly 1 day (today or yesterday)
+    if (daysDiff <= 1) {
+      return 'single-day';
+    }
+    // If it's exactly 7 days (this week)
+    else if (daysDiff === 6 || daysDiff === 7) {
+      return 'weekly';
+    }
+    // If it's a year range (more than 300 days)
+    else if (daysDiff > 300) {
+      return 'yearly';
+    }
+    // Default to daily for other ranges
+    else {
+      return 'daily';
+    }
+  };
+
+  const chartPeriod = getChartPeriod();
+
+  // Get chart title based on period
+  const getChartTitle = () => {
+    switch (chartPeriod) {
+      case 'single-day':
+        return 'Renovações por Hora';
+      case 'weekly':
+        return 'Renovações da Semana';
+      case 'yearly':
+        return 'Renovações por Mês';
+      default:
+        return 'Faturamento de Renovações';
+    }
+  };
+
+  const getChartDescription = () => {
+    switch (chartPeriod) {
+      case 'single-day':
+        return 'Distribuição das renovações ao longo do dia';
+      case 'weekly':
+        return 'Renovações de cada dia da semana';
+      case 'yearly':
+        return 'Renovações mensais ao longo do ano';
+      default:
+        return 'Evolução diária da receita das renovações de assinatura';
+    }
+  };
+
   const formatCurrency = (value: number) => {
     return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
   };
@@ -42,6 +95,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
     dataLength: lineData.length,
     hasData,
     totalRevenue,
+    chartPeriod,
     sampleData: lineData.slice(0, 2)
   });
 
@@ -52,10 +106,10 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
           <div>
             <CardTitle className="text-white flex items-center gap-2">
               <TrendingUp className="w-5 h-5" />
-              Faturamento de Renovações
+              {getChartTitle()}
             </CardTitle>
             <CardDescription className="text-slate-400">
-              Evolução diária da receita das renovações de assinatura
+              {getChartDescription()}
             </CardDescription>
             <div className="mt-2">
               <div className="text-sm text-slate-300">
