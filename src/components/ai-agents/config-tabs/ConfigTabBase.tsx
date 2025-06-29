@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -66,10 +65,10 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
         setManualPrompt(promptData.context_content || '');
       }
 
-      // Load files
+      // Load files - being explicit about columns to avoid type issues
       const { data: filesData } = await supabase
         .from('agent_training_files')
-        .select('*')
+        .select('id, file_name, file_type, file_url')
         .eq('user_id', user.id)
         .eq('file_category', tabName)
         .eq('status', 'active');
@@ -78,10 +77,10 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
         setFiles(filesData);
       }
 
-      // Load links
+      // Load links - being explicit about columns to avoid type issues
       const { data: linksData } = await supabase
         .from('agent_reference_links')
-        .select('*')
+        .select('id, link_title, link_url, link_description')
         .eq('user_id', user.id)
         .eq('link_category', tabName)
         .eq('status', 'active');
@@ -122,7 +121,7 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
           file_category: tabName,
           status: 'active'
         })
-        .select()
+        .select('id, file_name, file_type, file_url')
         .single();
 
       if (error) throw error;
@@ -167,7 +166,7 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
           link_category: tabName,
           status: 'active'
         })
-        .select()
+        .select('id, link_title, link_url, link_description')
         .single();
 
       if (error) throw error;
