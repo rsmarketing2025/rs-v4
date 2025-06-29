@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -65,28 +66,28 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
         setManualPrompt(promptData.context_content || '');
       }
 
-      // Load files - being explicit about columns to avoid type issues
-      const { data: filesData } = await supabase
+      // Load files with explicit typing
+      const filesQuery = await supabase
         .from('agent_training_files')
         .select('id, file_name, file_type, file_url')
         .eq('user_id', user.id)
         .eq('file_category', tabName)
         .eq('status', 'active');
 
-      if (filesData) {
-        setFiles(filesData);
+      if (filesQuery.data) {
+        setFiles(filesQuery.data as FileItem[]);
       }
 
-      // Load links - being explicit about columns to avoid type issues
-      const { data: linksData } = await supabase
+      // Load links with explicit typing
+      const linksQuery = await supabase
         .from('agent_reference_links')
         .select('id, link_title, link_url, link_description')
         .eq('user_id', user.id)
         .eq('link_category', tabName)
         .eq('status', 'active');
 
-      if (linksData) {
-        setLinks(linksData);
+      if (linksQuery.data) {
+        setLinks(linksQuery.data as LinkItem[]);
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -112,7 +113,7 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data, error } = await supabase
+      const insertResult = await supabase
         .from('agent_training_files')
         .insert({
           user_id: user.id,
@@ -124,9 +125,10 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
         .select('id, file_name, file_type, file_url')
         .single();
 
-      if (error) throw error;
-
-      setFiles(prev => [...prev, data]);
+      if (insertResult.error) throw insertResult.error;
+      if (insertResult.data) {
+        setFiles(prev => [...prev, insertResult.data as FileItem]);
+      }
 
       toast({
         title: "Sucesso",
@@ -156,7 +158,7 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data, error } = await supabase
+      const insertResult = await supabase
         .from('agent_reference_links')
         .insert({
           user_id: user.id,
@@ -169,9 +171,10 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
         .select('id, link_title, link_url, link_description')
         .single();
 
-      if (error) throw error;
-
-      setLinks(prev => [...prev, data]);
+      if (insertResult.error) throw insertResult.error;
+      if (insertResult.data) {
+        setLinks(prev => [...prev, insertResult.data as LinkItem]);
+      }
       setNewLink({ title: '', url: '', description: '' });
 
       toast({
