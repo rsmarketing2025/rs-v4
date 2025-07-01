@@ -51,20 +51,23 @@ export const useSubscriptionRenewalMetrics = (
         const startDateStr = format(startDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         const endDateStr = format(endDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
+        console.log('📊 [RENEWAL METRICS] Date range:', { startDateStr, endDateStr });
+
         let query = supabase
           .from('subscription_renewals')
           .select('*')
           .gte('created_at', startDateStr)
-          .lte('created_at', endDateStr)
-          .eq('subscription_status', 'active');
+          .lte('created_at', endDateStr);
 
+        // Only filter by plan if it's not 'all'
         if (filters.plan !== 'all') {
           query = query.eq('plan', filters.plan);
+          console.log('📊 [RENEWAL METRICS] Filtering by plan:', filters.plan);
         }
 
-        if (filters.status !== 'all') {
-          query = query.eq('subscription_status', filters.status);
-        }
+        // Remove the problematic subscription_status filter since the data uses 'renovação' not 'active'
+        // We'll fetch all renewals and let the data speak for itself
+        console.log('📊 [RENEWAL METRICS] Fetching all renewals without status filter...');
 
         const { data: renewals, error } = await query;
 
@@ -73,9 +76,14 @@ export const useSubscriptionRenewalMetrics = (
           return;
         }
 
+        console.log('📊 [RENEWAL METRICS] Raw renewals data:', renewals);
         console.log('📊 [RENEWAL METRICS] Renewals fetched:', renewals?.length || 0);
 
         if (renewals) {
+          // Log the subscription statuses we have
+          const statuses = [...new Set(renewals.map(r => r.subscription_status))];
+          console.log('📊 [RENEWAL METRICS] Available subscription statuses:', statuses);
+
           const totalRenewals = renewals.length;
           const totalRenewalRevenue = renewals.reduce((sum, renewal) => sum + (renewal.amount || 0), 0);
           const averageRenewalValue = totalRenewals > 0 ? totalRenewalRevenue / totalRenewals : 0;
@@ -89,6 +97,9 @@ export const useSubscriptionRenewalMetrics = (
             renewalsByPlan[plan] = (renewalsByPlan[plan] || 0) + 1;
             renewalRevenueByPlan[plan] = (renewalRevenueByPlan[plan] || 0) + (renewal.amount || 0);
           });
+
+          console.log('📊 [RENEWAL METRICS] Plan breakdown:', renewalsByPlan);
+          console.log('📊 [RENEWAL METRICS] Revenue breakdown:', renewalRevenueByPlan);
 
           setMetrics({
             totalRenewals,
