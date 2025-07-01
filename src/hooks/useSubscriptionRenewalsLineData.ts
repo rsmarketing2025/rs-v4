@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfDay, endOfDay, eachDayOfInterval, parseISO, eachMonthOfInterval, startOfMonth, endOfMonth, isSameDay, startOfYear, endOfYear, startOfWeek, endOfWeek } from 'date-fns';
@@ -125,9 +126,9 @@ export const useSubscriptionRenewalsLineData = (
                 revenue: 0
               }));
             } else if (chartPeriod === 'weekly') {
-              // Always generate Monday to Sunday for the current week
-              const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }); // Monday of current week
-              const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 }); // Sunday of current week
+              // Use the selected date range to determine the week
+              const weekStart = startOfWeek(dateRange.from, { weekStartsOn: 1 }); // Monday of selected week
+              const weekEnd = endOfWeek(dateRange.to, { weekStartsOn: 1 }); // Sunday of selected week
               const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
               return days.map(day => ({
                 date: format(day, 'EEE dd/MM', { locale: ptBR }),
@@ -201,15 +202,16 @@ export const useSubscriptionRenewalsLineData = (
           }
           
           else if (chartPeriod === 'weekly') {
-            // For weekly, always show Monday to Sunday of current week
-            const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }); // Monday of current week
-            const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 }); // Sunday of current week
+            // For weekly, use the selected date range to determine the week
+            const weekStart = startOfWeek(dateRange.from, { weekStartsOn: 1 }); // Monday of selected week
+            const weekEnd = endOfWeek(dateRange.to, { weekStartsOn: 1 }); // Sunday of selected week
             const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
             
-            console.log('📊 Weekly period - using current week:', {
+            console.log('📊 Weekly period - using selected week:', {
               weekStart: format(weekStart, 'yyyy-MM-dd'),
               weekEnd: format(weekEnd, 'yyyy-MM-dd'),
-              today: format(new Date(), 'yyyy-MM-dd')
+              selectedFrom: format(dateRange.from, 'yyyy-MM-dd'),
+              selectedTo: format(dateRange.to, 'yyyy-MM-dd')
             });
             
             return days.map(day => {
