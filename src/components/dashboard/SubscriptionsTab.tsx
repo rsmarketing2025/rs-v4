@@ -6,8 +6,10 @@ import { SubscriptionsChart } from "./subscriptions/SubscriptionsChart";
 import { SubscriptionsTable } from "./subscriptions/SubscriptionsTable";
 import { SubscriptionRenewalsSummaryCards } from "./subscriptions/SubscriptionRenewalsSummaryCards";
 import { SubscriptionRenewalsChart } from "./subscriptions/SubscriptionRenewalsChart";
+import { SubscriptionRenewalsLineChart } from "./subscriptions/SubscriptionRenewalsLineChart";
 import { SubscriptionRenewalsTable } from "./subscriptions/SubscriptionRenewalsTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMonthlyKPIs } from "@/hooks/useMonthlyKPIs";
 
 interface SubscriptionsTabProps {
   dateRange: { from: Date; to: Date };
@@ -22,6 +24,9 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
   });
 
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // Get total sales revenue for the line chart
+  const { kpis } = useMonthlyKPIs(dateRange);
 
   return (
     <div className="space-y-6">
@@ -60,7 +65,13 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
         
         <TabsContent value="renewals" className="space-y-6 mt-6">
           <SubscriptionRenewalsSummaryCards dateRange={dateRange} filters={filters} />
-          <SubscriptionRenewalsChart dateRange={dateRange} filters={filters} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <SubscriptionRenewalsLineChart 
+              dateRange={dateRange} 
+              totalSalesRevenue={kpis.totalRevenue}
+            />
+            <SubscriptionRenewalsChart dateRange={dateRange} filters={filters} />
+          </div>
           <SubscriptionRenewalsTable 
             dateRange={dateRange} 
             filters={filters} 
