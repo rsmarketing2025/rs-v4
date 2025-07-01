@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfDay, endOfDay, eachDayOfInterval, parseISO, eachMonthOfInterval, startOfMonth, endOfMonth, isSameDay, startOfYear, endOfYear, startOfWeek, endOfWeek } from 'date-fns';
@@ -40,16 +39,9 @@ export const useSubscriptionRenewalsLineData = (
     if (daysDiff <= 1) {
       return 'single-day';
     }
-    // If it's exactly 7 days (this week) - check if it's a Monday-Sunday week
-    else if (daysDiff === 6 || daysDiff === 7) {
-      // Check if it's a proper Monday-Sunday week
-      const weekStart = startOfWeek(dateRange.from, { weekStartsOn: 1 }); // Monday
-      const weekEnd = endOfWeek(dateRange.from, { weekStartsOn: 1 }); // Sunday
-      
-      if (isSameDay(dateRange.from, weekStart) && isSameDay(dateRange.to, weekEnd)) {
-        return 'weekly';
-      }
-      return 'daily';
+    // If it's 6 or 7 days, treat as weekly (covers different week selection scenarios)
+    else if (daysDiff >= 6 && daysDiff <= 7) {
+      return 'weekly';
     }
     // If it's a year range (more than 300 days)
     else if (daysDiff > 300) {
@@ -133,9 +125,9 @@ export const useSubscriptionRenewalsLineData = (
                 revenue: 0
               }));
             } else if (chartPeriod === 'weekly') {
-              // Generate Monday to Sunday days for the week
-              const weekStart = startOfWeek(dateRange.from, { weekStartsOn: 1 }); // Monday
-              const weekEnd = endOfWeek(dateRange.from, { weekStartsOn: 1 }); // Sunday
+              // Always generate Monday to Sunday for the current week
+              const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }); // Monday of current week
+              const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 }); // Sunday of current week
               const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
               return days.map(day => ({
                 date: format(day, 'EEE dd/MM', { locale: ptBR }),
@@ -209,10 +201,16 @@ export const useSubscriptionRenewalsLineData = (
           }
           
           else if (chartPeriod === 'weekly') {
-            // For weekly, show Monday to Sunday
-            const weekStart = startOfWeek(dateRange.from, { weekStartsOn: 1 }); // Monday
-            const weekEnd = endOfWeek(dateRange.from, { weekStartsOn: 1 }); // Sunday
+            // For weekly, always show Monday to Sunday of current week
+            const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }); // Monday of current week
+            const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 }); // Sunday of current week
             const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
+            
+            console.log('📊 Weekly period - using current week:', {
+              weekStart: format(weekStart, 'yyyy-MM-dd'),
+              weekEnd: format(weekEnd, 'yyyy-MM-dd'),
+              today: format(new Date(), 'yyyy-MM-dd')
+            });
             
             return days.map(day => {
               const dayRenewals = renewals.filter(renewal => {
