@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -66,24 +65,22 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
         setManualPrompt(promptData.context_content || '');
       }
 
-      // Load files
+      // Load files - removed the non-existent file_category filter
       const { data: filesData } = await supabase
         .from('agent_training_files')
         .select('id, file_name, file_type, file_url')
         .eq('user_id', user.id)
-        .eq('file_category', tabName)
         .eq('status', 'active');
 
       if (filesData) {
         setFiles(filesData);
       }
 
-      // Load links
+      // Load links - removed the non-existent link_category filter
       const { data: linksData } = await supabase
         .from('agent_reference_links')
         .select('id, link_title, link_url, link_description')
         .eq('user_id', user.id)
-        .eq('link_category', tabName)
         .eq('status', 'active');
 
       if (linksData) {
@@ -119,7 +116,6 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
           user_id: user.id,
           file_name: file.name,
           file_type: file.type,
-          file_category: tabName,
           status: 'active'
         })
         .select('id, file_name, file_type, file_url')
@@ -165,7 +161,6 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
           link_title: newLink.title,
           link_url: newLink.url,
           link_description: newLink.description,
-          link_category: tabName,
           status: 'active'
         })
         .select('id, link_title, link_url, link_description')
