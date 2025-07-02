@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { TrendingUp, Users, DollarSign, AlertTriangle, XCircle } from "lucide-react";
+import { TrendingUp, Users, DollarSign, XCircle } from "lucide-react";
 import { useSubscriptionMetrics } from "@/hooks/useSubscriptionMetrics";
 import { MetricsCard } from "@/components/dashboard/MetricsCard";
 
@@ -57,13 +57,6 @@ export const SubscriptionsSummaryCards: React.FC<SubscriptionsSummaryCardsProps>
       change: loading ? "..." : `${metrics.cancellationsGrowth >= 0 ? '+' : ''}${metrics.cancellationsGrowth.toFixed(1)}%`,
       icon: XCircle,
       variant: 'success' as const
-    },
-    {
-      title: "Taxa de Churn",
-      value: loading ? "..." : `${metrics.churnRate.toFixed(1)}%`,
-      change: loading ? "..." : `${metrics.churnRateChange >= 0 ? '+' : ''}${metrics.churnRateChange.toFixed(1)}%`,
-      icon: AlertTriangle,
-      variant: 'warning' as const
     }
   ];
 
@@ -72,7 +65,7 @@ export const SubscriptionsSummaryCards: React.FC<SubscriptionsSummaryCardsProps>
   console.log('🎯 [SUMMARY CARDS] Cancelamento card data:', cancellationCard);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
       {cards.map((card, index) => (
         <MetricsCard
           key={index}

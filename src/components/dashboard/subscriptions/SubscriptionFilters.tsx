@@ -60,21 +60,6 @@ export const SubscriptionFilters: React.FC<SubscriptionFiltersProps> = ({
       </Select>
 
       <Select
-        value={filters.plan}
-        onValueChange={(value) => onFiltersChange({ ...filters, plan: value })}
-      >
-        <SelectTrigger className="w-full sm:w-32 md:w-40 bg-slate-800 border-slate-700 text-white text-xs md:text-sm">
-          <SelectValue placeholder="Plano" />
-        </SelectTrigger>
-        <SelectContent className="bg-slate-800 border-slate-700">
-          <SelectItem value="all">Todos os Planos</SelectItem>
-          <SelectItem value="basic">Basic</SelectItem>
-          <SelectItem value="premium">Premium</SelectItem>
-          <SelectItem value="enterprise">Enterprise</SelectItem>
-        </SelectContent>
-      </Select>
-
-      <Select
         value={filters.eventType}
         onValueChange={(value) => onFiltersChange({ ...filters, eventType: value })}
       >

@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { format, parseISO, eachDayOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useProductSalesChartData } from "@/hooks/useProductSalesChartData";
 import { useSubscriptionChartData } from "@/hooks/useSubscriptionChartData";
 
 interface SubscriptionsChartProps {
@@ -17,7 +18,12 @@ export const SubscriptionsChart: React.FC<SubscriptionsChartProps> = ({
   filters,
   type = 'subscriptions'
 }) => {
-  const { chartData, loading } = useSubscriptionChartData(dateRange, filters, type);
+  // Use product_sales data for subscriptions chart, subscription_events for renewals
+  const { chartData: productSalesData, loading: productSalesLoading } = useProductSalesChartData(dateRange, true);
+  const { chartData: subscriptionData, loading: subscriptionLoading } = useSubscriptionChartData(dateRange, filters, type);
+  
+  const loading = type === 'subscriptions' ? productSalesLoading : subscriptionLoading;
+  const chartData = type === 'subscriptions' ? productSalesData : subscriptionData;
 
   // Prepare daily data
   const prepareDailyData = () => {
@@ -35,7 +41,8 @@ export const SubscriptionsChart: React.FC<SubscriptionsChartProps> = ({
     // Aggregate data by day
     chartData.forEach(item => {
       const dayStr = format(parseISO(item.date), 'dd/MM', { locale: ptBR });
-      dailyRevenue[dayStr] = (dailyRevenue[dayStr] || 0) + (item.revenue || 0);
+      const revenue = type === 'subscriptions' ? item.revenue : (item.revenue || 0);
+      dailyRevenue[dayStr] = (dailyRevenue[dayStr] || 0) + revenue;
     });
 
     return Object.entries(dailyRevenue)
@@ -48,7 +55,9 @@ export const SubscriptionsChart: React.FC<SubscriptionsChartProps> = ({
     const planCounts: Record<string, number> = {};
     
     chartData.forEach(item => {
-      const plan = item.plan || 'Unknown';
+      const plan = type === 'subscriptions' 
+        ? (item.product_name || 'Unknown')
+        : (item.plan || 'Unknown');
       planCounts[plan] = (planCounts[plan] || 0) + 1;
     });
 
@@ -64,7 +73,7 @@ export const SubscriptionsChart: React.FC<SubscriptionsChartProps> = ({
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
   const chartTitle = type === 'renewals' ? 'Receita de Renovações' : 'Receita de Assinaturas';
-  const planTitle = type === 'renewals' ? 'Renovações por Plano' : 'Assinaturas por Plano';
+  const planTitle = type === 'renewals' ? 'Renovações por Plano' : 'Assinaturas por Produto';
 
   if (loading) {
     return (
@@ -141,7 +150,7 @@ export const SubscriptionsChart: React.FC<SubscriptionsChartProps> = ({
         <CardHeader>
           <CardTitle className="text-white">{planTitle}</CardTitle>
           <CardDescription className="text-slate-400">
-            Distribuição por tipo de plano
+            Distribuição por tipo de {type === 'renewals' ? 'plano' : 'produto'}
           </CardDescription>
         </CardHeader>
         <CardContent>
