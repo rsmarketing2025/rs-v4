@@ -7,8 +7,7 @@ import { RotateCcw, Search } from "lucide-react";
 
 interface SubscriptionFiltersProps {
   filters: {
-    plan?: string;
-    product?: string;
+    plan: string;
     eventType: string;
     paymentMethod: string;
     status: string;
@@ -16,29 +15,21 @@ interface SubscriptionFiltersProps {
   onFiltersChange: (filters: any) => void;
   searchTerm: string;
   onSearchChange: (term: string) => void;
-  showProductFilter?: boolean;
 }
 
 export const SubscriptionFilters: React.FC<SubscriptionFiltersProps> = ({
   filters,
   onFiltersChange,
   searchTerm,
-  onSearchChange,
-  showProductFilter = false
+  onSearchChange
 }) => {
   const resetFilters = () => {
-    const baseFilters = {
+    onFiltersChange({
+      plan: 'all',
       eventType: 'all',
       paymentMethod: 'all',
       status: 'all'
-    };
-    
-    if (showProductFilter) {
-      onFiltersChange({ ...baseFilters, product: 'all' });
-    } else {
-      onFiltersChange({ ...baseFilters, plan: 'all' });
-    }
-    
+    });
     onSearchChange('');
   };
 
@@ -47,7 +38,7 @@ export const SubscriptionFilters: React.FC<SubscriptionFiltersProps> = ({
       <div className="relative flex-1 min-w-48">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
         <Input
-          placeholder={showProductFilter ? "Buscar por produto, ID..." : "Buscar por cliente, email ou ID..."}
+          placeholder="Buscar por cliente, email ou ID..."
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
           className="pl-10 bg-slate-800 border-slate-700 text-white text-xs md:text-sm"
@@ -68,38 +59,19 @@ export const SubscriptionFilters: React.FC<SubscriptionFiltersProps> = ({
         </SelectContent>
       </Select>
 
-      {showProductFilter && (
-        <Select
-          value={filters.product || 'all'}
-          onValueChange={(value) => onFiltersChange({ ...filters, product: value })}
-        >
-          <SelectTrigger className="w-full sm:w-32 md:w-40 bg-slate-800 border-slate-700 text-white text-xs md:text-sm">
-            <SelectValue placeholder="Produto" />
-          </SelectTrigger>
-          <SelectContent className="bg-slate-800 border-slate-700">
-            <SelectItem value="all">Todos os Produtos</SelectItem>
-            <SelectItem value="basic">Básico</SelectItem>
-            <SelectItem value="premium">Premium</SelectItem>
-            <SelectItem value="enterprise">Enterprise</SelectItem>
-          </SelectContent>
-        </Select>
-      )}
-
-      {!showProductFilter && (
-        <Select
-          value={filters.eventType}
-          onValueChange={(value) => onFiltersChange({ ...filters, eventType: value })}
-        >
-          <SelectTrigger className="w-full sm:w-32 md:w-40 bg-slate-800 border-slate-700 text-white text-xs md:text-sm">
-            <SelectValue placeholder="Tipo de Evento" />
-          </SelectTrigger>
-          <SelectContent className="bg-slate-800 border-slate-700">
-            <SelectItem value="all">Todos os Eventos</SelectItem>
-            <SelectItem value="subscription">Assinaturas</SelectItem>
-            <SelectItem value="cancellation">Cancelamentos</SelectItem>
-          </SelectContent>
-        </Select>
-      )}
+      <Select
+        value={filters.eventType}
+        onValueChange={(value) => onFiltersChange({ ...filters, eventType: value })}
+      >
+        <SelectTrigger className="w-full sm:w-32 md:w-40 bg-slate-800 border-slate-700 text-white text-xs md:text-sm">
+          <SelectValue placeholder="Tipo de Evento" />
+        </SelectTrigger>
+        <SelectContent className="bg-slate-800 border-slate-700">
+          <SelectItem value="all">Todos os Eventos</SelectItem>
+          <SelectItem value="subscription">Assinaturas</SelectItem>
+          <SelectItem value="cancellation">Cancelamentos</SelectItem>
+        </SelectContent>
+      </Select>
 
       <Select
         value={filters.paymentMethod}
