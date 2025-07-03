@@ -60,14 +60,38 @@ export const useSubscriptionMetrics = (
         const prevStartDateStr = format(prevStartDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         const prevEndDateStr = format(prevEndDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
-        // Build queries for current period
-        let currentQuery = supabase
+        // Get new subscriptions from subscription_status table (current period)
+        let newSubsQuery = supabase
+          .from('subscription_status')
+          .select('*')
+          .gte('created_at', startDateStr)
+          .lte('created_at', endDateStr)
+          .in('subscription_status', ['active', 'ativo', 'Active', 'Ativo']);
+
+        if (filters.plan !== 'all') {
+          newSubsQuery = newSubsQuery.eq('plan', filters.plan);
+        }
+
+        // Get new subscriptions from subscription_status table (previous period)
+        let prevNewSubsQuery = supabase
+          .from('subscription_status')
+          .select('*')
+          .gte('created_at', prevStartDateStr)
+          .lte('created_at', prevEndDateStr)
+          .in('subscription_status', ['active', 'ativo', 'Active', 'Ativo']);
+
+        if (filters.plan !== 'all') {
+          prevNewSubsQuery = prevNewSubsQuery.eq('plan', filters.plan);
+        }
+
+        // Build queries for cancellations and MRR from subscription_events
+        let currentEventsQuery = supabase
           .from('subscription_events')
           .select('*')
           .gte('event_date', startDateStr)
           .lte('event_date', endDateStr);
 
-        let prevQuery = supabase
+        let prevEventsQuery = supabase
           .from('subscription_events')
           .select('*')
           .gte('event_date', prevStartDateStr)
@@ -75,50 +99,51 @@ export const useSubscriptionMetrics = (
 
         // Apply product/plan filter if not "all"
         if (filters.plan !== 'all') {
-          currentQuery = currentQuery.eq('plan', filters.plan);
-          prevQuery = prevQuery.eq('plan', filters.plan);
+          currentEventsQuery = currentEventsQuery.eq('plan', filters.plan);
+          prevEventsQuery = prevEventsQuery.eq('plan', filters.plan);
         }
 
-        const [currentResult, prevResult] = await Promise.all([
-          currentQuery,
-          prevQuery
+        const [
+          newSubsResult,
+          prevNewSubsResult,
+          currentEventsResult,
+          prevEventsResult
+        ] = await Promise.all([
+          newSubsQuery,
+          prevNewSubsQuery,
+          currentEventsQuery,
+          prevEventsQuery
         ]);
 
-        if (currentResult.error || prevResult.error) {
-          console.error('❌ Error fetching subscription metrics:', currentResult.error || prevResult.error);
+        if (newSubsResult.error || prevNewSubsResult.error || currentEventsResult.error || prevEventsResult.error) {
+          console.error('❌ Error fetching subscription metrics:', 
+            newSubsResult.error || prevNewSubsResult.error || currentEventsResult.error || prevEventsResult.error);
           return;
         }
 
-        const currentEvents = currentResult.data || [];
-        const prevEvents = prevResult.data || [];
+        const newSubscriptionsData = newSubsResult.data || [];
+        const prevNewSubscriptionsData = prevNewSubsResult.data || [];
+        const currentEvents = currentEventsResult.data || [];
+        const prevEvents = prevEventsResult.data || [];
 
-        // Calculate metrics for current period - using correct event types
-        const newSubscriptions = currentEvents.filter(event => 
-          event.event_type === 'subscription' || event.event_type === 'created' || event.event_type === 'subscription_created'
-        ).length;
+        // Calculate new subscriptions from subscription_status table
+        const newSubscriptions = newSubscriptionsData.length;
+        const prevNewSubscriptions = prevNewSubscriptionsData.length;
 
+        // Calculate MRR from new subscriptions in subscription_status
+        const mrr = newSubscriptionsData.reduce((sum, sub) => sum + (sub.amount || 0), 0);
+        const prevMrr = prevNewSubscriptionsData.reduce((sum, sub) => sum + (sub.amount || 0), 0);
+
+        // Calculate cancellations from subscription_events
         const cancellations = currentEvents.filter(event => 
           event.event_type === 'cancellation' || event.event_type === 'canceled' || event.event_type === 'cancelled'
-        ).length;
-
-        const mrr = currentEvents
-          .filter(event => event.event_type === 'subscription' || event.event_type === 'created' || event.event_type === 'subscription_created')
-          .reduce((sum, event) => sum + (event.amount || 0), 0);
-
-        // Calculate metrics for previous period
-        const prevNewSubscriptions = prevEvents.filter(event => 
-          event.event_type === 'subscription' || event.event_type === 'created' || event.event_type === 'subscription_created'
         ).length;
 
         const prevCancellations = prevEvents.filter(event => 
           event.event_type === 'cancellation' || event.event_type === 'canceled' || event.event_type === 'cancelled'
         ).length;
 
-        const prevMrr = prevEvents
-          .filter(event => event.event_type === 'subscription' || event.event_type === 'created' || event.event_type === 'subscription_created')
-          .reduce((sum, event) => sum + (event.amount || 0), 0);
-
-        // Get active subscriptions from subscription_status table - using correct Portuguese status
+        // Get active subscriptions from subscription_status table
         let statusQuery = supabase
           .from('subscription_status')
           .select('*')
@@ -165,6 +190,7 @@ export const useSubscriptionMetrics = (
           newSubscriptions,
           mrr: mrr.toFixed(2),
           cancellations,
+          'newSubscriptionsData.length': newSubscriptionsData.length,
           'currentEvents.length': currentEvents.length,
           'events by type': {
             subscription: currentEvents.filter(e => e.event_type === 'subscription').length,
