@@ -15,23 +15,48 @@ export const SubscriptionRenewalsChart: React.FC<SubscriptionRenewalsChartProps>
 }) => {
   const { chartData, loading } = useSubscriptionChartData(dateRange, filters, 'renewals');
 
-  // Prepare plan distribution data
+  // Prepare plan distribution data with revenue
   const preparePlanData = () => {
     const planCounts: Record<string, number> = {};
+    const planRevenues: Record<string, number> = {};
     
     chartData.forEach(item => {
       const plan = item.plan || 'Unknown';
       planCounts[plan] = (planCounts[plan] || 0) + 1;
+      planRevenues[plan] = (planRevenues[plan] || 0) + (item.revenue || 0);
     });
 
     return Object.entries(planCounts).map(([name, value]) => ({
       name,
-      value
+      value,
+      revenue: planRevenues[name] || 0
     }));
   };
 
   const planData = preparePlanData();
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+
+  // Custom tooltip component
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-lg">
+          <p className="text-white font-medium">{data.name}</p>
+          <p className="text-white text-sm">
+            Renovações: {data.value}
+          </p>
+          <p className="text-white text-sm">
+            Valor: R$ {data.revenue.toLocaleString('pt-BR', { 
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2 
+            })}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   if (loading) {
     return (
@@ -72,14 +97,7 @@ export const SubscriptionRenewalsChart: React.FC<SubscriptionRenewalsChartProps>
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: '#1e293b', 
-                border: '1px solid #475569',
-                borderRadius: '8px',
-                color: '#fff'
-              }}
-            />
+            <Tooltip content={<CustomTooltip />} />
           </PieChart>
         </ResponsiveContainer>
       </CardContent>
