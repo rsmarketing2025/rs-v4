@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ProductFilter } from "./subscriptions/ProductFilter";
+import { SubscriptionFilters } from "./subscriptions/SubscriptionFilters";
 import { SubscriptionsSummaryCards } from "./subscriptions/SubscriptionsSummaryCards";
 import { SubscriptionsChart } from "./subscriptions/SubscriptionsChart";
 import { SubscriptionsTable } from "./subscriptions/SubscriptionsTable";
@@ -16,24 +16,25 @@ interface SubscriptionsTabProps {
 }
 
 export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange }) => {
-  const [selectedProduct, setSelectedProduct] = useState("all");
+  const [filters, setFilters] = useState({
+    plan: "all",
+    eventType: "all",
+    paymentMethod: "all",
+    status: "all"
+  });
+
+  const [searchTerm, setSearchTerm] = useState("");
   
   // Get total sales revenue for the line chart
   const { kpis } = useMonthlyKPIs(dateRange);
 
-  // Convert product filter to the format expected by existing components
-  const filters = {
-    plan: selectedProduct,
-    eventType: "all",
-    paymentMethod: "all",
-    status: "all"
-  };
-
   return (
     <div className="space-y-6">
-      <ProductFilter 
-        selectedProduct={selectedProduct}
-        onProductChange={setSelectedProduct}
+      <SubscriptionFilters 
+        filters={filters} 
+        onFiltersChange={setFilters}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
       />
       
       <Tabs defaultValue="subscriptions" className="w-full">
@@ -58,7 +59,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
           <SubscriptionsTable 
             dateRange={dateRange} 
             filters={filters} 
-            searchTerm="" 
+            searchTerm={searchTerm} 
           />
         </TabsContent>
         
@@ -74,7 +75,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
           <SubscriptionRenewalsTable 
             dateRange={dateRange} 
             filters={filters} 
-            searchTerm="" 
+            searchTerm={searchTerm} 
           />
         </TabsContent>
       </Tabs>
