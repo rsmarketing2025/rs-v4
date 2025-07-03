@@ -27,6 +27,7 @@ interface SubscriptionRenewal {
   created_at: string;
   updated_at: string;
   canceled_at: string | null;
+  subscription_number: number | null; // Add this property
 }
 
 export const useSubscriptionRenewals = (
@@ -37,6 +38,7 @@ export const useSubscriptionRenewals = (
   const [renewals, setRenewals] = useState<SubscriptionRenewal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [totalCount, setTotalCount] = useState(0); // Add totalCount
 
   useEffect(() => {
     const fetchRenewals = async () => {
@@ -83,8 +85,8 @@ export const useSubscriptionRenewals = (
 
         let filteredData = data || [];
 
-        // Apply search filter
-        if (searchTerm.trim()) {
+        // Apply search filter - make sure searchTerm is a string
+        if (searchTerm && typeof searchTerm === 'string' && searchTerm.trim()) {
           const searchLower = searchTerm.toLowerCase();
           filteredData = filteredData.filter(renewal =>
             renewal.customer_name?.toLowerCase().includes(searchLower) ||
@@ -95,6 +97,7 @@ export const useSubscriptionRenewals = (
         }
 
         setRenewals(filteredData);
+        setTotalCount(filteredData.length);
         
         console.log('✅ Renewals loaded:', {
           total: filteredData.length,
@@ -110,6 +113,7 @@ export const useSubscriptionRenewals = (
         console.error('❌ Error in useSubscriptionRenewals:', errorMessage);
         setError(errorMessage);
         setRenewals([]);
+        setTotalCount(0);
       } finally {
         setLoading(false);
       }
@@ -118,5 +122,5 @@ export const useSubscriptionRenewals = (
     fetchRenewals();
   }, [dateRange, filters, searchTerm]);
 
-  return { renewals, loading, error };
+  return { renewals, loading, error, totalCount };
 };

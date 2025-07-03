@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -25,8 +26,6 @@ export const SubscriptionRenewalsTable: React.FC<SubscriptionRenewalsTableProps>
   const { renewals, loading, totalCount } = useSubscriptionRenewals(
     dateRange,
     filters,
-    1, // page
-    50, // pageSize
     searchTerm
   );
 

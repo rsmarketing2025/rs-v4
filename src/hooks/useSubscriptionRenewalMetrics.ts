@@ -23,6 +23,12 @@ interface RenewalMetrics {
   activeSubscriptions: number;
   canceledSubscriptions: number;
   churnRate: number;
+  // Add the missing properties that the component expects
+  renewalGrowth: number;
+  totalRenewalRevenue: number;
+  revenueGrowth: number;
+  averageRenewalValue: number;
+  renewalsByPlan: Record<string, number>;
 }
 
 export const useSubscriptionRenewalMetrics = (
@@ -35,7 +41,12 @@ export const useSubscriptionRenewalMetrics = (
     averageValue: 0,
     activeSubscriptions: 0,
     canceledSubscriptions: 0,
-    churnRate: 0
+    churnRate: 0,
+    renewalGrowth: 0,
+    totalRenewalRevenue: 0,
+    revenueGrowth: 0,
+    averageRenewalValue: 0,
+    renewalsByPlan: {}
   });
   const [loading, setLoading] = useState(true);
 
@@ -89,13 +100,26 @@ export const useSubscriptionRenewalMetrics = (
           const canceledSubscriptions = data.filter(item => item.subscription_status === 'canceled').length;
           const churnRate = totalRenewals > 0 ? (canceledSubscriptions / totalRenewals) * 100 : 0;
 
+          // Calculate renewals by plan
+          const renewalsByPlan: Record<string, number> = {};
+          data.forEach(item => {
+            const plan = item.plan || 'Unknown';
+            renewalsByPlan[plan] = (renewalsByPlan[plan] || 0) + 1;
+          });
+
           setMetrics({
             totalRenewals,
             totalRevenue,
             averageValue,
             activeSubscriptions,
             canceledSubscriptions,
-            churnRate
+            churnRate,
+            // Map to expected property names
+            renewalGrowth: 0, // Default to 0 since we don't have previous period data
+            totalRenewalRevenue: totalRevenue,
+            revenueGrowth: 0, // Default to 0 since we don't have previous period data
+            averageRenewalValue: averageValue,
+            renewalsByPlan
           });
 
           console.log('✅ Renewal metrics calculated:', {

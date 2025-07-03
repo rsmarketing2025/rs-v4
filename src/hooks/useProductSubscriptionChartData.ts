@@ -20,6 +20,7 @@ interface ProductSubscriptionDataItem {
   date: string;
   amount: number;
   plan: string;
+  revenue: number; // Add revenue property
 }
 
 export const useProductSubscriptionChartData = (
@@ -58,7 +59,8 @@ export const useProductSubscriptionChartData = (
           const chartData: ProductSubscriptionDataItem[] = productSales.map(sale => ({
             date: sale.created_at,
             amount: sale.sale_value || 0,
-            plan: sale.product_name || 'Unknown'
+            plan: sale.product_name || 'Unknown',
+            revenue: sale.sale_value || 0 // Map amount to revenue as well
           }));
 
           setChartData(chartData);
