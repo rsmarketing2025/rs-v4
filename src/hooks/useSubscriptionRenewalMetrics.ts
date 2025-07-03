@@ -18,6 +18,7 @@ interface Filters {
   eventType: string;
   paymentMethod: string;
   status: string;
+  products: string[];
 }
 
 interface DateRange {
@@ -59,15 +60,19 @@ export const useSubscriptionRenewalMetrics = (
           .gte('created_at', startDateStr)
           .lte('created_at', endDateStr);
 
-        // Only filter by plan if it's not 'all'
+        // Apply plan filter if specified
         if (filters.plan !== 'all') {
           query = query.eq('plan', filters.plan);
           console.log('📊 [RENEWAL METRICS] Filtering by plan:', filters.plan);
         }
 
-        // Remove the problematic subscription_status filter since the data uses 'renovação' not 'active'
-        // We'll fetch all renewals and let the data speak for itself
-        console.log('📊 [RENEWAL METRICS] Fetching all renewals without status filter...');
+        // Apply products filter if products are selected
+        if (filters.products.length > 0) {
+          query = query.in('plan', filters.products);
+          console.log('📊 [RENEWAL METRICS] Filtering by products:', filters.products);
+        }
+
+        console.log('📊 [RENEWAL METRICS] Fetching renewals with filters...');
 
         const { data: renewals, error } = await query;
 
@@ -115,7 +120,8 @@ export const useSubscriptionRenewalMetrics = (
             totalRenewals,
             totalRenewalRevenue: totalRenewalRevenue.toFixed(2),
             averageRenewalValue: averageRenewalValue.toFixed(2),
-            planBreakdown: Object.keys(renewalsByPlan).length
+            planBreakdown: Object.keys(renewalsByPlan).length,
+            productsFilter: filters.products.length > 0 ? filters.products : 'none'
           });
         }
 

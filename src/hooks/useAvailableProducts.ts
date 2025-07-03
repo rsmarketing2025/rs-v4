@@ -16,76 +16,67 @@ export const useAvailableProducts = () => {
       if (isRetry) {
         console.log(`🔄 Retrying to fetch products (attempt ${retryCount + 1})`);
       } else {
-        console.log('🔍 Starting to fetch available products from subscription_status...');
+        console.log('🔍 Starting to fetch available products from both tables...');
       }
 
-      // Add detailed timing logs
       const startTime = performance.now();
       
-      const { data, error: queryError, count } = await supabase
+      // Fetch products from subscription_status table
+      const { data: statusData, error: statusError } = await supabase
         .from('subscription_status')
-        .select('plan', { count: 'exact' })
+        .select('plan')
         .not('plan', 'is', null)
         .not('plan', 'eq', '');
 
-      const endTime = performance.now();
-      console.log(`⏱️ Query completed in ${(endTime - startTime).toFixed(2)}ms`);
-
-      if (queryError) {
-        console.error('❌ Database query error:', {
-          message: queryError.message,
-          details: queryError.details,
-          hint: queryError.hint,
-          code: queryError.code
-        });
-        throw new Error(`Database error: ${queryError.message}`);
+      if (statusError) {
+        console.error('❌ Error fetching from subscription_status:', statusError);
+        throw new Error(`Database error (subscription_status): ${statusError.message}`);
       }
+
+      // Fetch products from subscription_renewals table
+      const { data: renewalsData, error: renewalsError } = await supabase
+        .from('subscription_renewals')
+        .select('plan')
+        .not('plan', 'is', null)
+        .not('plan', 'eq', '');
+
+      if (renewalsError) {
+        console.error('❌ Error fetching from subscription_renewals:', renewalsError);
+        throw new Error(`Database error (subscription_renewals): ${renewalsError.message}`);
+      }
+
+      const endTime = performance.now();
+      console.log(`⏱️ Both queries completed in ${(endTime - startTime).toFixed(2)}ms`);
 
       console.log('📊 Raw query results:', {
-        totalRecords: count,
-        dataLength: data?.length || 0,
-        sampleData: data?.slice(0, 3)
+        statusRecords: statusData?.length || 0,
+        renewalsRecords: renewalsData?.length || 0
       });
 
-      if (!data || data.length === 0) {
-        console.warn('⚠️ No data returned from subscription_status table');
-        setProducts([]);
-        return;
-      }
-
-      // Enhanced product extraction with validation
-      const allPlans = data.map(item => item.plan).filter(Boolean);
+      // Combine and deduplicate products from both sources
+      const statusPlans = (statusData || []).map(item => item.plan).filter(Boolean);
+      const renewalsPlans = (renewalsData || []).map(item => item.plan).filter(Boolean);
+      
+      const allPlans = [...statusPlans, ...renewalsPlans];
       const uniqueProducts = [...new Set(allPlans)].filter(plan => 
         plan && 
         typeof plan === 'string' && 
         plan.trim().length > 0
       ).sort();
 
-      console.log('🎯 Product extraction details:', {
+      console.log('🎯 Product consolidation details:', {
+        statusPlans: statusPlans.length,
+        renewalsPlans: renewalsPlans.length,
         totalPlans: allPlans.length,
         uniquePlans: uniqueProducts.length,
         duplicatesRemoved: allPlans.length - uniqueProducts.length,
         products: uniqueProducts
       });
 
-      // Validate uniqueness
-      const duplicateCheck = new Map();
-      allPlans.forEach(plan => {
-        duplicateCheck.set(plan, (duplicateCheck.get(plan) || 0) + 1);
-      });
-
-      const duplicates = Array.from(duplicateCheck.entries())
-        .filter(([_, count]) => count > 1)
-        .map(([plan, count]) => ({ plan, count }));
-
-      if (duplicates.length > 0) {
-        console.log('📋 Duplicate plans found:', duplicates);
-      }
-
       setProducts(uniqueProducts);
-      setRetryCount(0); // Reset retry count on success
+      setRetryCount(0);
       
-      console.log('✅ Products successfully loaded:', {
+      console.log('✅ Products successfully loaded from both sources:', {
         count: uniqueProducts.length,
         products: uniqueProducts
       });

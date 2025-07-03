@@ -60,6 +60,7 @@ export const useSubscriptionChartData = (
           // Apply product filter if products are selected
           if (filters.products.length > 0) {
             query = query.in('plan', filters.products);
+            console.log(`📊 [${type.toUpperCase()} CHART] Applying products filter:`, filters.products);
           }
 
           const { data: renewals, error } = await query;
@@ -97,6 +98,7 @@ export const useSubscriptionChartData = (
           // Apply product filter if products are selected
           if (filters.products.length > 0) {
             query = query.in('plan', filters.products);
+            console.log(`📊 [${type.toUpperCase()} CHART] Applying products filter:`, filters.products);
           }
 
           const { data: events, error } = await query;
@@ -117,7 +119,10 @@ export const useSubscriptionChartData = (
           }
         }
 
-        console.log(`✅ ${type} chart data loaded:`, chartData.length);
+        console.log(`✅ ${type} chart data loaded:`, {
+          count: chartData.length,
+          productsFilter: filters.products.length > 0 ? filters.products : 'none'
+        });
 
       } catch (error) {
         console.error(`❌ Error fetching ${type} chart data:`, error);

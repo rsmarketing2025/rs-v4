@@ -25,6 +25,7 @@ interface Filters {
   eventType: string;
   paymentMethod: string;
   status: string;
+  products: string[];
 }
 
 interface DateRange {
@@ -62,11 +63,18 @@ export const useSubscriptionRenewals = (
           .order('created_at', { ascending: false })
           .range((page - 1) * pageSize, page * pageSize - 1);
 
-        // Apply filters
+        // Apply plan filter
         if (filters.plan !== 'all') {
           query = query.eq('plan', filters.plan);
         }
 
+        // Apply products filter if products are selected
+        if (filters.products.length > 0) {
+          query = query.in('plan', filters.products);
+          console.log('📊 [RENEWALS TABLE] Applying products filter:', filters.products);
+        }
+
+        // Apply status filter
         if (filters.status !== 'all') {
           query = query.eq('subscription_status', filters.status);
         }
@@ -91,7 +99,8 @@ export const useSubscriptionRenewals = (
           totalCount: count || 0,
           page,
           pageSize,
-          searchTerm
+          searchTerm,
+          productsFilter: filters.products.length > 0 ? filters.products : 'none'
         });
 
       } catch (error) {
