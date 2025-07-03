@@ -6,6 +6,7 @@ import { RotateCcw, Search } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ChevronDown } from "lucide-react";
+import { useAvailableProducts } from "@/hooks/useAvailableProducts";
 
 interface SubscriptionFiltersProps {
   filters: {
@@ -26,14 +27,8 @@ export const SubscriptionFilters: React.FC<SubscriptionFiltersProps> = ({
   searchTerm,
   onSearchChange
 }) => {
-  // Lista de produtos disponíveis
-  const availableProducts = [
-    "Produto A",
-    "Produto B", 
-    "Produto C",
-    "Produto D",
-    "Produto E"
-  ];
+  // Fetch available products dynamically
+  const { products: availableProducts, loading: productsLoading } = useAvailableProducts();
 
   const resetFilters = () => {
     onFiltersChange({
@@ -72,32 +67,43 @@ export const SubscriptionFilters: React.FC<SubscriptionFiltersProps> = ({
             variant="outline"
             size="sm"
             className="text-slate-300 border-slate-600 text-xs md:text-sm px-2 md:px-3"
+            disabled={productsLoading}
           >
-            Produtos ({filters.products.length})
+            {productsLoading ? 'Carregando...' : `Produtos (${filters.products.length})`}
             <ChevronDown className="w-3 h-3 md:w-4 md:h-4 ml-1 md:ml-2" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-56 bg-slate-800 border-slate-700 p-3">
           <div className="space-y-2">
             <div className="font-medium text-white text-sm">Filtrar por Produtos</div>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {availableProducts.map((product) => (
-                <div key={product} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={product}
-                    checked={filters.products.includes(product)}
-                    onCheckedChange={(checked) => handleProductChange(product, checked as boolean)}
-                    className="border-slate-600 data-[state=checked]:bg-blue-600"
-                  />
-                  <label
-                    htmlFor={product}
-                    className="text-sm text-slate-300 cursor-pointer"
-                  >
-                    {product}
-                  </label>
-                </div>
-              ))}
-            </div>
+            {productsLoading ? (
+              <div className="text-slate-400 text-sm text-center py-4">
+                Carregando produtos...
+              </div>
+            ) : availableProducts.length === 0 ? (
+              <div className="text-slate-400 text-sm text-center py-4">
+                Nenhum produto encontrado
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {availableProducts.map((product) => (
+                  <div key={product} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={product}
+                      checked={filters.products.includes(product)}
+                      onCheckedChange={(checked) => handleProductChange(product, checked as boolean)}
+                      className="border-slate-600 data-[state=checked]:bg-blue-600"
+                    />
+                    <label
+                      htmlFor={product}
+                      className="text-sm text-slate-300 cursor-pointer flex-1"
+                    >
+                      {product}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            )}
             {filters.products.length > 0 && (
               <Button
                 variant="outline"
