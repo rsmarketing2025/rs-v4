@@ -41,6 +41,8 @@ export const useSubscriptionChartData = (
         const startDateStr = format(startDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         const endDateStr = format(endDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
+        let uniqueProducts: string[] = [];
+
         if (type === 'renewals') {
           // First, get all available products to determine if all are selected
           const { data: allProducts, error: productsError } = await supabase
@@ -53,7 +55,7 @@ export const useSubscriptionChartData = (
             console.error(`❌ [${type.toUpperCase()} CHART] Error fetching all products:`, productsError);
           }
 
-          const uniqueProducts = [...new Set((allProducts || []).map(p => p.plan))];
+          uniqueProducts = [...new Set((allProducts || []).map(p => p.plan))];
           console.log(`📊 [${type.toUpperCase()} CHART] Available products:`, uniqueProducts);
           console.log(`📊 [${type.toUpperCase()} CHART] Selected products:`, filters.products);
 
@@ -120,7 +122,7 @@ export const useSubscriptionChartData = (
             console.error(`❌ [${type.toUpperCase()} CHART] Error fetching all products:`, productsError);
           }
 
-          const uniqueProducts = [...new Set((allProducts || []).map(p => p.plan))];
+          uniqueProducts = [...new Set((allProducts || []).map(p => p.plan))];
           console.log(`📊 [${type.toUpperCase()} CHART] Available products:`, uniqueProducts);
           console.log(`📊 [${type.toUpperCase()} CHART] Selected products:`, filters.products);
 
