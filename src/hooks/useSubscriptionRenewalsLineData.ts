@@ -167,24 +167,18 @@ export const useSubscriptionRenewalsLineData = (
               hourlyRevenue[hourStr] = { quantity: 0, revenue: 0 };
             }
             
-            // Filter renewals for the specific selected day and aggregate by hour
-            const targetDate = dateRange.from;
-            const dayStart = startOfDay(targetDate);
-            const dayEnd = endOfDay(targetDate);
-            
+            // Process all renewals without additional date filtering
+            // The SQL query already filtered by the correct date range
             renewals.forEach(renewal => {
               if (renewal.created_at) {
                 try {
                   const renewalDateUTC = parseISO(renewal.created_at);
                   const renewalDateLocal = toZonedTime(renewalDateUTC, BRAZIL_TIMEZONE);
                   
-                  // Only include renewals from the specific selected day
-                  if (renewalDateLocal >= dayStart && renewalDateLocal <= dayEnd) {
-                    const hour = format(renewalDateLocal, 'HH:00');
-                    if (hourlyRevenue[hour]) {
-                      hourlyRevenue[hour].quantity += 1;
-                      hourlyRevenue[hour].revenue += Number(renewal.amount) || 0;
-                    }
+                  const hour = format(renewalDateLocal, 'HH:00');
+                  if (hourlyRevenue[hour]) {
+                    hourlyRevenue[hour].quantity += 1;
+                    hourlyRevenue[hour].revenue += Number(renewal.amount) || 0;
                   }
                 } catch (error) {
                   console.warn('📊 Error parsing renewal date:', renewal.created_at, error);
