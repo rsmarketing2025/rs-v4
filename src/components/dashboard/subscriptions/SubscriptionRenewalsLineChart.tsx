@@ -1,9 +1,10 @@
+
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useSubscriptionRenewalsLineData } from "@/hooks/useSubscriptionRenewalsLineData";
 import { useProductSalesChartData } from "@/hooks/useProductSalesChartData";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, AlertCircle } from "lucide-react";
 import { format, parseISO, eachDayOfInterval, eachHourOfInterval, eachMonthOfInterval, startOfDay, endOfDay } from 'date-fns';
 
 interface SubscriptionRenewalsLineChartProps {
@@ -29,7 +30,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
     totalSalesRevenue
   });
 
-  const { lineData: renewalData, loading: renewalLoading } = useSubscriptionRenewalsLineData(
+  const { lineData: renewalData, loading: renewalLoading, error: renewalError } = useSubscriptionRenewalsLineData(
     dateRange,
     renewalFilters
   );
@@ -218,6 +219,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
     totalRenewalRevenue,
     totalGeneralRevenue,
     chartPeriod,
+    renewalError,
     sampleData: combinedData.slice(0, 2)
   });
 
@@ -260,6 +262,16 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
         {loading ? (
           <div className="h-[300px] flex items-center justify-center">
             <div className="text-slate-400">Carregando dados...</div>
+          </div>
+        ) : renewalError ? (
+          <div className="h-[300px] flex items-center justify-center">
+            <div className="text-center">
+              <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-2" />
+              <div className="text-red-400 text-lg mb-2">Erro ao carregar dados</div>
+              <div className="text-slate-500 text-sm">
+                {renewalError}
+              </div>
+            </div>
           </div>
         ) : !hasData ? (
           <div className="h-[300px] flex items-center justify-center">
