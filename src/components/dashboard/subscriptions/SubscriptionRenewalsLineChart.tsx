@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useSubscriptionRenewalsLineData } from "@/hooks/useSubscriptionRenewalsLineData";
 import { useProductSalesChartData } from "@/hooks/useProductSalesChartData";
 import { TrendingUp } from "lucide-react";
@@ -16,9 +16,23 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   dateRange,
   totalSalesRevenue
 }) => {
+  // Stabilize filter dependencies with useMemo
+  const renewalFilters = useMemo(() => ({
+    plan: 'all',
+    status: 'all'
+  }), []);
+
+  console.log('🔄 SubscriptionRenewalsLineChart render', {
+    dateRange: {
+      from: dateRange?.from?.toISOString(),
+      to: dateRange?.to?.toISOString()
+    },
+    totalSalesRevenue
+  });
+
   const { lineData: renewalData, loading: renewalLoading } = useSubscriptionRenewalsLineData(
     dateRange,
-    { plan: 'all', status: 'all' }
+    renewalFilters
   );
 
   const { chartData: generalSalesData, loading: generalLoading } = useProductSalesChartData(
@@ -27,7 +41,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   );
 
   // Determine the chart period based on date range
-  const getChartPeriod = () => {
+  const chartPeriod = useMemo(() => {
     if (!dateRange.from || !dateRange.to) return 'daily';
     
     const daysDiff = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
@@ -41,9 +55,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
     } else {
       return 'daily';
     }
-  };
-
-  const chartPeriod = getChartPeriod();
+  }, [dateRange.from, dateRange.to]);
 
   // Get chart title based on period
   const getChartTitle = () => {
@@ -73,8 +85,14 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   };
 
   // Process general sales data to match the renewal data format
-  const processedGeneralData = React.useMemo(() => {
-    if (!generalSalesData.length) return [];
+  const processedGeneralData = useMemo(() => {
+    if (!generalSalesData.length || !dateRange.from || !dateRange.to) {
+      console.log('⚠️ processedGeneralData: No data or date range', {
+        dataLength: generalSalesData.length,
+        hasDateRange: !!(dateRange.from && dateRange.to)
+      });
+      return [];
+    }
 
     const startDate = startOfDay(dateRange.from);
     const endDate = endOfDay(dateRange.to);
@@ -94,7 +112,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
       formatString = 'dd/MM';
     }
 
-    return dateIntervals.map(intervalDate => {
+    const result = dateIntervals.map(intervalDate => {
       const dateKey = format(intervalDate, formatString);
       
       const salesInPeriod = generalSalesData.filter(sale => {
@@ -117,10 +135,23 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
         revenue
       };
     });
-  }, [generalSalesData, dateRange]);
+
+    console.log('✅ processedGeneralData processed', {
+      intervals: dateIntervals.length,
+      resultLength: result.length,
+      totalRevenue: result.reduce((sum, item) => sum + item.revenue, 0)
+    });
+
+    return result;
+  }, [generalSalesData, dateRange.from, dateRange.to]);
 
   // Combine both datasets
-  const combinedData = React.useMemo(() => {
+  const combinedData = useMemo(() => {
+    if (!renewalData.length && !processedGeneralData.length) {
+      console.log('⚠️ combinedData: No data from either source');
+      return [];
+    }
+
     const dataMap = new Map();
     
     // Add renewal data
@@ -146,7 +177,16 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
       }
     });
     
-    return Array.from(dataMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+    const result = Array.from(dataMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+    
+    console.log('📊 combinedData created', {
+      dataPoints: result.length,
+      totalRenewalRevenue: result.reduce((sum, item) => sum + item.renewalRevenue, 0),
+      totalGeneralRevenue: result.reduce((sum, item) => sum + item.generalRevenue, 0),
+      sampleData: result.slice(0, 2)
+    });
+
+    return result;
   }, [renewalData, processedGeneralData]);
 
   const formatCurrency = (value: number) => {
@@ -162,8 +202,25 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   const loading = renewalLoading || generalLoading;
 
   // Calculate totals for display
-  const totalRenewalRevenue = combinedData.reduce((acc, item) => acc + item.renewalRevenue, 0);
-  const totalGeneralRevenue = combinedData.reduce((acc, item) => acc + item.generalRevenue, 0);
+  const totalRenewalRevenue = useMemo(() => 
+    combinedData.reduce((acc, item) => acc + item.renewalRevenue, 0), 
+    [combinedData]
+  );
+  
+  const totalGeneralRevenue = useMemo(() => 
+    combinedData.reduce((acc, item) => acc + item.generalRevenue, 0), 
+    [combinedData]
+  );
+
+  console.log('📊 Chart rendering state:', {
+    loading,
+    dataLength: combinedData.length,
+    hasData,
+    totalRenewalRevenue,
+    totalGeneralRevenue,
+    chartPeriod,
+    sampleData: combinedData.slice(0, 2)
+  });
 
   return (
     <Card className="bg-slate-800/30 border-slate-700">
