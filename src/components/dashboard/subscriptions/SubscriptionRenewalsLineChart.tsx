@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useSubscriptionRenewalsLineData } from "@/hooks/useSubscriptionRenewalsLineData";
 import { useProductSalesChartData } from "@/hooks/useProductSalesChartData";
 import { TrendingUp } from "lucide-react";
@@ -272,7 +272,17 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={combinedData}>
+            <AreaChart data={combinedData}>
+              <defs>
+                <linearGradient id="renewalGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                </linearGradient>
+                <linearGradient id="generalGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
               <XAxis 
                 dataKey="date" 
@@ -294,21 +304,23 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
                 formatter={formatTooltipValue}
                 labelStyle={{ color: '#94a3b8' }}
               />
-              <Line
+              <Area
                 type="monotone"
                 dataKey="renewalRevenue"
+                stackId="1"
                 stroke="#3b82f6"
+                fill="url(#renewalGradient)"
                 strokeWidth={2}
-                dot={false}
               />
-              <Line
+              <Area
                 type="monotone"
                 dataKey="generalRevenue"
+                stackId="2"
                 stroke="#10b981"
+                fill="url(#generalGradient)"
                 strokeWidth={2}
-                dot={false}
               />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         )}
       </CardContent>
