@@ -2,10 +2,8 @@
 import React, { useState } from 'react';
 import { ProductFilter } from "./subscriptions/ProductFilter";
 import { SubscriptionsSummaryCards } from "./subscriptions/SubscriptionsSummaryCards";
-import { SubscriptionsChart } from "./subscriptions/SubscriptionsChart";
 import { SubscriptionsTable } from "./subscriptions/SubscriptionsTable";
 import { SubscriptionRenewalsSummaryCards } from "./subscriptions/SubscriptionRenewalsSummaryCards";
-import { SubscriptionRenewalsChart } from "./subscriptions/SubscriptionRenewalsChart";
 import { SubscriptionRenewalsLineChart } from "./subscriptions/SubscriptionRenewalsLineChart";
 import { SubscriptionRenewalsTable } from "./subscriptions/SubscriptionRenewalsTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -54,7 +52,6 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
         
         <TabsContent value="subscriptions" className="space-y-6 mt-6">
           <SubscriptionsSummaryCards dateRange={dateRange} filters={filters} />
-          <SubscriptionsChart dateRange={dateRange} filters={filters} type="subscriptions" />
           <SubscriptionsTable 
             dateRange={dateRange} 
             filters={filters} 
@@ -64,13 +61,10 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
         
         <TabsContent value="renewals" className="space-y-6 mt-6">
           <SubscriptionRenewalsSummaryCards dateRange={dateRange} filters={filters} />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <SubscriptionRenewalsLineChart 
-              dateRange={dateRange} 
-              totalSalesRevenue={kpis.totalRevenue}
-            />
-            <SubscriptionRenewalsChart dateRange={dateRange} filters={filters} />
-          </div>
+          <SubscriptionRenewalsLineChart 
+            dateRange={dateRange} 
+            totalSalesRevenue={kpis.totalRevenue}
+          />
           <SubscriptionRenewalsTable 
             dateRange={dateRange} 
             filters={filters} 
