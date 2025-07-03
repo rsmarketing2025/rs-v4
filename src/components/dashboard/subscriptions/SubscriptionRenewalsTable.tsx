@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -8,7 +7,13 @@ import { useSubscriptionRenewals } from "@/hooks/useSubscriptionRenewals";
 
 interface SubscriptionRenewalsTableProps {
   dateRange: { from: Date; to: Date };
-  filters: { plan: string; eventType: string; paymentMethod: string; status: string };
+  filters: { 
+    plan: string; 
+    eventType: string; 
+    paymentMethod: string; 
+    status: string; 
+    products: string[];
+  };
   searchTerm?: string;
 }
 
