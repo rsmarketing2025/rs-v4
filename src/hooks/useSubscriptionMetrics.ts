@@ -92,37 +92,37 @@ export const useSubscriptionMetrics = (
         const currentEvents = currentResult.data || [];
         const prevEvents = prevResult.data || [];
 
-        // Calculate metrics for current period
+        // Calculate metrics for current period - using correct event types
         const newSubscriptions = currentEvents.filter(event => 
-          event.event_type === 'subscription'
+          event.event_type === 'subscription' || event.event_type === 'created' || event.event_type === 'subscription_created'
         ).length;
 
         const cancellations = currentEvents.filter(event => 
-          event.event_type === 'cancellation'
+          event.event_type === 'cancellation' || event.event_type === 'canceled' || event.event_type === 'cancelled'
         ).length;
 
         const mrr = currentEvents
-          .filter(event => event.event_type === 'subscription')
+          .filter(event => event.event_type === 'subscription' || event.event_type === 'created' || event.event_type === 'subscription_created')
           .reduce((sum, event) => sum + (event.amount || 0), 0);
 
         // Calculate metrics for previous period
         const prevNewSubscriptions = prevEvents.filter(event => 
-          event.event_type === 'subscription'
+          event.event_type === 'subscription' || event.event_type === 'created' || event.event_type === 'subscription_created'
         ).length;
 
         const prevCancellations = prevEvents.filter(event => 
-          event.event_type === 'cancellation'
+          event.event_type === 'cancellation' || event.event_type === 'canceled' || event.event_type === 'cancelled'
         ).length;
 
         const prevMrr = prevEvents
-          .filter(event => event.event_type === 'subscription')
+          .filter(event => event.event_type === 'subscription' || event.event_type === 'created' || event.event_type === 'subscription_created')
           .reduce((sum, event) => sum + (event.amount || 0), 0);
 
-        // Get active subscriptions from subscription_status table
+        // Get active subscriptions from subscription_status table - using correct Portuguese status
         let statusQuery = supabase
           .from('subscription_status')
           .select('*')
-          .eq('subscription_status', 'active');
+          .in('subscription_status', ['active', 'ativo', 'Active', 'Ativo']);
 
         if (filters.plan !== 'all') {
           statusQuery = statusQuery.eq('plan', filters.plan);
@@ -164,7 +164,16 @@ export const useSubscriptionMetrics = (
           activeSubscriptions,
           newSubscriptions,
           mrr: mrr.toFixed(2),
-          cancellations
+          cancellations,
+          'currentEvents.length': currentEvents.length,
+          'events by type': {
+            subscription: currentEvents.filter(e => e.event_type === 'subscription').length,
+            created: currentEvents.filter(e => e.event_type === 'created').length,
+            subscription_created: currentEvents.filter(e => e.event_type === 'subscription_created').length,
+            cancellation: currentEvents.filter(e => e.event_type === 'cancellation').length,
+            canceled: currentEvents.filter(e => e.event_type === 'canceled').length,
+            cancelled: currentEvents.filter(e => e.event_type === 'cancelled').length,
+          }
         });
 
       } catch (error) {

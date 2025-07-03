@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfDay, endOfDay, eachDayOfInterval, parseISO, eachMonthOfInterval, startOfMonth, endOfMonth, isSameDay, startOfYear, endOfYear, startOfWeek, endOfWeek } from 'date-fns';
@@ -97,8 +96,14 @@ export const useSubscriptionRenewalsLineData = (
           query = query.eq('plan', filters.plan);
         }
 
+        // Fix status filter to use correct Portuguese values
         if (filters.status && filters.status !== 'all') {
-          query = query.eq('subscription_status', filters.status);
+          if (filters.status === 'active') {
+            // Map 'active' to Portuguese equivalents
+            query = query.in('subscription_status', ['ativo', 'active', 'Ativo', 'Active', 'renovação']);
+          } else {
+            query = query.eq('subscription_status', filters.status);
+          }
         }
 
         const { data: renewals, error } = await query;
@@ -110,6 +115,7 @@ export const useSubscriptionRenewalsLineData = (
         }
 
         console.log('📊 Raw renewals data:', renewals?.length || 0, 'records');
+        console.log('📊 Sample renewal statuses:', renewals?.slice(0, 5).map(r => r.subscription_status));
 
         const chartPeriod = getChartPeriod();
         console.log('📊 Chart period:', chartPeriod);
