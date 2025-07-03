@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -9,7 +8,13 @@ import { useSubscriptionChartData } from "@/hooks/useSubscriptionChartData";
 
 interface SubscriptionsChartProps {
   dateRange: { from: Date; to: Date };
-  filters: { plan: string; eventType: string; paymentMethod: string; status: string };
+  filters: { 
+    plan: string; 
+    eventType: string; 
+    paymentMethod: string; 
+    status: string; 
+    products: string[]; 
+  };
   type: 'subscriptions' | 'renewals';
 }
 
