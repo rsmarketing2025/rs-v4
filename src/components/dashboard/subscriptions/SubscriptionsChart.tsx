@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { format, parseISO, eachDayOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useProductSalesChartData } from "@/hooks/useProductSalesChartData";
+import { useSubscriptionStatusChartData } from "@/hooks/useSubscriptionStatusChartData";
 import { useSubscriptionChartData } from "@/hooks/useSubscriptionChartData";
 
 interface SubscriptionsChartProps {
@@ -23,12 +24,12 @@ export const SubscriptionsChart: React.FC<SubscriptionsChartProps> = ({
   filters,
   type = 'subscriptions'
 }) => {
-  // Use product_sales data for subscriptions chart, subscription_events for renewals
-  const { chartData: productSalesData, loading: productSalesLoading } = useProductSalesChartData(dateRange, true);
-  const { chartData: subscriptionData, loading: subscriptionLoading } = useSubscriptionChartData(dateRange, filters, type);
+  // Use subscription_status data for subscriptions chart, subscription_renewals for renewals
+  const { chartData: subscriptionStatusData, loading: subscriptionStatusLoading } = useSubscriptionStatusChartData(dateRange, filters);
+  const { chartData: renewalData, loading: renewalLoading } = useSubscriptionChartData(dateRange, filters, type);
   
-  const loading = type === 'subscriptions' ? productSalesLoading : subscriptionLoading;
-  const chartData = type === 'subscriptions' ? productSalesData : subscriptionData;
+  const loading = type === 'subscriptions' ? subscriptionStatusLoading : renewalLoading;
+  const chartData = type === 'subscriptions' ? subscriptionStatusData : renewalData;
 
   // Prepare daily data
   const prepareDailyData = () => {
@@ -46,7 +47,9 @@ export const SubscriptionsChart: React.FC<SubscriptionsChartProps> = ({
     // Aggregate data by day
     chartData.forEach(item => {
       const dayStr = format(parseISO(item.date), 'dd/MM', { locale: ptBR });
-      const revenue = type === 'subscriptions' ? item.revenue : (item.revenue || 0);
+      const revenue = type === 'subscriptions' 
+        ? (item.amount || 0) 
+        : (item.revenue || 0);
       dailyRevenue[dayStr] = (dailyRevenue[dayStr] || 0) + revenue;
     });
 
@@ -61,12 +64,12 @@ export const SubscriptionsChart: React.FC<SubscriptionsChartProps> = ({
     const planRevenues: Record<string, number> = {};
     
     chartData.forEach(item => {
-      const plan = type === 'subscriptions' 
-        ? (item.product_name || 'Unknown')
-        : (item.plan || 'Unknown');
+      const plan = item.plan || 'Unknown';
       planCounts[plan] = (planCounts[plan] || 0) + 1;
       
-      const revenue = type === 'subscriptions' ? item.revenue : (item.revenue || 0);
+      const revenue = type === 'subscriptions' 
+        ? (item.amount || 0) 
+        : (item.revenue || 0);
       planRevenues[plan] = (planRevenues[plan] || 0) + revenue;
     });
 
@@ -83,7 +86,7 @@ export const SubscriptionsChart: React.FC<SubscriptionsChartProps> = ({
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
   const chartTitle = type === 'renewals' ? 'Receita de Renovações' : 'Receita de Assinaturas';
-  const planTitle = type === 'renewals' ? 'Renovações por Plano' : 'Assinaturas por Produto';
+  const planTitle = type === 'renewals' ? 'Renovações por Plano' : 'Assinaturas por Plano';
 
   // Custom tooltip component for pie chart
   const CustomPieTooltip = ({ active, payload }: any) => {
@@ -182,7 +185,7 @@ export const SubscriptionsChart: React.FC<SubscriptionsChartProps> = ({
         <CardHeader>
           <CardTitle className="text-white">{planTitle}</CardTitle>
           <CardDescription className="text-slate-400">
-            Distribuição por tipo de {type === 'renewals' ? 'plano' : 'produto'}
+            Distribuição por {type === 'renewals' ? 'plano de renovação' : 'plano de assinatura'}
           </CardDescription>
         </CardHeader>
         <CardContent>
