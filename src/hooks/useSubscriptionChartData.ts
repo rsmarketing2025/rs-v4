@@ -42,6 +42,33 @@ export const useSubscriptionChartData = (
         const endDateStr = format(endDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
         if (type === 'renewals') {
+          // First, get all available products to determine if all are selected
+          const { data: allProducts, error: productsError } = await supabase
+            .from('subscription_renewals')
+            .select('plan')
+            .not('plan', 'is', null)
+            .not('plan', 'eq', '');
+
+          if (productsError) {
+            console.error(`❌ [${type.toUpperCase()} CHART] Error fetching all products:`, productsError);
+          }
+
+          const uniqueProducts = [...new Set((allProducts || []).map(p => p.plan))];
+          console.log(`📊 [${type.toUpperCase()} CHART] Available products:`, uniqueProducts);
+          console.log(`📊 [${type.toUpperCase()} CHART] Selected products:`, filters.products);
+
+          // Determine if product filter should be applied
+          // If no products selected OR all products selected, don't apply filter
+          const shouldApplyProductFilter = filters.products.length > 0 && 
+                                         filters.products.length < uniqueProducts.length;
+
+          console.log(`📊 [${type.toUpperCase()} CHART] Filter logic:`, {
+            productsSelected: filters.products.length,
+            totalProducts: uniqueProducts.length,
+            shouldApplyProductFilter,
+            allProductsSelected: filters.products.length === uniqueProducts.length
+          });
+
           // Use subscription_renewals table for renewals
           let query = supabase
             .from('subscription_renewals')
@@ -57,10 +84,12 @@ export const useSubscriptionChartData = (
             query = query.eq('subscription_status', filters.status);
           }
 
-          // Apply product filter if products are selected
-          if (filters.products.length > 0) {
+          // Apply product filter only if not all products are selected
+          if (shouldApplyProductFilter) {
             query = query.in('plan', filters.products);
             console.log(`📊 [${type.toUpperCase()} CHART] Applying products filter:`, filters.products);
+          } else {
+            console.log(`📊 [${type.toUpperCase()} CHART] Not applying products filter (all products selected or none)`);
           }
 
           const { data: renewals, error } = await query;
@@ -80,6 +109,33 @@ export const useSubscriptionChartData = (
             setChartData(chartData);
           }
         } else {
+          // First, get all available products to determine if all are selected
+          const { data: allProducts, error: productsError } = await supabase
+            .from('subscription_events')
+            .select('plan')
+            .not('plan', 'is', null)
+            .not('plan', 'eq', '');
+
+          if (productsError) {
+            console.error(`❌ [${type.toUpperCase()} CHART] Error fetching all products:`, productsError);
+          }
+
+          const uniqueProducts = [...new Set((allProducts || []).map(p => p.plan))];
+          console.log(`📊 [${type.toUpperCase()} CHART] Available products:`, uniqueProducts);
+          console.log(`📊 [${type.toUpperCase()} CHART] Selected products:`, filters.products);
+
+          // Determine if product filter should be applied
+          // If no products selected OR all products selected, don't apply filter
+          const shouldApplyProductFilter = filters.products.length > 0 && 
+                                         filters.products.length < uniqueProducts.length;
+
+          console.log(`📊 [${type.toUpperCase()} CHART] Filter logic:`, {
+            productsSelected: filters.products.length,
+            totalProducts: uniqueProducts.length,
+            shouldApplyProductFilter,
+            allProductsSelected: filters.products.length === uniqueProducts.length
+          });
+
           // Use subscription_events for subscriptions
           let query = supabase
             .from('subscription_events')
@@ -95,10 +151,12 @@ export const useSubscriptionChartData = (
             query = query.eq('event_type', filters.eventType);
           }
 
-          // Apply product filter if products are selected
-          if (filters.products.length > 0) {
+          // Apply product filter only if not all products are selected
+          if (shouldApplyProductFilter) {
             query = query.in('plan', filters.products);
             console.log(`📊 [${type.toUpperCase()} CHART] Applying products filter:`, filters.products);
+          } else {
+            console.log(`📊 [${type.toUpperCase()} CHART] Not applying products filter (all products selected or none)`);
           }
 
           const { data: events, error } = await query;
@@ -121,7 +179,8 @@ export const useSubscriptionChartData = (
 
         console.log(`✅ ${type} chart data loaded:`, {
           count: chartData.length,
-          productsFilter: filters.products.length > 0 ? filters.products : 'none'
+          filterApplied: filters.products.length > 0 && filters.products.length < uniqueProducts.length ? 'YES' : 'NO',
+          productsFilter: filters.products.length > 0 && filters.products.length < uniqueProducts.length ? filters.products : 'none (all products or none selected)'
         });
 
       } catch (error) {

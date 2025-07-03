@@ -66,6 +66,33 @@ export const useSubscriptionMetrics = (
           filters
         });
 
+        // First, get all available products to determine if all are selected
+        const { data: allProducts, error: productsError } = await supabase
+          .from('subscription_status')
+          .select('plan')
+          .not('plan', 'is', null)
+          .not('plan', 'eq', '');
+
+        if (productsError) {
+          console.error('❌ [SUBSCRIPTION METRICS] Error fetching all products:', productsError);
+        }
+
+        const uniqueProducts = [...new Set((allProducts || []).map(p => p.plan))];
+        console.log('📊 [SUBSCRIPTION METRICS] Available products:', uniqueProducts);
+        console.log('📊 [SUBSCRIPTION METRICS] Selected products:', filters.products);
+
+        // Determine if product filter should be applied
+        // If no products selected OR all products selected, don't apply filter
+        const shouldApplyProductFilter = filters.products.length > 0 && 
+                                       filters.products.length < uniqueProducts.length;
+
+        console.log('📊 [SUBSCRIPTION METRICS] Filter logic:', {
+          productsSelected: filters.products.length,
+          totalProducts: uniqueProducts.length,
+          shouldApplyProductFilter,
+          allProductsSelected: filters.products.length === uniqueProducts.length
+        });
+
         // 1. Get active subscriptions from subscription_status table
         let activeQuery = supabase
           .from('subscription_status')
@@ -76,9 +103,12 @@ export const useSubscriptionMetrics = (
           activeQuery = activeQuery.eq('plan', filters.plan);
         }
 
-        // Apply product filter if products are selected
-        if (filters.products.length > 0) {
+        // Apply product filter only if not all products are selected
+        if (shouldApplyProductFilter) {
           activeQuery = activeQuery.in('plan', filters.products);
+          console.log('📊 [SUBSCRIPTION METRICS] Applying product filter to active subscriptions:', filters.products);
+        } else {
+          console.log('📊 [SUBSCRIPTION METRICS] Not applying product filter to active subscriptions (all products selected or none)');
         }
 
         const { count: activeCount, data: activeSubscriptions, error: activeError } = await activeQuery;
@@ -107,9 +137,12 @@ export const useSubscriptionMetrics = (
           newSubsQuery = newSubsQuery.eq('plan', filters.plan);
         }
 
-        // Apply product filter if products are selected
-        if (filters.products.length > 0) {
+        // Apply product filter only if not all products are selected
+        if (shouldApplyProductFilter) {
           newSubsQuery = newSubsQuery.in('plan', filters.products);
+          console.log('📊 [SUBSCRIPTION METRICS] Applying product filter to new subscriptions:', filters.products);
+        } else {
+          console.log('📊 [SUBSCRIPTION METRICS] Not applying product filter to new subscriptions (all products selected or none)');
         }
 
         const { count: newSubscriptionsCount, error: newSubsError } = await newSubsQuery;
@@ -157,9 +190,12 @@ export const useSubscriptionMetrics = (
           cancellationsQuery1 = cancellationsQuery1.eq('plan', filters.plan);
         }
 
-        // Apply product filter if products are selected
-        if (filters.products.length > 0) {
+        // Apply product filter only if not all products are selected
+        if (shouldApplyProductFilter) {
           cancellationsQuery1 = cancellationsQuery1.in('plan', filters.products);
+          console.log('📊 [CANCELLATIONS] Applying product filter to cancellations (approach 1):', filters.products);
+        } else {
+          console.log('📊 [CANCELLATIONS] Not applying product filter to cancellations (approach 1)');
         }
 
         const { count: cancellationsCount1, data: cancellationsData1, error: cancellationsError1 } = await cancellationsQuery1;
@@ -188,9 +224,12 @@ export const useSubscriptionMetrics = (
           cancellationsQuery2 = cancellationsQuery2.eq('plan', filters.plan);
         }
 
-        // Apply product filter if products are selected
-        if (filters.products.length > 0) {
+        // Apply product filter only if not all products are selected
+        if (shouldApplyProductFilter) {
           cancellationsQuery2 = cancellationsQuery2.in('plan', filters.products);
+          console.log('📊 [CANCELLATIONS] Applying product filter to cancellations (approach 2):', filters.products);
+        } else {
+          console.log('📊 [CANCELLATIONS] Not applying product filter to cancellations (approach 2)');
         }
 
         const { count: cancellationsCount2, data: cancellationsData2, error: cancellationsError2 } = await cancellationsQuery2;
@@ -218,9 +257,12 @@ export const useSubscriptionMetrics = (
           cancellationEventsQuery = cancellationEventsQuery.eq('plan', filters.plan);
         }
 
-        // Apply product filter if products are selected
-        if (filters.products.length > 0) {
+        // Apply product filter only if not all products are selected
+        if (shouldApplyProductFilter) {
           cancellationEventsQuery = cancellationEventsQuery.in('plan', filters.products);
+          console.log('📊 [CANCELLATIONS] Applying product filter to cancellation events:', filters.products);
+        } else {
+          console.log('📊 [CANCELLATIONS] Not applying product filter to cancellation events');
         }
 
         const { count: cancellationEventsCount, data: cancellationEventsData, error: cancellationEventsError } = await cancellationEventsQuery;
@@ -278,7 +320,8 @@ export const useSubscriptionMetrics = (
           mrr: finalMetrics.mrr.toFixed(2),
           churnRate: finalMetrics.churnRate + '%',
           dateRangeUsed: `${startDateStr} to ${endDateStr}`,
-          productsFilter: filters.products.length > 0 ? filters.products : 'none'
+          filterApplied: shouldApplyProductFilter ? 'YES' : 'NO',
+          productsFilter: shouldApplyProductFilter ? filters.products : 'none (all products or none selected)'
         });
 
         setMetrics(finalMetrics);

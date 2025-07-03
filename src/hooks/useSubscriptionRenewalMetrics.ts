@@ -54,6 +54,33 @@ export const useSubscriptionRenewalMetrics = (
 
         console.log('📊 [RENEWAL METRICS] Date range:', { startDateStr, endDateStr });
 
+        // First, get all available products to determine if all are selected
+        const { data: allProducts, error: productsError } = await supabase
+          .from('subscription_renewals')
+          .select('plan')
+          .not('plan', 'is', null)
+          .not('plan', 'eq', '');
+
+        if (productsError) {
+          console.error('❌ [RENEWAL METRICS] Error fetching all products:', productsError);
+        }
+
+        const uniqueProducts = [...new Set((allProducts || []).map(p => p.plan))];
+        console.log('📊 [RENEWAL METRICS] Available products:', uniqueProducts);
+        console.log('📊 [RENEWAL METRICS] Selected products:', filters.products);
+
+        // Determine if product filter should be applied
+        // If no products selected OR all products selected, don't apply filter
+        const shouldApplyProductFilter = filters.products.length > 0 && 
+                                       filters.products.length < uniqueProducts.length;
+
+        console.log('📊 [RENEWAL METRICS] Filter logic:', {
+          productsSelected: filters.products.length,
+          totalProducts: uniqueProducts.length,
+          shouldApplyProductFilter,
+          allProductsSelected: filters.products.length === uniqueProducts.length
+        });
+
         let query = supabase
           .from('subscription_renewals')
           .select('*')
@@ -66,10 +93,12 @@ export const useSubscriptionRenewalMetrics = (
           console.log('📊 [RENEWAL METRICS] Filtering by plan:', filters.plan);
         }
 
-        // Apply products filter if products are selected
-        if (filters.products.length > 0) {
+        // Apply product filter only if not all products are selected
+        if (shouldApplyProductFilter) {
           query = query.in('plan', filters.products);
-          console.log('📊 [RENEWAL METRICS] Filtering by products:', filters.products);
+          console.log('📊 [RENEWAL METRICS] Applying product filter:', filters.products);
+        } else {
+          console.log('📊 [RENEWAL METRICS] Not applying product filter (all products selected or none)');
         }
 
         console.log('📊 [RENEWAL METRICS] Fetching renewals with filters...');
@@ -121,7 +150,8 @@ export const useSubscriptionRenewalMetrics = (
             totalRenewalRevenue: totalRenewalRevenue.toFixed(2),
             averageRenewalValue: averageRenewalValue.toFixed(2),
             planBreakdown: Object.keys(renewalsByPlan).length,
-            productsFilter: filters.products.length > 0 ? filters.products : 'none'
+            filterApplied: shouldApplyProductFilter ? 'YES' : 'NO',
+            productsFilter: shouldApplyProductFilter ? filters.products : 'none (all products or none selected)'
           });
         }
 
