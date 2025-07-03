@@ -3,7 +3,6 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useSubscriptionRenewalsLineData } from "@/hooks/useSubscriptionRenewalsLineData";
-import { useSalesChartData } from "@/hooks/useSalesChartData";
 import { TrendingUp } from "lucide-react";
 
 interface SubscriptionRenewalsLineChartProps {
@@ -18,11 +17,6 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   const { lineData: renewalsData, loading: renewalsLoading } = useSubscriptionRenewalsLineData(
     dateRange,
     { plan: 'all', status: 'all' }
-  );
-
-  const { chartData: salesData, loading: salesLoading } = useSalesChartData(
-    dateRange,
-    { creative: 'all', paymentMethod: 'all', status: 'all' }
   );
 
   // Determine the chart period based on date range
@@ -48,26 +42,26 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   const getChartTitle = () => {
     switch (chartPeriod) {
       case 'single-day':
-        return 'Faturamento por Hora';
+        return 'Renovações por Hora';
       case 'weekly':
-        return 'Faturamento da Semana';
+        return 'Renovações da Semana';
       case 'yearly':
-        return 'Faturamento por Mês';
+        return 'Renovações por Mês';
       default:
-        return 'Faturamento Geral vs Renovações';
+        return 'Renovações de Assinaturas';
     }
   };
 
   const getChartDescription = () => {
     switch (chartPeriod) {
       case 'single-day':
-        return 'Comparação entre faturamento geral e renovações ao longo do dia';
+        return 'Receita de renovações ao longo do dia';
       case 'weekly':
-        return 'Comparação entre faturamento geral e renovações da semana';
+        return 'Receita de renovações da semana';
       case 'yearly':
-        return 'Comparação entre faturamento geral e renovações por mês';
+        return 'Receita de renovações por mês';
       default:
-        return 'Comparação entre faturamento geral e receita de renovações';
+        return 'Receita de renovações de assinaturas';
     }
   };
 
@@ -76,51 +70,22 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   };
 
   const formatTooltipValue = (value: any, name: string) => {
-    const label = name === 'renewals' ? 'Renovações' : 'Faturamento Geral';
-    return [formatCurrency(value), label];
+    return [formatCurrency(value), 'Renovações'];
   };
 
-  // Combine data from both sources
-  const combinedData = React.useMemo(() => {
-    if (renewalsLoading || salesLoading) return [];
-
-    // Create a map to merge data by date
-    const dataMap = new Map();
-
-    // Add renewals data
-    renewalsData.forEach(item => {
-      dataMap.set(item.date, {
-        date: item.date,
-        renewals: item.revenue,
-        general: 0
-      });
-    });
-
-    // Add sales data
-    salesData.forEach(item => {
-      const existing = dataMap.get(item.date) || { date: item.date, renewals: 0, general: 0 };
-      existing.general = item.revenue;
-      dataMap.set(item.date, existing);
-    });
-
-    return Array.from(dataMap.values()).sort((a, b) => a.date.localeCompare(b.date));
-  }, [renewalsData, salesData, renewalsLoading, salesLoading]);
-
-  const loading = renewalsLoading || salesLoading;
-  const hasData = combinedData.some(item => item.renewals > 0 || item.general > 0);
+  const loading = renewalsLoading;
+  const hasData = renewalsData.some(item => item.revenue > 0);
 
   // Calculate totals for display
-  const totalRenewals = combinedData.reduce((acc, item) => acc + item.renewals, 0);
-  const totalGeneral = combinedData.reduce((acc, item) => acc + item.general, 0);
+  const totalRenewals = renewalsData.reduce((acc, item) => acc + item.revenue, 0);
 
-  console.log('📊 Combined chart rendering state:', { 
+  console.log('📊 Renewals chart rendering state:', { 
     loading, 
-    dataLength: combinedData.length,
+    dataLength: renewalsData.length,
     hasData,
     totalRenewals,
-    totalGeneral,
     chartPeriod,
-    sampleData: combinedData.slice(0, 2)
+    sampleData: renewalsData.slice(0, 2)
   });
 
   return (
@@ -135,15 +100,9 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
             <CardDescription className="text-slate-400">
               {getChartDescription()}
             </CardDescription>
-            <div className="mt-2 space-y-1">
+            <div className="mt-2">
               <div className="text-sm text-slate-300">
-                <span className="text-slate-400">Faturamento Geral:</span>{' '}
-                <span className="font-semibold text-green-400">
-                  {formatCurrency(totalGeneral)}
-                </span>
-              </div>
-              <div className="text-sm text-slate-300">
-                <span className="text-slate-400">Renovações:</span>{' '}
+                <span className="text-slate-400">Total de Renovações:</span>{' '}
                 <span className="font-semibold text-blue-400">
                   {formatCurrency(totalRenewals)}
                 </span>
@@ -168,7 +127,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={combinedData}>
+            <LineChart data={renewalsData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
               <XAxis 
                 dataKey="date" 
@@ -190,21 +149,9 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
                 formatter={formatTooltipValue}
                 labelStyle={{ color: '#94a3b8' }}
               />
-              <Legend 
-                wrapperStyle={{ color: '#94a3b8' }}
-                formatter={(value) => value === 'renewals' ? 'Renovações' : 'Faturamento Geral'}
-              />
               <Line
                 type="monotone"
-                dataKey="general"
-                stroke="#22c55e"
-                strokeWidth={2}
-                dot={false}
-                name="general"
-              />
-              <Line
-                type="monotone"
-                dataKey="renewals"
+                dataKey="revenue"
                 stroke="#3b82f6"
                 strokeWidth={2}
                 dot={false}
