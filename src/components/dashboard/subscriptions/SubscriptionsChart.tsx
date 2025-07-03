@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { format, parseISO, eachDayOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useSubscriptionStatusChartData } from "@/hooks/useSubscriptionStatusChartData";
+import { useProductSubscriptionChartData } from "@/hooks/useProductSubscriptionChartData";
 import { useSubscriptionChartData } from "@/hooks/useSubscriptionChartData";
 
 interface SubscriptionsChartProps {
@@ -24,12 +24,12 @@ export const SubscriptionsChart: React.FC<SubscriptionsChartProps> = ({
   filters,
   type = 'subscriptions'
 }) => {
-  // Use subscription_status data for subscriptions chart, subscription_renewals for renewals
-  const { chartData: subscriptionStatusData, loading: subscriptionStatusLoading } = useSubscriptionStatusChartData(dateRange, filters);
+  // Use product_sales data for subscriptions chart, subscription_renewals for renewals
+  const { chartData: subscriptionData, loading: subscriptionLoading } = useProductSubscriptionChartData(dateRange, filters);
   const { chartData: renewalData, loading: renewalLoading } = useSubscriptionChartData(dateRange, filters, type);
   
-  const loading = type === 'subscriptions' ? subscriptionStatusLoading : renewalLoading;
-  const chartData = type === 'subscriptions' ? subscriptionStatusData : renewalData;
+  const loading = type === 'subscriptions' ? subscriptionLoading : renewalLoading;
+  const chartData = type === 'subscriptions' ? subscriptionData : renewalData;
 
   // Prepare daily data
   const prepareDailyData = () => {
