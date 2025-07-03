@@ -18,14 +18,20 @@ interface DateRange {
 
 interface ChartDataItem {
   date: string;
-  revenue: number;
   plan: string;
+  status: string;
+  amount: number;
+  revenue: number;
+  customer_name: string;
+  customer_email: string;
+  event_type?: string;
+  payment_method?: string;
 }
 
 export const useSubscriptionChartData = (
   dateRange: DateRange,
   filters: ChartFilters,
-  type: 'subscriptions' | 'renewals'
+  type: 'subscriptions' | 'renewals' = 'subscriptions'
 ) => {
   const [chartData, setChartData] = useState<ChartDataItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,156 +40,68 @@ export const useSubscriptionChartData = (
     const fetchChartData = async () => {
       try {
         setLoading(true);
-        console.log(`📊 Fetching ${type} chart data...`);
+        console.log(`📊 Fetching ${type} chart data with filters:`, filters);
 
         const startDate = startOfDay(dateRange.from);
         const endDate = endOfDay(dateRange.to);
         const startDateStr = format(startDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         const endDateStr = format(endDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
-        let uniqueProducts: string[] = [];
+        const tableName = type === 'renewals' ? 'subscription_renewals' : 'subscription_status';
+        
+        let query = supabase
+          .from(tableName)
+          .select('*')
+          .gte('created_at', startDateStr)
+          .lte('created_at', endDateStr);
 
-        if (type === 'renewals') {
-          // First, get all available products to determine if all are selected
-          const { data: allProducts, error: productsError } = await supabase
-            .from('subscription_renewals')
-            .select('plan')
-            .not('plan', 'is', null)
-            .not('plan', 'eq', '');
-
-          if (productsError) {
-            console.error(`❌ [${type.toUpperCase()} CHART] Error fetching all products:`, productsError);
-          }
-
-          uniqueProducts = [...new Set((allProducts || []).map(p => p.plan))];
-          console.log(`📊 [${type.toUpperCase()} CHART] Available products:`, uniqueProducts);
-          console.log(`📊 [${type.toUpperCase()} CHART] Selected products:`, filters.products);
-
-          // Determine if product filter should be applied
-          // If no products selected OR all products selected, don't apply filter
-          const shouldApplyProductFilter = filters.products.length > 0 && 
-                                         filters.products.length < uniqueProducts.length;
-
-          console.log(`📊 [${type.toUpperCase()} CHART] Filter logic:`, {
-            productsSelected: filters.products.length,
-            totalProducts: uniqueProducts.length,
-            shouldApplyProductFilter,
-            allProductsSelected: filters.products.length === uniqueProducts.length
-          });
-
-          // Use subscription_renewals table for renewals
-          let query = supabase
-            .from('subscription_renewals')
-            .select('*')
-            .gte('created_at', startDateStr)
-            .lte('created_at', endDateStr);
-
-          if (filters.plan !== 'all') {
-            query = query.eq('plan', filters.plan);
-          }
-
-          if (filters.status !== 'all') {
-            query = query.eq('subscription_status', filters.status);
-          }
-
-          // Apply product filter only if not all products are selected
-          if (shouldApplyProductFilter) {
-            query = query.in('plan', filters.products);
-            console.log(`📊 [${type.toUpperCase()} CHART] Applying products filter:`, filters.products);
-          } else {
-            console.log(`📊 [${type.toUpperCase()} CHART] Not applying products filter (all products selected or none)`);
-          }
-
-          const { data: renewals, error } = await query;
-
-          if (error) {
-            console.error('❌ Error fetching renewals:', error);
-            return;
-          }
-
-          if (renewals) {
-            const chartData: ChartDataItem[] = renewals.map(renewal => ({
-              date: renewal.created_at,
-              revenue: renewal.amount || 0,
-              plan: renewal.plan || 'Unknown'
-            }));
-
-            setChartData(chartData);
-          }
-        } else {
-          // First, get all available products to determine if all are selected
-          const { data: allProducts, error: productsError } = await supabase
-            .from('subscription_events')
-            .select('plan')
-            .not('plan', 'is', null)
-            .not('plan', 'eq', '');
-
-          if (productsError) {
-            console.error(`❌ [${type.toUpperCase()} CHART] Error fetching all products:`, productsError);
-          }
-
-          uniqueProducts = [...new Set((allProducts || []).map(p => p.plan))];
-          console.log(`📊 [${type.toUpperCase()} CHART] Available products:`, uniqueProducts);
-          console.log(`📊 [${type.toUpperCase()} CHART] Selected products:`, filters.products);
-
-          // Determine if product filter should be applied
-          // If no products selected OR all products selected, don't apply filter
-          const shouldApplyProductFilter = filters.products.length > 0 && 
-                                         filters.products.length < uniqueProducts.length;
-
-          console.log(`📊 [${type.toUpperCase()} CHART] Filter logic:`, {
-            productsSelected: filters.products.length,
-            totalProducts: uniqueProducts.length,
-            shouldApplyProductFilter,
-            allProductsSelected: filters.products.length === uniqueProducts.length
-          });
-
-          // Use subscription_events for subscriptions
-          let query = supabase
-            .from('subscription_events')
-            .select('*')
-            .gte('event_date', startDateStr)
-            .lte('event_date', endDateStr);
-
-          if (filters.plan !== 'all') {
-            query = query.eq('plan', filters.plan);
-          }
-
-          if (filters.eventType !== 'all') {
-            query = query.eq('event_type', filters.eventType);
-          }
-
-          // Apply product filter only if not all products are selected
-          if (shouldApplyProductFilter) {
-            query = query.in('plan', filters.products);
-            console.log(`📊 [${type.toUpperCase()} CHART] Applying products filter:`, filters.products);
-          } else {
-            console.log(`📊 [${type.toUpperCase()} CHART] Not applying products filter (all products selected or none)`);
-          }
-
-          const { data: events, error } = await query;
-
-          if (error) {
-            console.error('❌ Error fetching subscription events:', error);
-            return;
-          }
-
-          if (events) {
-            const chartData: ChartDataItem[] = events.map(event => ({
-              date: event.event_date,
-              revenue: event.amount || 0,
-              plan: event.plan || 'Unknown'
-            }));
-
-            setChartData(chartData);
+        // Apply status filter
+        if (filters.status !== 'all') {
+          if (filters.status === 'active') {
+            query = query.eq('subscription_status', 'active');
+          } else if (filters.status === 'canceled') {
+            query = query.eq('subscription_status', 'canceled');
+          } else if (filters.status === 'expired') {
+            query = query.eq('subscription_status', 'expired');
           }
         }
 
-        console.log(`✅ ${type} chart data loaded:`, {
-          count: chartData.length,
-          filterApplied: filters.products.length > 0 && filters.products.length < uniqueProducts.length ? 'YES' : 'NO',
-          productsFilter: filters.products.length > 0 && filters.products.length < uniqueProducts.length ? filters.products : 'none (all products or none selected)'
-        });
+        // Apply product filter (only for renewals tab)
+        if (type === 'renewals' && filters.products.length > 0) {
+          console.log('🔍 Applying product filter for renewals:', filters.products);
+          query = query.in('plan', filters.products);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          console.error(`❌ Error fetching ${type} data:`, error);
+          return;
+        }
+
+        if (data) {
+          const chartData: ChartDataItem[] = data.map(item => ({
+            date: item.created_at,
+            plan: item.plan || 'Unknown',
+            status: item.subscription_status || 'unknown',
+            amount: item.amount || 0,
+            revenue: item.amount || 0,
+            customer_name: item.customer_name || '',
+            customer_email: item.customer_email || '',
+            event_type: type,
+            payment_method: 'subscription'
+          }));
+
+          setChartData(chartData);
+          
+          console.log(`✅ ${type} chart data loaded:`, {
+            count: chartData.length,
+            filtersApplied: {
+              status: filters.status,
+              products: filters.products.length > 0 ? filters.products : 'none'
+            }
+          });
+        }
 
       } catch (error) {
         console.error(`❌ Error fetching ${type} chart data:`, error);
