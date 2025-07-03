@@ -5,6 +5,7 @@ import { SubscriptionsTable } from "./subscriptions/SubscriptionsTable";
 import { SubscriptionRenewalsSummaryCards } from "./subscriptions/SubscriptionRenewalsSummaryCards";
 import { SubscriptionRenewalsLineChart } from "./subscriptions/SubscriptionRenewalsLineChart";
 import { SubscriptionRenewalsTable } from "./subscriptions/SubscriptionRenewalsTable";
+import { NewSubscriptionsLineChart } from "./subscriptions/NewSubscriptionsLineChart";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMonthlyKPIs } from "@/hooks/useMonthlyKPIs";
 
@@ -44,6 +45,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
         
         <TabsContent value="subscriptions" className="space-y-6 mt-6">
           <SubscriptionsSummaryCards dateRange={dateRange} filters={filters} />
+          <NewSubscriptionsLineChart dateRange={dateRange} />
           <SubscriptionsTable 
             dateRange={dateRange} 
             filters={filters} 
