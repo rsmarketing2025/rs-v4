@@ -1,9 +1,9 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useSubscriptionRenewalsLineData } from "@/hooks/useSubscriptionRenewalsLineData";
+import { useSalesChartData } from "@/hooks/useSalesChartData";
 import { TrendingUp } from "lucide-react";
 
 interface SubscriptionRenewalsLineChartProps {
@@ -15,11 +15,14 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   dateRange,
   totalSalesRevenue
 }) => {
-  const [revenueFilter, setRevenueFilter] = useState('renewal');
-  
-  const { lineData, loading } = useSubscriptionRenewalsLineData(
+  const { lineData: renewalsData, loading: renewalsLoading } = useSubscriptionRenewalsLineData(
     dateRange,
     { plan: 'all', status: 'all' }
+  );
+
+  const { chartData: salesData, loading: salesLoading } = useSalesChartData(
+    dateRange,
+    { creative: 'all', paymentMethod: 'all', status: 'all' }
   );
 
   // Determine the chart period based on date range
@@ -45,26 +48,26 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   const getChartTitle = () => {
     switch (chartPeriod) {
       case 'single-day':
-        return 'Faturamento e Renovações por Hora';
+        return 'Faturamento por Hora';
       case 'weekly':
-        return 'Faturamento e Renovações da Semana';
+        return 'Faturamento da Semana';
       case 'yearly':
-        return 'Faturamento e Renovações por Mês';
+        return 'Faturamento por Mês';
       default:
-        return 'Faturamento e Renovações';
+        return 'Faturamento Geral vs Renovações';
     }
   };
 
   const getChartDescription = () => {
     switch (chartPeriod) {
       case 'single-day':
-        return 'Distribuição do faturamento ao longo do dia';
+        return 'Comparação entre faturamento geral e renovações ao longo do dia';
       case 'weekly':
-        return 'Faturamento de cada dia da semana';
+        return 'Comparação entre faturamento geral e renovações da semana';
       case 'yearly':
-        return 'Faturamento mensal ao longo do ano';
+        return 'Comparação entre faturamento geral e renovações por mês';
       default:
-        return 'Evolução diária do faturamento';
+        return 'Comparação entre faturamento geral e receita de renovações';
     }
   };
 
@@ -73,38 +76,57 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   };
 
   const formatTooltipValue = (value: any, name: string) => {
-    return [formatCurrency(value), 'Receita'];
+    const label = name === 'renewals' ? 'Renovações' : 'Faturamento Geral';
+    return [formatCurrency(value), label];
   };
 
-  // Calculate data based on revenue filter
-  const processedData = React.useMemo(() => {
-    if (revenueFilter === 'renewal') {
-      return lineData;
-    } else {
-      // For "Faturamento sem Renovação", subtract renewal revenue from total sales revenue
-      const renewalTotalRevenue = lineData.reduce((acc, item) => acc + item.revenue, 0);
-      const nonRenewalRevenue = totalSalesRevenue - renewalTotalRevenue;
-      
-      // Distribute the non-renewal revenue proportionally across the period
-      const totalDataPoints = lineData.length;
-      const avgNonRenewalRevenue = totalDataPoints > 0 ? nonRenewalRevenue / totalDataPoints : 0;
-      
-      return lineData.map(item => ({
-        ...item,
-        revenue: avgNonRenewalRevenue
-      }));
-    }
-  }, [lineData, revenueFilter, totalSalesRevenue]);
+  // Combine data from both sources
+  const combinedData = React.useMemo(() => {
+    if (renewalsLoading || salesLoading) return [];
 
-  const hasData = processedData.some(item => item.revenue > 0);
+    // Create a map to merge data by date
+    const dataMap = new Map();
 
-  // Calcular total de receita para exibição
-  const totalRevenue = processedData.reduce((acc, item) => acc + item.revenue, 0);
+    // Add renewals data
+    renewalsData.forEach(item => {
+      dataMap.set(item.date, {
+        date: item.date,
+        renewals: item.revenue,
+        general: 0
+      });
+    });
+
+    // Add sales data
+    salesData.forEach(item => {
+      const existing = dataMap.get(item.date) || { date: item.date, renewals: 0, general: 0 };
+      existing.general = item.revenue;
+      dataMap.set(item.date, existing);
+    });
+
+    return Array.from(dataMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+  }, [renewalsData, salesData, renewalsLoading, salesLoading]);
+
+  const loading = renewalsLoading || salesLoading;
+  const hasData = combinedData.some(item => item.renewals > 0 || item.general > 0);
+
+  // Calculate totals for display
+  const totalRenewals = combinedData.reduce((acc, item) => acc + item.renewals, 0);
+  const totalGeneral = combinedData.reduce((acc, item) => acc + item.general, 0);
+
+  console.log('📊 Combined chart rendering state:', { 
+    loading, 
+    dataLength: combinedData.length,
+    hasData,
+    totalRenewals,
+    totalGeneral,
+    chartPeriod,
+    sampleData: combinedData.slice(0, 2)
+  });
 
   return (
     <Card className="bg-slate-800/30 border-slate-700">
       <CardHeader>
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <div className="flex flex-col justify-between items-start gap-4">
           <div>
             <CardTitle className="text-white flex items-center gap-2">
               <TrendingUp className="w-5 h-5" />
@@ -113,25 +135,20 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
             <CardDescription className="text-slate-400">
               {getChartDescription()}
             </CardDescription>
-            <div className="mt-2">
+            <div className="mt-2 space-y-1">
               <div className="text-sm text-slate-300">
-                <span className="text-slate-400">Total:</span>{' '}
+                <span className="text-slate-400">Faturamento Geral:</span>{' '}
+                <span className="font-semibold text-green-400">
+                  {formatCurrency(totalGeneral)}
+                </span>
+              </div>
+              <div className="text-sm text-slate-300">
+                <span className="text-slate-400">Renovações:</span>{' '}
                 <span className="font-semibold text-blue-400">
-                  {formatCurrency(totalRevenue)}
+                  {formatCurrency(totalRenewals)}
                 </span>
               </div>
             </div>
-          </div>
-          <div className="w-full sm:w-48">
-            <Select value={revenueFilter} onValueChange={setRevenueFilter}>
-              <SelectTrigger className="bg-slate-800/50 border-slate-700/50 text-white backdrop-blur-sm">
-                <SelectValue placeholder="Filtrar receita" />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-900/95 border-slate-700/50 backdrop-blur-sm">
-                <SelectItem value="renewal">Renovação</SelectItem>
-                <SelectItem value="non-renewal">Faturamento sem Renovação</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </div>
       </CardHeader>
@@ -145,19 +162,13 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
             <div className="text-center">
               <div className="text-slate-400 text-lg mb-2">📊 Nenhum dado encontrado</div>
               <div className="text-slate-500 text-sm">
-                Não há dados para o período e filtros selecionados
+                Não há dados para o período selecionado
               </div>
             </div>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={processedData}>
-              <defs>
-                <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
-                </linearGradient>
-              </defs>
+            <LineChart data={combinedData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
               <XAxis 
                 dataKey="date" 
@@ -179,14 +190,27 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
                 formatter={formatTooltipValue}
                 labelStyle={{ color: '#94a3b8' }}
               />
-              <Area
-                type="monotone"
-                dataKey="revenue"
-                stroke="#3b82f6"
-                fill="#3b82f6"
-                fillOpacity={0.3}
+              <Legend 
+                wrapperStyle={{ color: '#94a3b8' }}
+                formatter={(value) => value === 'renewals' ? 'Renovações' : 'Faturamento Geral'}
               />
-            </AreaChart>
+              <Line
+                type="monotone"
+                dataKey="general"
+                stroke="#22c55e"
+                strokeWidth={2}
+                dot={false}
+                name="general"
+              />
+              <Line
+                type="monotone"
+                dataKey="renewals"
+                stroke="#3b82f6"
+                strokeWidth={2}
+                dot={false}
+                name="renewals"
+              />
+            </LineChart>
           </ResponsiveContainer>
         )}
       </CardContent>
