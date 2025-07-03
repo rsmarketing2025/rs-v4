@@ -64,7 +64,8 @@ export const useSubscriptionStatusChartData = (
           productsSelected: filters.products.length,
           totalProducts: uniqueProducts.length,
           shouldApplyProductFilter,
-          allProductsSelected: filters.products.length === uniqueProducts.length
+          allProductsSelected: filters.products.length === uniqueProducts.length,
+          statusFilter: filters.status
         });
 
         let query = supabase
@@ -78,9 +79,14 @@ export const useSubscriptionStatusChartData = (
           query = query.eq('plan', filters.plan);
         }
 
-        // Apply status filter
+        // Apply status filter - default to 'active' if 'all' is selected
         if (filters.status !== 'all') {
           query = query.eq('subscription_status', filters.status);
+          console.log('📊 [SUBSCRIPTION STATUS CHART] Applying status filter:', filters.status);
+        } else {
+          // Default to active subscriptions only when 'all' is selected
+          query = query.eq('subscription_status', 'active');
+          console.log('📊 [SUBSCRIPTION STATUS CHART] Applying default active filter');
         }
 
         // Apply product filter only if not all products are selected
@@ -107,13 +113,16 @@ export const useSubscriptionStatusChartData = (
           }));
 
           setChartData(chartData);
+          
+          console.log('✅ Subscription status chart data loaded:', {
+            count: chartData.length,
+            filterApplied: shouldApplyProductFilter ? 'YES' : 'NO',
+            productsFilter: shouldApplyProductFilter ? filters.products : 'none (all products selected or none selected)',
+            statusFilter: filters.status !== 'all' ? filters.status : 'active (default)',
+            activeSubscriptions: chartData.filter(item => item.subscription_status === 'active').length,
+            canceledSubscriptions: chartData.filter(item => item.subscription_status === 'canceled').length
+          });
         }
-
-        console.log('✅ Subscription status chart data loaded:', {
-          count: chartData.length,
-          filterApplied: shouldApplyProductFilter ? 'YES' : 'NO',
-          productsFilter: shouldApplyProductFilter ? filters.products : 'none (all products selected or none selected)'
-        });
 
       } catch (error) {
         console.error('❌ Error fetching subscription status chart data:', error);
