@@ -47,7 +47,7 @@ export const useSubscriptionsTableData = (
           if (statusFilter === 'active') {
             query = query.in('subscription_status', ['active', 'ativo', 'Active', 'Ativo']);
           } else if (statusFilter === 'canceled') {
-            query = query.in('subscription_status', ['canceled', 'cancelled', 'Canceled', 'Cancelled', 'cancelado']);
+            query = query.in('subscription_status', ['canceled', 'cancelled', 'Canceled', 'Cancelled', 'cancelado', 'Cancelado']);
           }
         }
 
@@ -101,7 +101,7 @@ export const useSubscriptionsTableData = (
         if (statusFilter === 'active') {
           exportQuery = exportQuery.in('subscription_status', ['active', 'ativo', 'Active', 'Ativo']);
         } else if (statusFilter === 'canceled') {
-          exportQuery = exportQuery.in('subscription_status', ['canceled', 'cancelled', 'Canceled', 'Cancelled', 'cancelado']);
+          exportQuery = exportQuery.in('subscription_status', ['canceled', 'cancelled', 'Canceled', 'Cancelled', 'cancelado', 'Cancelado']);
         }
       }
 
