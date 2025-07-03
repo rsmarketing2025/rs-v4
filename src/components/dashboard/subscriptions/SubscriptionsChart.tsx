@@ -50,20 +50,25 @@ export const SubscriptionsChart: React.FC<SubscriptionsChartProps> = ({
       .sort((a, b) => a.date.localeCompare(b.date));
   };
 
-  // Prepare plan distribution data
+  // Prepare plan distribution data with revenue
   const preparePlanData = () => {
     const planCounts: Record<string, number> = {};
+    const planRevenues: Record<string, number> = {};
     
     chartData.forEach(item => {
       const plan = type === 'subscriptions' 
         ? (item.product_name || 'Unknown')
         : (item.plan || 'Unknown');
       planCounts[plan] = (planCounts[plan] || 0) + 1;
+      
+      const revenue = type === 'subscriptions' ? item.revenue : (item.revenue || 0);
+      planRevenues[plan] = (planRevenues[plan] || 0) + revenue;
     });
 
     return Object.entries(planCounts).map(([name, value]) => ({
       name,
-      value
+      value,
+      revenue: planRevenues[name] || 0
     }));
   };
 
@@ -74,6 +79,28 @@ export const SubscriptionsChart: React.FC<SubscriptionsChartProps> = ({
 
   const chartTitle = type === 'renewals' ? 'Receita de Renovações' : 'Receita de Assinaturas';
   const planTitle = type === 'renewals' ? 'Renovações por Plano' : 'Assinaturas por Produto';
+
+  // Custom tooltip component for pie chart
+  const CustomPieTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-lg">
+          <p className="text-white font-medium">{data.name}</p>
+          <p className="text-white text-sm">
+            {type === 'renewals' ? 'Renovações' : 'Assinaturas'}: {data.value}
+          </p>
+          <p className="text-white text-sm">
+            Valor: R$ {data.revenue.toLocaleString('pt-BR', { 
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2 
+            })}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   if (loading) {
     return (
@@ -169,14 +196,7 @@ export const SubscriptionsChart: React.FC<SubscriptionsChartProps> = ({
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1e293b', 
-                  border: '1px solid #475569',
-                  borderRadius: '8px',
-                  color: '#fff'
-                }}
-              />
+              <Tooltip content={<CustomPieTooltip />} />
             </PieChart>
           </ResponsiveContainer>
         </CardContent>
