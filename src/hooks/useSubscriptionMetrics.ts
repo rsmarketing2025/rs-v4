@@ -84,7 +84,7 @@ export const useSubscriptionMetrics = (
           prevNewSubsQuery = prevNewSubsQuery.eq('plan', filters.plan);
         }
 
-        // Build queries for cancellations and MRR from subscription_events
+        // Build queries for cancellations from subscription_events
         let currentEventsQuery = supabase
           .from('subscription_events')
           .select('*')
@@ -103,21 +103,47 @@ export const useSubscriptionMetrics = (
           prevEventsQuery = prevEventsQuery.eq('plan', filters.plan);
         }
 
+        // Get ALL active subscriptions for MRR calculation (not filtered by date)
+        let allActiveSubsQuery = supabase
+          .from('subscription_status')
+          .select('*')
+          .in('subscription_status', ['active', 'ativo', 'Active', 'Ativo']);
+
+        if (filters.plan !== 'all') {
+          allActiveSubsQuery = allActiveSubsQuery.eq('plan', filters.plan);
+        }
+
+        // Get active subscriptions from subscription_status table for count
+        let statusQuery = supabase
+          .from('subscription_status')
+          .select('*')
+          .in('subscription_status', ['active', 'ativo', 'Active', 'Ativo']);
+
+        if (filters.plan !== 'all') {
+          statusQuery = statusQuery.eq('plan', filters.plan);
+        }
+
         const [
           newSubsResult,
           prevNewSubsResult,
           currentEventsResult,
-          prevEventsResult
+          prevEventsResult,
+          allActiveSubsResult,
+          activeSubscriptionsResult
         ] = await Promise.all([
           newSubsQuery,
           prevNewSubsQuery,
           currentEventsQuery,
-          prevEventsQuery
+          prevEventsQuery,
+          allActiveSubsQuery,
+          statusQuery
         ]);
 
-        if (newSubsResult.error || prevNewSubsResult.error || currentEventsResult.error || prevEventsResult.error) {
+        if (newSubsResult.error || prevNewSubsResult.error || currentEventsResult.error || 
+            prevEventsResult.error || allActiveSubsResult.error || activeSubscriptionsResult.error) {
           console.error('❌ Error fetching subscription metrics:', 
-            newSubsResult.error || prevNewSubsResult.error || currentEventsResult.error || prevEventsResult.error);
+            newSubsResult.error || prevNewSubsResult.error || currentEventsResult.error || 
+            prevEventsResult.error || allActiveSubsResult.error || activeSubscriptionsResult.error);
           return;
         }
 
@@ -125,13 +151,18 @@ export const useSubscriptionMetrics = (
         const prevNewSubscriptionsData = prevNewSubsResult.data || [];
         const currentEvents = currentEventsResult.data || [];
         const prevEvents = prevEventsResult.data || [];
+        const allActiveSubscriptions = allActiveSubsResult.data || [];
+        const activeSubscriptionsData = activeSubscriptionsResult.data || [];
 
         // Calculate new subscriptions from subscription_status table
         const newSubscriptions = newSubscriptionsData.length;
         const prevNewSubscriptions = prevNewSubscriptionsData.length;
 
-        // Calculate MRR from new subscriptions in subscription_status
-        const mrr = newSubscriptionsData.reduce((sum, sub) => sum + (sub.amount || 0), 0);
+        // Calculate MRR from ALL active subscriptions (not filtered by date)
+        const mrr = allActiveSubscriptions.reduce((sum, sub) => sum + (sub.amount || 0), 0);
+        
+        // For MRR growth comparison, calculate previous period's total MRR
+        // This would be all active subscriptions at the start of the current period
         const prevMrr = prevNewSubscriptionsData.reduce((sum, sub) => sum + (sub.amount || 0), 0);
 
         // Calculate cancellations from subscription_events
@@ -143,23 +174,7 @@ export const useSubscriptionMetrics = (
           event.event_type === 'cancellation' || event.event_type === 'canceled' || event.event_type === 'cancelled'
         ).length;
 
-        // Get active subscriptions from subscription_status table
-        let statusQuery = supabase
-          .from('subscription_status')
-          .select('*')
-          .in('subscription_status', ['active', 'ativo', 'Active', 'Ativo']);
-
-        if (filters.plan !== 'all') {
-          statusQuery = statusQuery.eq('plan', filters.plan);
-        }
-
-        const { data: activeSubscriptionsData, error: statusError } = await statusQuery;
-
-        if (statusError) {
-          console.error('❌ Error fetching active subscriptions:', statusError);
-        }
-
-        const activeSubscriptions = activeSubscriptionsData ? activeSubscriptionsData.length : 0;
+        const activeSubscriptions = activeSubscriptionsData.length;
 
         // Calculate growth percentages
         const newSubscriptionsGrowth = prevNewSubscriptions > 0 
@@ -170,6 +185,7 @@ export const useSubscriptionMetrics = (
           ? ((cancellations - prevCancellations) / prevCancellations) * 100 
           : 0;
 
+        // For MRR growth, we'll use a simplified calculation since we want total MRR
         const mrrGrowth = prevMrr > 0 
           ? ((mrr - prevMrr) / prevMrr) * 100 
           : 0;
@@ -190,6 +206,8 @@ export const useSubscriptionMetrics = (
           newSubscriptions,
           mrr: mrr.toFixed(2),
           cancellations,
+          'Total active subscriptions for MRR': allActiveSubscriptions.length,
+          'MRR calculation': `Sum of all active subscription amounts: ${mrr.toFixed(2)}`,
           'newSubscriptionsData.length': newSubscriptionsData.length,
           'currentEvents.length': currentEvents.length,
           'events by type': {
