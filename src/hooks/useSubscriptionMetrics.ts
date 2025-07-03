@@ -20,6 +20,7 @@ interface Filters {
   plan: string;
   eventType: string;
   paymentMethod: string;
+  products: string[];
 }
 
 interface DateRange {
@@ -75,6 +76,11 @@ export const useSubscriptionMetrics = (
           activeQuery = activeQuery.eq('plan', filters.plan);
         }
 
+        // Apply product filter if products are selected
+        if (filters.products.length > 0) {
+          activeQuery = activeQuery.in('plan', filters.products);
+        }
+
         const { count: activeCount, data: activeSubscriptions, error: activeError } = await activeQuery;
 
         if (activeError) {
@@ -99,6 +105,11 @@ export const useSubscriptionMetrics = (
 
         if (filters.plan !== 'all') {
           newSubsQuery = newSubsQuery.eq('plan', filters.plan);
+        }
+
+        // Apply product filter if products are selected
+        if (filters.products.length > 0) {
+          newSubsQuery = newSubsQuery.in('plan', filters.products);
         }
 
         const { count: newSubscriptionsCount, error: newSubsError } = await newSubsQuery;
@@ -146,6 +157,11 @@ export const useSubscriptionMetrics = (
           cancellationsQuery1 = cancellationsQuery1.eq('plan', filters.plan);
         }
 
+        // Apply product filter if products are selected
+        if (filters.products.length > 0) {
+          cancellationsQuery1 = cancellationsQuery1.in('plan', filters.products);
+        }
+
         const { count: cancellationsCount1, data: cancellationsData1, error: cancellationsError1 } = await cancellationsQuery1;
 
         console.log('🎯 [CANCELLATIONS] Approach 1 (updated_at):', {
@@ -172,6 +188,11 @@ export const useSubscriptionMetrics = (
           cancellationsQuery2 = cancellationsQuery2.eq('plan', filters.plan);
         }
 
+        // Apply product filter if products are selected
+        if (filters.products.length > 0) {
+          cancellationsQuery2 = cancellationsQuery2.in('plan', filters.products);
+        }
+
         const { count: cancellationsCount2, data: cancellationsData2, error: cancellationsError2 } = await cancellationsQuery2;
 
         console.log('📅 [CANCELLATIONS] Approach 2 (canceled_at):', {
@@ -195,6 +216,11 @@ export const useSubscriptionMetrics = (
 
         if (filters.plan !== 'all') {
           cancellationEventsQuery = cancellationEventsQuery.eq('plan', filters.plan);
+        }
+
+        // Apply product filter if products are selected
+        if (filters.products.length > 0) {
+          cancellationEventsQuery = cancellationEventsQuery.in('plan', filters.products);
         }
 
         const { count: cancellationEventsCount, data: cancellationEventsData, error: cancellationEventsError } = await cancellationEventsQuery;
@@ -251,7 +277,8 @@ export const useSubscriptionMetrics = (
           cancellations: finalMetrics.cancellations,
           mrr: finalMetrics.mrr.toFixed(2),
           churnRate: finalMetrics.churnRate + '%',
-          dateRangeUsed: `${startDateStr} to ${endDateStr}`
+          dateRangeUsed: `${startDateStr} to ${endDateStr}`,
+          productsFilter: filters.products.length > 0 ? filters.products : 'none'
         });
 
         setMetrics(finalMetrics);

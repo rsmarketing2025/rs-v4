@@ -20,7 +20,8 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
     plan: "all",
     eventType: "all",
     paymentMethod: "all",
-    status: "all"
+    status: "all",
+    products: [] as string[]
   });
 
   const [searchTerm, setSearchTerm] = useState("");

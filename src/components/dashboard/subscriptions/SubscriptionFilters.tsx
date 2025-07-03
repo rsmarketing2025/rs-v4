@@ -1,9 +1,11 @@
 
 import React from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RotateCcw, Search } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ChevronDown } from "lucide-react";
 
 interface SubscriptionFiltersProps {
   filters: {
@@ -11,6 +13,7 @@ interface SubscriptionFiltersProps {
     eventType: string;
     paymentMethod: string;
     status: string;
+    products: string[];
   };
   onFiltersChange: (filters: any) => void;
   searchTerm: string;
@@ -23,14 +26,32 @@ export const SubscriptionFilters: React.FC<SubscriptionFiltersProps> = ({
   searchTerm,
   onSearchChange
 }) => {
+  // Lista de produtos disponíveis
+  const availableProducts = [
+    "Produto A",
+    "Produto B", 
+    "Produto C",
+    "Produto D",
+    "Produto E"
+  ];
+
   const resetFilters = () => {
     onFiltersChange({
       plan: 'all',
       eventType: 'all',
       paymentMethod: 'all',
-      status: 'all'
+      status: 'all',
+      products: []
     });
     onSearchChange('');
+  };
+
+  const handleProductChange = (product: string, checked: boolean) => {
+    const updatedProducts = checked
+      ? [...filters.products, product]
+      : filters.products.filter(p => p !== product);
+    
+    onFiltersChange({ ...filters, products: updatedProducts });
   };
 
   return (
@@ -45,48 +66,51 @@ export const SubscriptionFilters: React.FC<SubscriptionFiltersProps> = ({
         />
       </div>
 
-      <Select
-        value={filters.status}
-        onValueChange={(value) => onFiltersChange({ ...filters, status: value })}
-      >
-        <SelectTrigger className="w-full sm:w-32 md:w-40 bg-slate-800 border-slate-700 text-white text-xs md:text-sm">
-          <SelectValue placeholder="Status" />
-        </SelectTrigger>
-        <SelectContent className="bg-slate-800 border-slate-700">
-          <SelectItem value="all">Todos</SelectItem>
-          <SelectItem value="active">Ativos</SelectItem>
-          <SelectItem value="canceled">Cancelados</SelectItem>
-        </SelectContent>
-      </Select>
-
-      <Select
-        value={filters.eventType}
-        onValueChange={(value) => onFiltersChange({ ...filters, eventType: value })}
-      >
-        <SelectTrigger className="w-full sm:w-32 md:w-40 bg-slate-800 border-slate-700 text-white text-xs md:text-sm">
-          <SelectValue placeholder="Tipo de Evento" />
-        </SelectTrigger>
-        <SelectContent className="bg-slate-800 border-slate-700">
-          <SelectItem value="all">Todos os Eventos</SelectItem>
-          <SelectItem value="subscription">Assinaturas</SelectItem>
-          <SelectItem value="cancellation">Cancelamentos</SelectItem>
-        </SelectContent>
-      </Select>
-
-      <Select
-        value={filters.paymentMethod}
-        onValueChange={(value) => onFiltersChange({ ...filters, paymentMethod: value })}
-      >
-        <SelectTrigger className="w-full sm:w-32 md:w-40 bg-slate-800 border-slate-700 text-white text-xs md:text-sm">
-          <SelectValue placeholder="Pagamento" />
-        </SelectTrigger>
-        <SelectContent className="bg-slate-800 border-slate-700">
-          <SelectItem value="all">Todos os Métodos</SelectItem>
-          <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
-          <SelectItem value="pix">PIX</SelectItem>
-          <SelectItem value="boleto">Boleto</SelectItem>
-        </SelectContent>
-      </Select>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-slate-300 border-slate-600 text-xs md:text-sm px-2 md:px-3"
+          >
+            Produtos ({filters.products.length})
+            <ChevronDown className="w-3 h-3 md:w-4 md:h-4 ml-1 md:ml-2" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-56 bg-slate-800 border-slate-700 p-3">
+          <div className="space-y-2">
+            <div className="font-medium text-white text-sm">Filtrar por Produtos</div>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {availableProducts.map((product) => (
+                <div key={product} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={product}
+                    checked={filters.products.includes(product)}
+                    onCheckedChange={(checked) => handleProductChange(product, checked as boolean)}
+                    className="border-slate-600 data-[state=checked]:bg-blue-600"
+                  />
+                  <label
+                    htmlFor={product}
+                    className="text-sm text-slate-300 cursor-pointer"
+                  >
+                    {product}
+                  </label>
+                </div>
+              ))}
+            </div>
+            {filters.products.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onFiltersChange({ ...filters, products: [] })}
+                className="w-full text-xs text-slate-300 border-slate-600"
+              >
+                Limpar Seleção
+              </Button>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
 
       <Button
         variant="outline"

@@ -8,6 +8,7 @@ interface ChartFilters {
   eventType: string;
   paymentMethod: string;
   status: string;
+  products: string[];
 }
 
 interface DateRange {
@@ -56,6 +57,11 @@ export const useSubscriptionChartData = (
             query = query.eq('subscription_status', filters.status);
           }
 
+          // Apply product filter if products are selected
+          if (filters.products.length > 0) {
+            query = query.in('plan', filters.products);
+          }
+
           const { data: renewals, error } = await query;
 
           if (error) {
@@ -86,6 +92,11 @@ export const useSubscriptionChartData = (
 
           if (filters.eventType !== 'all') {
             query = query.eq('event_type', filters.eventType);
+          }
+
+          // Apply product filter if products are selected
+          if (filters.products.length > 0) {
+            query = query.in('plan', filters.products);
           }
 
           const { data: events, error } = await query;
