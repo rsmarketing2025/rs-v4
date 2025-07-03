@@ -5,13 +5,7 @@ import { useSubscriptionRenewalMetrics } from "@/hooks/useSubscriptionRenewalMet
 
 interface SubscriptionRenewalsSummaryCardsProps {
   dateRange: { from: Date; to: Date };
-  filters: { 
-    plan: string; 
-    eventType: string; 
-    paymentMethod: string; 
-    status: string; 
-    products: string[];
-  };
+  filters: { plan: string; eventType: string; paymentMethod: string; status: string };
 }
 
 export const SubscriptionRenewalsSummaryCards: React.FC<SubscriptionRenewalsSummaryCardsProps> = ({

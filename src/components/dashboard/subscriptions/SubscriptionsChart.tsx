@@ -4,18 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { format, parseISO, eachDayOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useProductSubscriptionChartData } from "@/hooks/useProductSubscriptionChartData";
+import { useProductSalesChartData } from "@/hooks/useProductSalesChartData";
 import { useSubscriptionChartData } from "@/hooks/useSubscriptionChartData";
 
 interface SubscriptionsChartProps {
   dateRange: { from: Date; to: Date };
-  filters: { 
-    plan: string; 
-    eventType: string; 
-    paymentMethod: string; 
-    status: string; 
-    products: string[]; 
-  };
+  filters: { plan: string; eventType: string; paymentMethod: string; status: string };
   type: 'subscriptions' | 'renewals';
 }
 
@@ -24,12 +18,12 @@ export const SubscriptionsChart: React.FC<SubscriptionsChartProps> = ({
   filters,
   type = 'subscriptions'
 }) => {
-  // Use product_sales data for subscriptions chart, subscription_renewals for renewals
-  const { chartData: subscriptionData, loading: subscriptionLoading } = useProductSubscriptionChartData(dateRange, filters);
-  const { chartData: renewalData, loading: renewalLoading } = useSubscriptionChartData(dateRange, filters, type);
+  // Use product_sales data for subscriptions chart, subscription_events for renewals
+  const { chartData: productSalesData, loading: productSalesLoading } = useProductSalesChartData(dateRange, true);
+  const { chartData: subscriptionData, loading: subscriptionLoading } = useSubscriptionChartData(dateRange, filters, type);
   
-  const loading = type === 'subscriptions' ? subscriptionLoading : renewalLoading;
-  const chartData = type === 'subscriptions' ? subscriptionData : renewalData;
+  const loading = type === 'subscriptions' ? productSalesLoading : subscriptionLoading;
+  const chartData = type === 'subscriptions' ? productSalesData : subscriptionData;
 
   // Prepare daily data
   const prepareDailyData = () => {
@@ -47,9 +41,7 @@ export const SubscriptionsChart: React.FC<SubscriptionsChartProps> = ({
     // Aggregate data by day
     chartData.forEach(item => {
       const dayStr = format(parseISO(item.date), 'dd/MM', { locale: ptBR });
-      const revenue = type === 'subscriptions' 
-        ? (item.amount || 0) 
-        : (item.revenue || 0);
+      const revenue = type === 'subscriptions' ? item.revenue : (item.revenue || 0);
       dailyRevenue[dayStr] = (dailyRevenue[dayStr] || 0) + revenue;
     });
 
@@ -64,12 +56,12 @@ export const SubscriptionsChart: React.FC<SubscriptionsChartProps> = ({
     const planRevenues: Record<string, number> = {};
     
     chartData.forEach(item => {
-      const plan = item.plan || 'Unknown';
+      const plan = type === 'subscriptions' 
+        ? (item.product_name || 'Unknown')
+        : (item.plan || 'Unknown');
       planCounts[plan] = (planCounts[plan] || 0) + 1;
       
-      const revenue = type === 'subscriptions' 
-        ? (item.amount || 0) 
-        : (item.revenue || 0);
+      const revenue = type === 'subscriptions' ? item.revenue : (item.revenue || 0);
       planRevenues[plan] = (planRevenues[plan] || 0) + revenue;
     });
 
@@ -86,7 +78,7 @@ export const SubscriptionsChart: React.FC<SubscriptionsChartProps> = ({
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
   const chartTitle = type === 'renewals' ? 'Receita de Renovações' : 'Receita de Assinaturas';
-  const planTitle = type === 'renewals' ? 'Renovações por Plano' : 'Assinaturas por Plano';
+  const planTitle = type === 'renewals' ? 'Renovações por Plano' : 'Assinaturas por Produto';
 
   // Custom tooltip component for pie chart
   const CustomPieTooltip = ({ active, payload }: any) => {
@@ -185,7 +177,7 @@ export const SubscriptionsChart: React.FC<SubscriptionsChartProps> = ({
         <CardHeader>
           <CardTitle className="text-white">{planTitle}</CardTitle>
           <CardDescription className="text-slate-400">
-            Distribuição por {type === 'renewals' ? 'plano de renovação' : 'plano de assinatura'}
+            Distribuição por tipo de {type === 'renewals' ? 'plano' : 'produto'}
           </CardDescription>
         </CardHeader>
         <CardContent>

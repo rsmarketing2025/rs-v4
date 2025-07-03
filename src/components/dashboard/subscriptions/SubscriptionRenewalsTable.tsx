@@ -8,13 +8,7 @@ import { useSubscriptionRenewals } from "@/hooks/useSubscriptionRenewals";
 
 interface SubscriptionRenewalsTableProps {
   dateRange: { from: Date; to: Date };
-  filters: { 
-    plan: string; 
-    eventType: string; 
-    paymentMethod: string; 
-    status: string; 
-    products: string[];
-  };
+  filters: { plan: string; eventType: string; paymentMethod: string; status: string };
   searchTerm?: string;
 }
 
@@ -26,6 +20,8 @@ export const SubscriptionRenewalsTable: React.FC<SubscriptionRenewalsTableProps>
   const { renewals, loading, totalCount } = useSubscriptionRenewals(
     dateRange,
     filters,
+    1, // page
+    50, // pageSize
     searchTerm
   );
 

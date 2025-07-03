@@ -3,12 +3,28 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfDay, endOfDay } from 'date-fns';
 
-interface RenewalFilters {
+interface SubscriptionRenewal {
+  id: string;
+  subscription_id: string | null;
+  customer_id: string | null;
+  customer_email: string | null;
+  customer_name: string | null;
+  plan: string;
+  amount: number;
+  currency: string;
+  frequency: string | null;
+  subscription_status: string;
+  created_at: string;
+  updated_at: string;
+  canceled_at: string | null;
+  subscription_number: number | null;
+}
+
+interface Filters {
   plan: string;
   eventType: string;
   paymentMethod: string;
   status: string;
-  products: string[];
 }
 
 interface DateRange {
@@ -16,36 +32,22 @@ interface DateRange {
   to: Date;
 }
 
-interface SubscriptionRenewal {
-  id: string;
-  subscription_id: string | null;
-  customer_name: string | null;
-  customer_email: string | null;
-  plan: string;
-  amount: number;
-  subscription_status: string;
-  created_at: string;
-  updated_at: string;
-  canceled_at: string | null;
-  subscription_number: number | null; // Add this property
-}
-
 export const useSubscriptionRenewals = (
   dateRange: DateRange,
-  filters: RenewalFilters,
+  filters: Filters,
+  page: number,
+  pageSize: number,
   searchTerm: string = ''
 ) => {
   const [renewals, setRenewals] = useState<SubscriptionRenewal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [totalCount, setTotalCount] = useState(0); // Add totalCount
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     const fetchRenewals = async () => {
       try {
         setLoading(true);
-        setError(null);
-        console.log('🔄 Fetching subscription renewals with filters:', filters);
+        console.log('📊 Fetching subscription renewals...');
 
         const startDate = startOfDay(dateRange.from);
         const endDate = endOfDay(dateRange.to);
@@ -54,64 +56,46 @@ export const useSubscriptionRenewals = (
 
         let query = supabase
           .from('subscription_renewals')
-          .select('*')
+          .select('*', { count: 'exact' })
           .gte('created_at', startDateStr)
           .lte('created_at', endDateStr)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .range((page - 1) * pageSize, page * pageSize - 1);
 
-        // Apply status filter
+        // Apply filters
+        if (filters.plan !== 'all') {
+          query = query.eq('plan', filters.plan);
+        }
+
         if (filters.status !== 'all') {
-          if (filters.status === 'active') {
-            query = query.eq('subscription_status', 'active');
-          } else if (filters.status === 'canceled') {
-            query = query.eq('subscription_status', 'canceled');
-          } else if (filters.status === 'expired') {
-            query = query.eq('subscription_status', 'expired');
-          }
+          query = query.eq('subscription_status', filters.status);
         }
 
-        // Apply product filter
-        if (filters.products.length > 0) {
-          console.log('🔍 Applying product filter to renewals table:', filters.products);
-          query = query.in('plan', filters.products);
+        // Search filter
+        if (searchTerm.trim()) {
+          query = query.or(`customer_name.ilike.%${searchTerm}%,customer_email.ilike.%${searchTerm}%,subscription_id.ilike.%${searchTerm}%`);
         }
 
-        const { data, error } = await query;
+        const { data, error, count } = await query;
 
         if (error) {
-          console.error('❌ Error fetching renewals:', error);
-          throw error;
+          console.error('❌ Error fetching subscription renewals:', error);
+          return;
         }
 
-        let filteredData = data || [];
+        setRenewals(data || []);
+        setTotalCount(count || 0);
 
-        // Apply search filter - make sure searchTerm is a string
-        if (searchTerm && typeof searchTerm === 'string' && searchTerm.trim()) {
-          const searchLower = searchTerm.toLowerCase();
-          filteredData = filteredData.filter(renewal =>
-            renewal.customer_name?.toLowerCase().includes(searchLower) ||
-            renewal.customer_email?.toLowerCase().includes(searchLower) ||
-            renewal.subscription_id?.toLowerCase().includes(searchLower) ||
-            renewal.plan?.toLowerCase().includes(searchLower)
-          );
-        }
-
-        setRenewals(filteredData);
-        setTotalCount(filteredData.length);
-        
-        console.log('✅ Renewals loaded:', {
-          total: filteredData.length,
-          filtersApplied: {
-            status: filters.status,
-            products: filters.products.length > 0 ? filters.products : 'none',
-            search: searchTerm || 'none'
-          }
+        console.log('✅ Subscription renewals loaded:', {
+          count: data?.length || 0,
+          totalCount: count || 0,
+          page,
+          pageSize,
+          searchTerm
         });
 
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-        console.error('❌ Error in useSubscriptionRenewals:', errorMessage);
-        setError(errorMessage);
+      } catch (error) {
+        console.error('❌ Error fetching subscription renewals:', error);
         setRenewals([]);
         setTotalCount(0);
       } finally {
@@ -120,7 +104,7 @@ export const useSubscriptionRenewals = (
     };
 
     fetchRenewals();
-  }, [dateRange, filters, searchTerm]);
+  }, [dateRange, filters, page, pageSize, searchTerm]);
 
-  return { renewals, loading, error, totalCount };
+  return { renewals, loading, totalCount };
 };

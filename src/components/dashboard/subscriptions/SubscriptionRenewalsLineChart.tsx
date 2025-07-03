@@ -1,11 +1,10 @@
 
-import React, { useMemo } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSubscriptionRenewalsLineData } from "@/hooks/useSubscriptionRenewalsLineData";
-import { useProductSalesChartData } from "@/hooks/useProductSalesChartData";
-import { TrendingUp, AlertCircle } from "lucide-react";
-import { format, parseISO, eachDayOfInterval, eachHourOfInterval, eachMonthOfInterval, startOfDay, endOfDay } from 'date-fns';
+import { TrendingUp } from "lucide-react";
 
 interface SubscriptionRenewalsLineChartProps {
   dateRange: { from: Date; to: Date };
@@ -16,32 +15,15 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   dateRange,
   totalSalesRevenue
 }) => {
-  // Stabilize filter dependencies with useMemo
-  const renewalFilters = useMemo(() => ({
-    plan: 'all',
-    status: 'all'
-  }), []);
-
-  console.log('🔄 SubscriptionRenewalsLineChart render', {
-    dateRange: {
-      from: dateRange?.from?.toISOString(),
-      to: dateRange?.to?.toISOString()
-    },
-    totalSalesRevenue
-  });
-
-  const { lineData: renewalData, loading: renewalLoading, error: renewalError } = useSubscriptionRenewalsLineData(
+  const [revenueFilter, setRevenueFilter] = useState('renewal');
+  
+  const { lineData, loading } = useSubscriptionRenewalsLineData(
     dateRange,
-    renewalFilters
-  );
-
-  const { chartData: generalSalesData, loading: generalLoading } = useProductSalesChartData(
-    dateRange,
-    false // Get all sales, not just subscriptions
+    { plan: 'all', status: 'all' }
   );
 
   // Determine the chart period based on date range
-  const chartPeriod = useMemo(() => {
+  const getChartPeriod = () => {
     if (!dateRange.from || !dateRange.to) return 'daily';
     
     const daysDiff = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
@@ -55,7 +37,9 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
     } else {
       return 'daily';
     }
-  }, [dateRange.from, dateRange.to]);
+  };
+
+  const chartPeriod = getChartPeriod();
 
   // Get chart title based on period
   const getChartTitle = () => {
@@ -74,159 +58,53 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   const getChartDescription = () => {
     switch (chartPeriod) {
       case 'single-day':
-        return 'Comparação entre faturamento geral e renovações ao longo do dia';
+        return 'Distribuição do faturamento ao longo do dia';
       case 'weekly':
-        return 'Comparação entre faturamento geral e renovações da semana';
+        return 'Faturamento de cada dia da semana';
       case 'yearly':
-        return 'Comparação entre faturamento geral e renovações por mês';
+        return 'Faturamento mensal ao longo do ano';
       default:
-        return 'Comparação entre faturamento geral e renovações';
+        return 'Evolução diária do faturamento';
     }
   };
-
-  // Process general sales data to match the renewal data format
-  const processedGeneralData = useMemo(() => {
-    if (!generalSalesData.length || !dateRange.from || !dateRange.to) {
-      console.log('⚠️ processedGeneralData: No data or date range', {
-        dataLength: generalSalesData.length,
-        hasDateRange: !!(dateRange.from && dateRange.to)
-      });
-      return [];
-    }
-
-    const startDate = startOfDay(dateRange.from);
-    const endDate = endOfDay(dateRange.to);
-    const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    
-    let dateIntervals: Date[];
-    let formatString: string;
-    
-    if (daysDiff <= 1) {
-      dateIntervals = eachHourOfInterval({ start: startDate, end: endDate });
-      formatString = 'HH:mm';
-    } else if (daysDiff > 300) {
-      dateIntervals = eachMonthOfInterval({ start: startDate, end: endDate });
-      formatString = 'MMM yyyy';
-    } else {
-      dateIntervals = eachDayOfInterval({ start: startDate, end: endDate });
-      formatString = 'dd/MM';
-    }
-
-    const result = dateIntervals.map(intervalDate => {
-      const dateKey = format(intervalDate, formatString);
-      
-      const salesInPeriod = generalSalesData.filter(sale => {
-        const saleDate = parseISO(sale.date);
-        
-        if (daysDiff <= 1) {
-          return format(saleDate, 'HH') === format(intervalDate, 'HH') &&
-                 format(saleDate, 'yyyy-MM-dd') === format(intervalDate, 'yyyy-MM-dd');
-        } else if (daysDiff > 300) {
-          return format(saleDate, 'yyyy-MM') === format(intervalDate, 'yyyy-MM');
-        } else {
-          return format(saleDate, 'yyyy-MM-dd') === format(intervalDate, 'yyyy-MM-dd');
-        }
-      });
-
-      const revenue = salesInPeriod.reduce((sum, sale) => sum + (sale.revenue || 0), 0);
-
-      return {
-        date: dateKey,
-        revenue
-      };
-    });
-
-    console.log('✅ processedGeneralData processed', {
-      intervals: dateIntervals.length,
-      resultLength: result.length,
-      totalRevenue: result.reduce((sum, item) => sum + item.revenue, 0)
-    });
-
-    return result;
-  }, [generalSalesData, dateRange.from, dateRange.to]);
-
-  // Combine both datasets
-  const combinedData = useMemo(() => {
-    if (!renewalData.length && !processedGeneralData.length) {
-      console.log('⚠️ combinedData: No data from either source');
-      return [];
-    }
-
-    const dataMap = new Map();
-    
-    // Add renewal data
-    renewalData.forEach(item => {
-      dataMap.set(item.date, {
-        date: item.date,
-        renewalRevenue: item.revenue,
-        generalRevenue: 0
-      });
-    });
-    
-    // Add general sales data
-    processedGeneralData.forEach(item => {
-      const existing = dataMap.get(item.date);
-      if (existing) {
-        existing.generalRevenue = item.revenue;
-      } else {
-        dataMap.set(item.date, {
-          date: item.date,
-          renewalRevenue: 0,
-          generalRevenue: item.revenue
-        });
-      }
-    });
-    
-    const result = Array.from(dataMap.values()).sort((a, b) => a.date.localeCompare(b.date));
-    
-    console.log('📊 combinedData created', {
-      dataPoints: result.length,
-      totalRenewalRevenue: result.reduce((sum, item) => sum + item.renewalRevenue, 0),
-      totalGeneralRevenue: result.reduce((sum, item) => sum + item.generalRevenue, 0),
-      sampleData: result.slice(0, 2)
-    });
-
-    return result;
-  }, [renewalData, processedGeneralData]);
 
   const formatCurrency = (value: number) => {
     return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
   };
 
   const formatTooltipValue = (value: any, name: string) => {
-    const label = name === 'renewalRevenue' ? 'Renovações' : 'Faturamento Geral';
-    return [formatCurrency(value), label];
+    return [formatCurrency(value), 'Receita'];
   };
 
-  const hasData = combinedData.some(item => item.renewalRevenue > 0 || item.generalRevenue > 0);
-  const loading = renewalLoading || generalLoading;
+  // Calculate data based on revenue filter
+  const processedData = React.useMemo(() => {
+    if (revenueFilter === 'renewal') {
+      return lineData;
+    } else {
+      // For "Faturamento sem Renovação", subtract renewal revenue from total sales revenue
+      const renewalTotalRevenue = lineData.reduce((acc, item) => acc + item.revenue, 0);
+      const nonRenewalRevenue = totalSalesRevenue - renewalTotalRevenue;
+      
+      // Distribute the non-renewal revenue proportionally across the period
+      const totalDataPoints = lineData.length;
+      const avgNonRenewalRevenue = totalDataPoints > 0 ? nonRenewalRevenue / totalDataPoints : 0;
+      
+      return lineData.map(item => ({
+        ...item,
+        revenue: avgNonRenewalRevenue
+      }));
+    }
+  }, [lineData, revenueFilter, totalSalesRevenue]);
 
-  // Calculate totals for display
-  const totalRenewalRevenue = useMemo(() => 
-    combinedData.reduce((acc, item) => acc + item.renewalRevenue, 0), 
-    [combinedData]
-  );
-  
-  const totalGeneralRevenue = useMemo(() => 
-    combinedData.reduce((acc, item) => acc + item.generalRevenue, 0), 
-    [combinedData]
-  );
+  const hasData = processedData.some(item => item.revenue > 0);
 
-  console.log('📊 Chart rendering state:', {
-    loading,
-    dataLength: combinedData.length,
-    hasData,
-    totalRenewalRevenue,
-    totalGeneralRevenue,
-    chartPeriod,
-    renewalError,
-    sampleData: combinedData.slice(0, 2)
-  });
+  // Calcular total de receita para exibição
+  const totalRevenue = processedData.reduce((acc, item) => acc + item.revenue, 0);
 
   return (
     <Card className="bg-slate-800/30 border-slate-700">
       <CardHeader>
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div>
             <CardTitle className="text-white flex items-center gap-2">
               <TrendingUp className="w-5 h-5" />
@@ -235,26 +113,25 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
             <CardDescription className="text-slate-400">
               {getChartDescription()}
             </CardDescription>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-slate-400">Renovações:</span>
+            <div className="mt-2">
+              <div className="text-sm text-slate-300">
+                <span className="text-slate-400">Total:</span>{' '}
                 <span className="font-semibold text-blue-400">
-                  {formatCurrency(totalRenewalRevenue)}
+                  {formatCurrency(totalRevenue)}
                 </span>
               </div>
             </div>
-            <div className="text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-slate-400">Faturamento Geral:</span>
-                <span className="font-semibold text-green-400">
-                  {formatCurrency(totalGeneralRevenue)}
-                </span>
-              </div>
-            </div>
+          </div>
+          <div className="w-full sm:w-48">
+            <Select value={revenueFilter} onValueChange={setRevenueFilter}>
+              <SelectTrigger className="bg-slate-800/50 border-slate-700/50 text-white backdrop-blur-sm">
+                <SelectValue placeholder="Filtrar receita" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-900/95 border-slate-700/50 backdrop-blur-sm">
+                <SelectItem value="renewal">Renovação</SelectItem>
+                <SelectItem value="non-renewal">Faturamento sem Renovação</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </CardHeader>
@@ -263,36 +140,22 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
           <div className="h-[300px] flex items-center justify-center">
             <div className="text-slate-400">Carregando dados...</div>
           </div>
-        ) : renewalError ? (
-          <div className="h-[300px] flex items-center justify-center">
-            <div className="text-center">
-              <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-2" />
-              <div className="text-red-400 text-lg mb-2">Erro ao carregar dados</div>
-              <div className="text-slate-500 text-sm">
-                {renewalError}
-              </div>
-            </div>
-          </div>
         ) : !hasData ? (
           <div className="h-[300px] flex items-center justify-center">
             <div className="text-center">
               <div className="text-slate-400 text-lg mb-2">📊 Nenhum dado encontrado</div>
               <div className="text-slate-500 text-sm">
-                Não há dados para o período selecionado
+                Não há dados para o período e filtros selecionados
               </div>
             </div>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={combinedData}>
+            <AreaChart data={processedData}>
               <defs>
-                <linearGradient id="renewalGradient" x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
                   <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
-                </linearGradient>
-                <linearGradient id="generalGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
@@ -318,19 +181,10 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
               />
               <Area
                 type="monotone"
-                dataKey="renewalRevenue"
-                stackId="1"
+                dataKey="revenue"
                 stroke="#3b82f6"
-                fill="url(#renewalGradient)"
-                strokeWidth={2}
-              />
-              <Area
-                type="monotone"
-                dataKey="generalRevenue"
-                stackId="2"
-                stroke="#10b981"
-                fill="url(#generalGradient)"
-                strokeWidth={2}
+                fill="#3b82f6"
+                fillOpacity={0.3}
               />
             </AreaChart>
           </ResponsiveContainer>

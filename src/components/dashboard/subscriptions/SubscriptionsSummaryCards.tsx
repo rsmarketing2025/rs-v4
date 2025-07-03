@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { TrendingUp, Users, DollarSign, XCircle } from "lucide-react";
 import { useSubscriptionMetrics } from "@/hooks/useSubscriptionMetrics";
@@ -12,7 +13,6 @@ interface SubscriptionsSummaryCardsProps {
     plan: string;
     eventType: string;
     paymentMethod: string;
-    products: string[];
   };
 }
 

@@ -8,7 +8,6 @@ interface ChartFilters {
   eventType: string;
   paymentMethod: string;
   status: string;
-  products: string[];
 }
 
 interface DateRange {
@@ -18,20 +17,14 @@ interface DateRange {
 
 interface ChartDataItem {
   date: string;
-  plan: string;
-  status: string;
-  amount: number;
   revenue: number;
-  customer_name: string;
-  customer_email: string;
-  event_type?: string;
-  payment_method?: string;
+  plan: string;
 }
 
 export const useSubscriptionChartData = (
   dateRange: DateRange,
   filters: ChartFilters,
-  type: 'subscriptions' | 'renewals' = 'subscriptions'
+  type: 'subscriptions' | 'renewals'
 ) => {
   const [chartData, setChartData] = useState<ChartDataItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,68 +33,102 @@ export const useSubscriptionChartData = (
     const fetchChartData = async () => {
       try {
         setLoading(true);
-        console.log(`📊 Fetching ${type} chart data with filters:`, filters);
+        console.log(`📊 Fetching ${type} chart data with product filter:`, filters.plan);
 
         const startDate = startOfDay(dateRange.from);
         const endDate = endOfDay(dateRange.to);
         const startDateStr = format(startDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         const endDateStr = format(endDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
-        const tableName = type === 'renewals' ? 'subscription_renewals' : 'subscription_status';
-        
-        let query = supabase
-          .from(tableName)
-          .select('*')
-          .gte('created_at', startDateStr)
-          .lte('created_at', endDateStr);
+        if (type === 'renewals') {
+          // Use subscription_renewals table for renewals
+          let query = supabase
+            .from('subscription_renewals')
+            .select('*')
+            .gte('created_at', startDateStr)
+            .lte('created_at', endDateStr);
 
-        // Apply status filter
-        if (filters.status !== 'all') {
-          if (filters.status === 'active') {
-            query = query.eq('subscription_status', 'active');
-          } else if (filters.status === 'canceled') {
-            query = query.eq('subscription_status', 'canceled');
-          } else if (filters.status === 'expired') {
-            query = query.eq('subscription_status', 'expired');
+          // Apply product filter if not "all"
+          if (filters.plan !== 'all') {
+            query = query.eq('plan', filters.plan);
           }
-        }
 
-        // Apply product filter (only for renewals tab)
-        if (type === 'renewals' && filters.products.length > 0) {
-          console.log('🔍 Applying product filter for renewals:', filters.products);
-          query = query.in('plan', filters.products);
-        }
+          const { data: renewals, error } = await query;
 
-        const { data, error } = await query;
+          if (error) {
+            console.error('❌ Error fetching renewals:', error);
+            return;
+          }
 
-        if (error) {
-          console.error(`❌ Error fetching ${type} data:`, error);
-          return;
-        }
+          if (renewals) {
+            const chartData: ChartDataItem[] = renewals.map(renewal => ({
+              date: renewal.created_at,
+              revenue: renewal.amount || 0,
+              plan: renewal.plan || 'Unknown'
+            }));
 
-        if (data) {
-          const chartData: ChartDataItem[] = data.map(item => ({
-            date: item.created_at,
-            plan: item.plan || 'Unknown',
-            status: item.subscription_status || 'unknown',
-            amount: item.amount || 0,
-            revenue: item.amount || 0,
-            customer_name: item.customer_name || '',
-            customer_email: item.customer_email || '',
-            event_type: type,
-            payment_method: 'subscription'
-          }));
+            setChartData(chartData);
+          }
+        } else {
+          // For subscriptions, we'll use both product_sales and subscription_events
+          let productSalesQuery = supabase
+            .from('product_sales')
+            .select('*')
+            .gte('sale_date', startDateStr)
+            .lte('sale_date', endDateStr);
+
+          let subscriptionEventsQuery = supabase
+            .from('subscription_events')
+            .select('*')
+            .gte('event_date', startDateStr)
+            .lte('event_date', endDateStr)
+            .eq('event_type', 'subscription');
+
+          // Apply product filter if not "all"
+          if (filters.plan !== 'all') {
+            productSalesQuery = productSalesQuery.eq('product_name', filters.plan);
+            subscriptionEventsQuery = subscriptionEventsQuery.eq('plan', filters.plan);
+          }
+
+          const [productSalesResult, subscriptionEventsResult] = await Promise.all([
+            productSalesQuery,
+            subscriptionEventsQuery
+          ]);
+
+          if (productSalesResult.error || subscriptionEventsResult.error) {
+            console.error('❌ Error fetching subscription data:', 
+              productSalesResult.error || subscriptionEventsResult.error);
+            return;
+          }
+
+          const chartData: ChartDataItem[] = [];
+
+          // Add product sales data
+          if (productSalesResult.data) {
+            productSalesResult.data.forEach(sale => {
+              chartData.push({
+                date: sale.sale_date,
+                revenue: sale.sale_value || 0,
+                plan: sale.product_name || 'Unknown'
+              });
+            });
+          }
+
+          // Add subscription events data
+          if (subscriptionEventsResult.data) {
+            subscriptionEventsResult.data.forEach(event => {
+              chartData.push({
+                date: event.event_date,
+                revenue: event.amount || 0,
+                plan: event.plan || 'Unknown'
+              });
+            });
+          }
 
           setChartData(chartData);
-          
-          console.log(`✅ ${type} chart data loaded:`, {
-            count: chartData.length,
-            filtersApplied: {
-              status: filters.status,
-              products: filters.products.length > 0 ? filters.products : 'none'
-            }
-          });
         }
+
+        console.log(`✅ ${type} chart data loaded:`, chartData.length, 'items');
 
       } catch (error) {
         console.error(`❌ Error fetching ${type} chart data:`, error);

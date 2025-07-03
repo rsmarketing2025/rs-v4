@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
@@ -5,13 +6,7 @@ import { useSubscriptionChartData } from "@/hooks/useSubscriptionChartData";
 
 interface SubscriptionRenewalsChartProps {
   dateRange: { from: Date; to: Date };
-  filters: { 
-    plan: string; 
-    eventType: string; 
-    paymentMethod: string; 
-    status: string; 
-    products: string[]; 
-  };
+  filters: { plan: string; eventType: string; paymentMethod: string; status: string };
 }
 
 export const SubscriptionRenewalsChart: React.FC<SubscriptionRenewalsChartProps> = ({
@@ -20,6 +15,7 @@ export const SubscriptionRenewalsChart: React.FC<SubscriptionRenewalsChartProps>
 }) => {
   const { chartData, loading } = useSubscriptionChartData(dateRange, filters, 'renewals');
 
+  // Prepare plan distribution data with revenue
   const preparePlanData = () => {
     const planCounts: Record<string, number> = {};
     const planRevenues: Record<string, number> = {};
@@ -40,6 +36,7 @@ export const SubscriptionRenewalsChart: React.FC<SubscriptionRenewalsChartProps>
   const planData = preparePlanData();
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
+  // Custom tooltip component
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
