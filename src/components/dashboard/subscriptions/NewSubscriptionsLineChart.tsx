@@ -15,7 +15,7 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<string>('all');
 
-  const { lineData: subscriptionsData, loading: subscriptionsLoading, totalSubscriptions } = useNewSubscriptionsLineData(
+  const { lineData: subscriptionsData, subscriptionCountData, loading: subscriptionsLoading, totalSubscriptions } = useNewSubscriptionsLineData(
     dateRange,
     { plan: selectedProduct, status: 'all' }
   );
@@ -64,10 +64,10 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
           {payload.map((entry: any, index: number) => {
             const productName = entry.dataKey;
             const revenue = entry.value;
-            // Calculate quantity based on average subscription value (assuming R$ 79 per subscription as example)
-            // You can adjust this logic based on your actual data structure
-            const avgSubscriptionValue = 79; // This should ideally come from your data
-            const quantity = Math.round(revenue / avgSubscriptionValue);
+            
+            // Get the actual quantity from the count data for this date and product
+            const countEntry = subscriptionCountData.find(item => item.date === label);
+            const quantity = countEntry ? (countEntry[productName] as number) || 0 : 0;
             
             return (
               <div key={index} className="mb-1">

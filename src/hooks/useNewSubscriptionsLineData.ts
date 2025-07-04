@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfDay, endOfDay, eachDayOfInterval, parseISO, eachMonthOfInterval, startOfMonth, endOfMonth, isSameDay, startOfYear, endOfYear, startOfWeek, endOfWeek } from 'date-fns';
@@ -27,6 +26,7 @@ export const useNewSubscriptionsLineData = (
   filters: Filters
 ) => {
   const [lineData, setLineData] = useState<NewSubscriptionLineData[]>([]);
+  const [subscriptionCountData, setSubscriptionCountData] = useState<NewSubscriptionLineData[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalSubscriptions, setTotalSubscriptions] = useState(0);
 
@@ -99,6 +99,7 @@ export const useNewSubscriptionsLineData = (
         if (error) {
           console.error('❌ Error fetching new subscriptions line data:', error);
           setLineData([]);
+          setSubscriptionCountData([]);
           setTotalSubscriptions(0);
           return;
         }
@@ -218,6 +219,7 @@ export const useNewSubscriptionsLineData = (
 
           // Generate chart data based on period using Brazil timezone dates
           let chartData: NewSubscriptionLineData[] = [];
+          let countData: NewSubscriptionLineData[] = [];
           
           if (chartPeriod === 'weekly') {
             const weekStart = startOfWeek(dateRange.from, { weekStartsOn: 1 });
@@ -227,20 +229,39 @@ export const useNewSubscriptionsLineData = (
             chartData = days.map(day => {
               const dayStr = format(day, 'EEE dd/MM', { locale: ptBR });
               const dayData: NewSubscriptionLineData = { date: dayStr };
+              const countDayData: NewSubscriptionLineData = { date: dayStr };
               
               // Initialize all plans with 0
               uniquePlans.forEach(plan => {
                 dayData[plan] = 0;
+                countDayData[plan] = 0;
               });
               
-              // Add revenue for subscriptions on this day
+              // Add revenue and count for subscriptions on this day
               const daySubscriptions = subscriptionsByDateStr[dayStr] || [];
               daySubscriptions.forEach(sub => {
                 const amount = Number(sub.amount) || 0;
                 dayData[sub.plan] = (dayData[sub.plan] as number) + amount;
+                countDayData[sub.plan] = (countDayData[sub.plan] as number) + 1;
               });
               
               return dayData;
+            });
+
+            countData = days.map(day => {
+              const dayStr = format(day, 'EEE dd/MM', { locale: ptBR });
+              const countDayData: NewSubscriptionLineData = { date: dayStr };
+              
+              uniquePlans.forEach(plan => {
+                countDayData[plan] = 0;
+              });
+              
+              const daySubscriptions = subscriptionsByDateStr[dayStr] || [];
+              daySubscriptions.forEach(sub => {
+                countDayData[sub.plan] = (countDayData[sub.plan] as number) + 1;
+              });
+              
+              return countDayData;
             });
           } else if (chartPeriod === 'yearly') {
             const yearStart = startOfYear(dateRange.from);
@@ -264,6 +285,22 @@ export const useNewSubscriptionsLineData = (
               });
               
               return monthData;
+            });
+
+            countData = months.map(month => {
+              const monthStr = format(month, 'MMM', { locale: ptBR });
+              const countMonthData: NewSubscriptionLineData = { date: monthStr };
+              
+              uniquePlans.forEach(plan => {
+                countMonthData[plan] = 0;
+              });
+              
+              const monthSubscriptions = subscriptionsByDateStr[monthStr] || [];
+              monthSubscriptions.forEach(sub => {
+                countMonthData[sub.plan] = (countMonthData[sub.plan] as number) + 1;
+              });
+              
+              return countMonthData;
             });
           } else {
             // Default daily view using Brazil timezone dates
@@ -290,13 +327,30 @@ export const useNewSubscriptionsLineData = (
               
               return dayData;
             });
+
+            countData = allDays.map(day => {
+              const dayStr = format(day, 'dd/MM');
+              const countDayData: NewSubscriptionLineData = { date: dayStr };
+              
+              uniquePlans.forEach(plan => {
+                countDayData[plan] = 0;
+              });
+              
+              const daySubscriptions = subscriptionsByDateStr[dayStr] || [];
+              daySubscriptions.forEach(sub => {
+                countDayData[sub.plan] = (countDayData[sub.plan] as number) + 1;
+              });
+              
+              return countDayData;
+            });
           }
           
-          return chartData;
+          return { chartData, countData };
         };
 
-        const chartData = prepareChartData();
+        const { chartData, countData } = prepareChartData();
         setLineData(chartData);
+        setSubscriptionCountData(countData);
 
         // Calculate and verify total revenue from chart data
         const chartTotalRevenue = chartData.reduce((acc, item) => {
@@ -340,6 +394,7 @@ export const useNewSubscriptionsLineData = (
       } catch (error) {
         console.error('❌ Error in fetchLineData:', error);
         setLineData([]);
+        setSubscriptionCountData([]);
         setTotalSubscriptions(0);
       } finally {
         setLoading(false);
@@ -352,5 +407,5 @@ export const useNewSubscriptionsLineData = (
     return () => clearTimeout(timeoutId);
   }, [dateRange.from?.getTime(), dateRange.to?.getTime(), filters.plan, filters.status]);
 
-  return { lineData, loading, totalSubscriptions };
+  return { lineData, subscriptionCountData, loading, totalSubscriptions };
 };
