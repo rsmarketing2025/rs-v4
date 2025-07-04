@@ -76,7 +76,8 @@ export const CreativesTable: React.FC<CreativesTableProps> = ({
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
-            <Table>
+            <div className="min-w-[1400px]">
+              <Table>
               <TableHeader sticky={true}>
                 <TableRow className="border-slate-700">
                   <TableHead className="text-slate-300 min-w-[150px]">Criativo</TableHead>
@@ -241,6 +242,7 @@ export const CreativesTable: React.FC<CreativesTableProps> = ({
                 )}
               </TableBody>
             </Table>
+            </div>
           </div>
         </CardContent>
       </Card>

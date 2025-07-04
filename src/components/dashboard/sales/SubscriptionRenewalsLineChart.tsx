@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useSubscriptionRenewalsLineData } from "@/hooks/useSubscriptionRenewalsLineData";
+import { useSubscriptionRenewals } from "@/hooks/useSubscriptionRenewals";
 import { TrendingUp } from "lucide-react";
 import { formatCurrency } from "@/lib/dateUtils";
 
@@ -20,10 +20,34 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   onRevenueFilterChange,
   totalSalesRevenue
 }) => {
-  const { lineData, loading } = useSubscriptionRenewalsLineData(
+  const { renewals, loading } = useSubscriptionRenewals(
     dateRange,
-    { plan: 'all', status: 'all' }
+    { plan: 'all', eventType: 'all', paymentMethod: 'all', status: 'all' },
+    1,
+    1000
   );
+
+  // Transform renewals data to line chart format
+  const lineData = React.useMemo(() => {
+    if (!renewals || renewals.length === 0) return [];
+    
+    // Group renewals by date and sum the revenue
+    const grouped = renewals.reduce((acc, renewal) => {
+      const date = new Date(renewal.created_at).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit'
+      });
+      
+      if (!acc[date]) {
+        acc[date] = { date, revenue: 0 };
+      }
+      
+      acc[date].revenue += renewal.amount;
+      return acc;
+    }, {} as Record<string, { date: string; revenue: number }>);
+    
+    return Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
+  }, [renewals]);
 
   // Determine the chart period based on date range (same logic as SalesChart)
   const getChartPeriod = () => {
