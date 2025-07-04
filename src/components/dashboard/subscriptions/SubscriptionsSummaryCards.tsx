@@ -42,7 +42,7 @@ export const SubscriptionsSummaryCards: React.FC<SubscriptionsSummaryCardsProps>
       value: loading ? "..." : metrics.newSubscriptions.toLocaleString(),
       change: loading ? "..." : `+${metrics.newSubscriptionsGrowth.toFixed(1)}%`,
       icon: TrendingUp,
-      variant: 'orange' as const
+      variant: 'success' as const
     },
     {
       title: "MRR",
@@ -56,7 +56,7 @@ export const SubscriptionsSummaryCards: React.FC<SubscriptionsSummaryCardsProps>
       value: loading ? "..." : metrics.cancellations.toLocaleString(),
       change: loading ? "..." : `${metrics.cancellationsGrowth >= 0 ? '+' : ''}${metrics.cancellationsGrowth.toFixed(1)}%`,
       icon: XCircle,
-      variant: 'success' as const
+      variant: 'warning' as const
     }
   ];
 
