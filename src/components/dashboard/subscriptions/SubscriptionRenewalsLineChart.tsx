@@ -14,7 +14,6 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   dateRange,
   totalSalesRevenue
 }) => {
-  // Remove status filter to align with summary cards calculation
   const { lineData: renewalsData, loading: renewalsLoading } = useSubscriptionRenewalsLineData(
     dateRange,
     { plan: 'all', status: 'all' }
@@ -26,7 +25,9 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
     
     const daysDiff = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
     
-    if (daysDiff >= 6 && daysDiff <= 7) {
+    if (daysDiff <= 1) {
+      return 'single-day';
+    } else if (daysDiff >= 6 && daysDiff <= 7) {
       return 'weekly';
     } else if (daysDiff > 300) {
       return 'yearly';
@@ -37,9 +38,11 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
 
   const chartPeriod = getChartPeriod();
 
-  // Get chart title based on period - remove single-day hour display
+  // Get chart title based on period
   const getChartTitle = () => {
     switch (chartPeriod) {
+      case 'single-day':
+        return 'Renovações por Hora';
       case 'weekly':
         return 'Renovações da Semana';
       case 'yearly':
@@ -51,6 +54,8 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
 
   const getChartDescription = () => {
     switch (chartPeriod) {
+      case 'single-day':
+        return 'Receita de renovações ao longo do dia';
       case 'weekly':
         return 'Receita de renovações da semana';
       case 'yearly':
@@ -71,7 +76,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   const loading = renewalsLoading;
   const hasData = renewalsData.some(item => item.revenue > 0);
 
-  // Calculate totals for display - align with summary cards calculation
+  // Calculate totals for display
   const totalRenewals = renewalsData.reduce((acc, item) => acc + item.revenue, 0);
 
   console.log('📊 Renewals chart rendering state:', { 

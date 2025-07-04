@@ -15,11 +15,12 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<string>('all');
 
-  const { lineData: subscriptionsData, subscriptionCountData, loading: subscriptionsLoading, totalSubscriptions } = useNewSubscriptionsLineData(
+  const { lineData: subscriptionsData, loading: subscriptionsLoading } = useNewSubscriptionsLineData(
     dateRange,
     { plan: selectedProduct, status: 'all' }
   );
 
+  // Determine the chart period based on date range (removing single-day)
   const getChartPeriod = () => {
     if (!dateRange.from || !dateRange.to) return 'daily';
     
@@ -36,8 +37,16 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
 
   const chartPeriod = getChartPeriod();
 
+  // Get chart title based on period
   const getChartTitle = () => {
-    return 'Novas Assinaturas por Produto';
+    switch (chartPeriod) {
+      case 'weekly':
+        return 'Novas Assinaturas da Semana';
+      case 'yearly':
+        return 'Novas Assinaturas por Mês';
+      default:
+        return 'Novas Assinaturas por Dia';
+    }
   };
 
   const getChartDescription = () => {
@@ -55,50 +64,20 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
     return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
   };
 
-  // Custom tooltip component to show both revenue and quantity
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-lg">
-          <p className="text-slate-400 text-sm mb-2">{`Data: ${label}`}</p>
-          {payload.map((entry: any, index: number) => {
-            const productName = entry.dataKey;
-            const revenue = entry.value;
-            
-            // Get the actual quantity from the count data for this date and product
-            const countEntry = subscriptionCountData.find(item => item.date === label);
-            const quantity = countEntry ? (countEntry[productName] as number) || 0 : 0;
-            
-            return (
-              <div key={index} className="mb-1">
-                <p className="text-white font-medium" style={{ color: entry.color }}>
-                  {productName}
-                </p>
-                <p className="text-white text-sm">
-                  Receita: {formatCurrency(revenue)}
-                </p>
-                <p className="text-white text-sm">
-                  Quantidade: {quantity} assinaturas
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      );
-    }
-    return null;
+  const formatTooltipValue = (value: any, name: string) => {
+    return [formatCurrency(value), name];
   };
 
   const loading = subscriptionsLoading;
   const hasData = subscriptionsData.length > 0 && subscriptionsData.some(item => 
-    Object.keys(item).some(key => key !== 'date' && typeof item[key] === 'number' && item[key] > 0)
+    Object.keys(item).some(key => key !== 'date' && item[key] > 0)
   );
 
-  // Calculate totals for display with improved precision
-  const totalNewSubscriptionsRevenue = subscriptionsData.reduce((acc, item) => {
+  // Calculate totals for display
+  const totalNewSubscriptions = subscriptionsData.reduce((acc, item) => {
     return acc + Object.keys(item).reduce((sum, key) => {
-      if (key !== 'date' && typeof item[key] === 'number') {
-        return sum + (item[key] as number);
+      if (key !== 'date') {
+        return sum + (item[key] || 0);
       }
       return sum;
     }, 0);
@@ -119,8 +98,7 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
     loading, 
     dataLength: subscriptionsData.length,
     hasData,
-    totalNewSubscriptionsRevenue,
-    totalSubscriptions,
+    totalNewSubscriptions,
     chartPeriod,
     selectedProduct,
     productNames,
@@ -139,17 +117,11 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
             <CardDescription className="text-slate-400">
               {getChartDescription()}
             </CardDescription>
-            <div className="mt-2 flex flex-wrap gap-6">
+            <div className="mt-2">
               <div className="text-sm text-slate-300">
-                <span className="text-slate-400">Total de Receita:</span>{' '}
+                <span className="text-slate-400">Total de Novas Assinaturas:</span>{' '}
                 <span className="font-semibold text-green-400">
-                  {formatCurrency(totalNewSubscriptionsRevenue)}
-                </span>
-              </div>
-              <div className="text-sm text-slate-300">
-                <span className="text-slate-400">Novas Assinaturas:</span>{' '}
-                <span className="font-semibold text-blue-400">
-                  {totalSubscriptions}
+                  {formatCurrency(totalNewSubscriptions)}
                 </span>
               </div>
             </div>
@@ -189,7 +161,14 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
                 tickFormatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`}
               />
               <Tooltip 
-                content={<CustomTooltip />}
+                contentStyle={{ 
+                  backgroundColor: '#1e293b', 
+                  border: '1px solid #475569',
+                  borderRadius: '8px',
+                  color: '#fff'
+                }}
+                formatter={formatTooltipValue}
+                labelStyle={{ color: '#94a3b8' }}
               />
               <Legend />
               {productNames.map((productName, index) => (
