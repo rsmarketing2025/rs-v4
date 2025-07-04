@@ -25,9 +25,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
     
     const daysDiff = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
     
-    if (daysDiff <= 1) {
-      return 'single-day';
-    } else if (daysDiff >= 6 && daysDiff <= 7) {
+    if (daysDiff >= 6 && daysDiff <= 7) {
       return 'weekly';
     } else if (daysDiff > 300) {
       return 'yearly';
@@ -41,8 +39,6 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   // Get chart title based on period
   const getChartTitle = () => {
     switch (chartPeriod) {
-      case 'single-day':
-        return 'Renovações por Hora';
       case 'weekly':
         return 'Renovações da Semana';
       case 'yearly':
@@ -54,8 +50,6 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
 
   const getChartDescription = () => {
     switch (chartPeriod) {
-      case 'single-day':
-        return 'Receita de renovações ao longo do dia';
       case 'weekly':
         return 'Receita de renovações da semana';
       case 'yearly':

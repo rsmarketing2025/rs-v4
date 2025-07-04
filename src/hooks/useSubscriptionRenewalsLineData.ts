@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfDay, endOfDay, eachDayOfInterval, parseISO, eachMonthOfInterval, startOfMonth, endOfMonth, isSameDay, startOfYear, endOfYear, startOfWeek, endOfWeek } from 'date-fns';
@@ -29,25 +30,21 @@ export const useSubscriptionRenewalsLineData = (
   const [lineData, setLineData] = useState<RenewalLineData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Determine the chart period based on date range (same logic as SalesChart)
+  // Determine the chart period based on date range
   const getChartPeriod = () => {
     if (!dateRange.from || !dateRange.to) return 'daily';
     
     const daysDiff = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
     
-    // If it's exactly 1 day (today or yesterday)
-    if (daysDiff <= 1) {
-      return 'single-day';
-    }
     // If it's 6 or 7 days, treat as weekly (covers different week selection scenarios)
-    else if (daysDiff >= 6 && daysDiff <= 7) {
+    if (daysDiff >= 6 && daysDiff <= 7) {
       return 'weekly';
     }
     // If it's a year range (more than 300 days)
     else if (daysDiff > 300) {
       return 'yearly';
     }
-    // Default to daily for other ranges
+    // Default to daily for all other ranges (including single day)
     else {
       return 'daily';
     }
@@ -125,13 +122,7 @@ export const useSubscriptionRenewalsLineData = (
           if (!renewals || renewals.length === 0) {
             console.log('📊 No renewals data found for the period');
             // Create empty data structure based on period
-            if (chartPeriod === 'single-day') {
-              return Array.from({ length: 24 }, (_, hour) => ({
-                date: hour.toString().padStart(2, '0') + ':00',
-                quantity: 0,
-                revenue: 0
-              }));
-            } else if (chartPeriod === 'weekly') {
+            if (chartPeriod === 'weekly') {
               // Use the selected date range to determine the week
               const weekStart = startOfWeek(dateRange.from, { weekStartsOn: 1 }); // Monday of selected week
               const weekEnd = endOfWeek(dateRange.to, { weekStartsOn: 1 }); // Sunday of selected week
@@ -163,45 +154,7 @@ export const useSubscriptionRenewalsLineData = (
             }
           }
 
-          if (chartPeriod === 'single-day') {
-            // For single day, show hourly breakdown
-            const hourlyRevenue: Record<string, { quantity: number; revenue: number }> = {};
-            
-            // Initialize all hours
-            for (let hour = 0; hour < 24; hour++) {
-              const hourStr = hour.toString().padStart(2, '0') + ':00';
-              hourlyRevenue[hourStr] = { quantity: 0, revenue: 0 };
-            }
-            
-            // Process all renewals without additional date filtering
-            // The SQL query already filtered by the correct date range
-            renewals.forEach(renewal => {
-              if (renewal.created_at) {
-                try {
-                  const renewalDateUTC = parseISO(renewal.created_at);
-                  const renewalDateLocal = toZonedTime(renewalDateUTC, BRAZIL_TIMEZONE);
-                  
-                  const hour = format(renewalDateLocal, 'HH:00');
-                  if (hourlyRevenue[hour]) {
-                    hourlyRevenue[hour].quantity += 1;
-                    hourlyRevenue[hour].revenue += Number(renewal.amount) || 0;
-                  }
-                } catch (error) {
-                  console.warn('📊 Error parsing renewal date:', renewal.created_at, error);
-                }
-              }
-            });
-
-            return Object.entries(hourlyRevenue)
-              .map(([hour, data]) => ({ 
-                date: hour, 
-                quantity: data.quantity,
-                revenue: data.revenue 
-              }))
-              .sort((a, b) => a.date.localeCompare(b.date));
-          }
-          
-          else if (chartPeriod === 'weekly') {
+          if (chartPeriod === 'weekly') {
             // For weekly, use the selected date range to determine the week
             const weekStart = startOfWeek(dateRange.from, { weekStartsOn: 1 }); // Monday of selected week
             const weekEnd = endOfWeek(dateRange.to, { weekStartsOn: 1 }); // Sunday of selected week
@@ -268,7 +221,7 @@ export const useSubscriptionRenewalsLineData = (
           }
           
           else {
-            // Default daily view
+            // Default daily view (including single day periods)
             const allDays = eachDayOfInterval({ 
               start: startOfDay(dateRange.from), 
               end: endOfDay(dateRange.to) 
