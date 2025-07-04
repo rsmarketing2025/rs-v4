@@ -42,11 +42,13 @@ export const useSubscriptionRenewals = (
   const [renewals, setRenewals] = useState<SubscriptionRenewal[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchRenewals = async () => {
       try {
         setLoading(true);
+        setError(null);
         console.log('📊 Fetching subscription renewals...');
 
         const startDate = startOfDay(dateRange.from);
@@ -59,8 +61,12 @@ export const useSubscriptionRenewals = (
           .select('*', { count: 'exact' })
           .gte('created_at', startDateStr)
           .lte('created_at', endDateStr)
-          .order('created_at', { ascending: false })
-          .range((page - 1) * pageSize, page * pageSize - 1);
+          .order('created_at', { ascending: false });
+
+        // Apply pagination
+        if (pageSize > 0) {
+          query = query.range((page - 1) * pageSize, page * pageSize - 1);
+        }
 
         // Apply filters
         if (filters.plan !== 'all') {
@@ -76,26 +82,38 @@ export const useSubscriptionRenewals = (
           query = query.or(`customer_name.ilike.%${searchTerm}%,customer_email.ilike.%${searchTerm}%,subscription_id.ilike.%${searchTerm}%`);
         }
 
-        const { data, error, count } = await query;
+        const { data, error: queryError, count } = await query;
 
-        if (error) {
-          console.error('❌ Error fetching subscription renewals:', error);
+        if (queryError) {
+          console.error('❌ Error fetching subscription renewals:', queryError);
+          setError(queryError.message);
+          setRenewals([]);
+          setTotalCount(0);
           return;
         }
 
-        setRenewals(data || []);
+        const validRenewals = (data || []).filter(renewal => 
+          renewal && 
+          renewal.created_at && 
+          renewal.plan && 
+          typeof renewal.amount === 'number'
+        );
+
+        setRenewals(validRenewals);
         setTotalCount(count || 0);
 
         console.log('✅ Subscription renewals loaded:', {
-          count: data?.length || 0,
+          count: validRenewals.length,
           totalCount: count || 0,
           page,
           pageSize,
-          searchTerm
+          searchTerm,
+          dateRange: { from: startDateStr, to: endDateStr }
         });
 
       } catch (error) {
         console.error('❌ Error fetching subscription renewals:', error);
+        setError(error instanceof Error ? error.message : 'Erro desconhecido');
         setRenewals([]);
         setTotalCount(0);
       } finally {
@@ -103,8 +121,13 @@ export const useSubscriptionRenewals = (
       }
     };
 
-    fetchRenewals();
+    // Adicionar um pequeno delay para evitar muitas requisições
+    const timeoutId = setTimeout(() => {
+      fetchRenewals();
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
   }, [dateRange, filters, page, pageSize, searchTerm]);
 
-  return { renewals, loading, totalCount };
+  return { renewals, loading, totalCount, error };
 };

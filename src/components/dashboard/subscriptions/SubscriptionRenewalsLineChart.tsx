@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useSubscriptionRenewals } from "@/hooks/useSubscriptionRenewals";
 import { TrendingUp } from "lucide-react";
 import { formatCurrency } from "@/lib/dateUtils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SubscriptionRenewalsLineChartProps {
   dateRange: { from: Date; to: Date };
@@ -33,14 +34,14 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
   const [selectedPlan, setSelectedPlan] = useState<string>('all');
 
-  const { renewals, loading } = useSubscriptionRenewals(
+  const { renewals, loading, totalCount } = useSubscriptionRenewals(
     dateRange,
     { plan: 'all', eventType: 'all', paymentMethod: 'all', status: 'all' },
     1,
     1000
   );
 
-  console.log('📊 Renewals data:', renewals);
+  console.log('📊 Renewals data:', { renewals: renewals?.length || 0, loading, totalCount });
 
   // Obter planos únicos disponíveis
   const availablePlans = useMemo(() => {
@@ -62,6 +63,8 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
     
     // Agrupar dados por data
     const groupedByDate = renewals.reduce((acc, renewal) => {
+      if (!renewal.created_at) return acc;
+      
       const date = new Date(renewal.created_at).toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: '2-digit'
@@ -76,9 +79,10 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
         };
       }
       
-      acc[date].total += renewal.amount;
+      const amount = renewal.amount || 0;
+      acc[date].total += amount;
       if (renewal.plan) {
-        acc[date][renewal.plan] = (acc[date][renewal.plan] || 0) + renewal.amount;
+        acc[date][renewal.plan] = (acc[date][renewal.plan] || 0) + amount;
       }
       
       return acc;
@@ -190,6 +194,33 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
     availablePlans
   });
 
+  // Componente de loading melhorado
+  if (loading) {
+    return (
+      <Card className="bg-slate-800/30 border-slate-700">
+        <CardHeader>
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div className="flex-1">
+              <Skeleton className="h-6 w-48 mb-2 bg-slate-700" />
+              <Skeleton className="h-4 w-64 bg-slate-700" />
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-48 bg-slate-700" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[400px] flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+              <div className="text-slate-400">Carregando dados de renovações...</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="bg-slate-800/30 border-slate-700">
       <CardHeader>
@@ -247,11 +278,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
       </CardHeader>
       
       <CardContent>
-        {loading ? (
-          <div className="h-[400px] flex items-center justify-center">
-            <div className="text-slate-400">Carregando dados...</div>
-          </div>
-        ) : !hasData ? (
+        {!hasData ? (
           <div className="h-[400px] flex items-center justify-center">
             <div className="text-center">
               <div className="text-slate-400 text-lg mb-2">📊 Nenhum dado encontrado</div>
