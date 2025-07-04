@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfDay, endOfDay, eachDayOfInterval, parseISO, eachMonthOfInterval, startOfMonth, endOfMonth, isSameDay, startOfYear, endOfYear, startOfWeek, endOfWeek } from 'date-fns';
@@ -148,24 +149,30 @@ export const useNewSubscriptionsLineData = (
               const weekStart = startOfWeek(dateRange.from, { weekStartsOn: 1 });
               const weekEnd = endOfWeek(dateRange.to, { weekStartsOn: 1 });
               const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
-              return days.map(day => ({
+              const chartData = days.map(day => ({
                 date: format(day, 'EEE dd/MM', { locale: ptBR })
               }));
+              const countData = [...chartData];
+              return { chartData, countData };
             } else if (chartPeriod === 'yearly') {
               const yearStart = startOfYear(dateRange.from);
               const yearEnd = endOfYear(dateRange.to);
               const months = eachMonthOfInterval({ start: yearStart, end: yearEnd });
-              return months.map(month => ({
+              const chartData = months.map(month => ({
                 date: format(month, 'MMM', { locale: ptBR })
               }));
+              const countData = [...chartData];
+              return { chartData, countData };
             } else {
               const allDays = eachDayOfInterval({ 
                 start: startOfDay(dateRange.from), 
                 end: endOfDay(dateRange.to) 
               });
-              return allDays.map(day => ({
+              const chartData = allDays.map(day => ({
                 date: format(day, 'dd/MM')
               }));
+              const countData = [...chartData];
+              return { chartData, countData };
             }
           }
 
@@ -348,12 +355,12 @@ export const useNewSubscriptionsLineData = (
           return { chartData, countData };
         };
 
-        const { chartData, countData } = prepareChartData();
-        setLineData(chartData);
-        setSubscriptionCountData(countData);
+        const result = prepareChartData();
+        setLineData(result.chartData);
+        setSubscriptionCountData(result.countData);
 
         // Calculate and verify total revenue from chart data
-        const chartTotalRevenue = chartData.reduce((acc, item) => {
+        const chartTotalRevenue = result.chartData.reduce((acc, item) => {
           return acc + Object.keys(item).reduce((sum, key) => {
             if (key !== 'date' && typeof item[key] === 'number') {
               return sum + (item[key] as number);
@@ -380,8 +387,8 @@ export const useNewSubscriptionsLineData = (
 
         console.log('✅ New subscriptions line data processed with timezone correction:', {
           chartPeriod,
-          totalDays: chartData.length,
-          sampleData: chartData.slice(0, 3),
+          totalDays: result.chartData.length,
+          sampleData: result.chartData.slice(0, 3),
           totalSubscriptions: newSubscriptions?.length || 0,
           uniqueSubscriptions: totalUniqueSubscriptions,
           directRevenue: directTotalRevenue,
