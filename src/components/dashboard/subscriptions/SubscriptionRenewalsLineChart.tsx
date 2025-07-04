@@ -83,15 +83,19 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
         acc[date] = { 
           date, 
           total: 0,
+          totalCount: 0,
           // Inicializar com 0 para todos os planos disponíveis
-          ...Object.fromEntries(availablePlans.map(plan => [plan, 0]))
+          ...Object.fromEntries(availablePlans.map(plan => [plan, 0])),
+          ...Object.fromEntries(availablePlans.map(plan => [`${plan}_count`, 0]))
         };
       }
       
       const amount = renewal.amount || 0;
       acc[date].total += amount;
+      acc[date].totalCount += 1;
       if (renewal.plan) {
         acc[date][renewal.plan] = (acc[date][renewal.plan] || 0) + amount;
+        acc[date][`${renewal.plan}_count`] = (acc[date][`${renewal.plan}_count`] || 0) + 1;
       }
       
       return acc;
@@ -104,6 +108,21 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
     console.log('📊 Processed chart data:', processedData);
     return processedData;
   }, [renewals, availablePlans]);
+
+  // Calcular receita total baseada no filtro selecionado
+  const totalRevenue = useMemo(() => {
+    if (filterMode === 'all') {
+      return chartData.reduce((acc, item) => acc + (item.total || 0), 0);
+    } else if (filterMode === 'specific' && selectedPlan && selectedPlan !== 'all') {
+      return chartData.reduce((acc, item) => acc + (item[selectedPlan] || 0), 0);
+    } else if (filterMode === 'comparison') {
+      return chartData.reduce((acc, item) => {
+        const planTotal = availablePlans.reduce((planAcc, plan) => planAcc + (item[plan] || 0), 0);
+        return acc + planTotal;
+      }, 0);
+    }
+    return 0;
+  }, [chartData, filterMode, selectedPlan, availablePlans]);
 
   // Renderizar linhas baseado no modo de filtro
   const renderLines = () => {
@@ -153,11 +172,31 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
       return (
         <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-lg">
           <p className="text-white font-medium mb-2">{label}</p>
-          {payload.map((entry: any, index: number) => (
-            <p key={index} className="text-white text-sm" style={{ color: entry.color }}>
-              {entry.name}: {formatCurrency(entry.value || 0)}
-            </p>
-          ))}
+          {payload.map((entry: any, index: number) => {
+            const planName = entry.dataKey;
+            const revenue = entry.value || 0;
+            
+            // Obter a quantidade baseada no modo de filtro
+            let count = 0;
+            if (filterMode === 'all') {
+              count = entry.payload.totalCount || 0;
+            } else if (filterMode === 'specific' && selectedPlan && selectedPlan !== 'all') {
+              count = entry.payload[`${selectedPlan}_count`] || 0;
+            } else if (filterMode === 'comparison') {
+              count = entry.payload[`${planName}_count`] || 0;
+            }
+            
+            return (
+              <div key={index} style={{ color: entry.color }}>
+                <p className="text-white text-sm">
+                  {entry.name}: {formatCurrency(revenue)}
+                </p>
+                <p className="text-white text-xs opacity-80">
+                  Quantidade: {count} renovações
+                </p>
+              </div>
+            );
+          })}
         </div>
       );
     }
@@ -191,7 +230,6 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   };
 
   const hasData = chartData.length > 0;
-  const totalRevenue = chartData.reduce((acc, item) => acc + (item.total || 0), 0);
 
   console.log('📊 Chart rendering state:', { 
     loading, 
