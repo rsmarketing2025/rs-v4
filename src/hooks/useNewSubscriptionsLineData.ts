@@ -38,7 +38,7 @@ export const useNewSubscriptionsLineData = (
     
     if (daysDiff >= 6 && daysDiff <= 7) {
       return 'weekly';
-    } else if daysDiff > 300) {
+    } else if (daysDiff > 300) {
       return 'yearly';
     } else {
       return 'daily';
