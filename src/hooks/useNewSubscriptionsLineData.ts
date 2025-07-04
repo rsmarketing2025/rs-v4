@@ -29,22 +29,17 @@ export const useNewSubscriptionsLineData = (
   const [lineData, setLineData] = useState<NewSubscriptionLineData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Determine the chart period based on date range (removing single-day)
+  // Determine the chart period based on date range (removing single-day and hourly)
   const getChartPeriod = () => {
     if (!dateRange.from || !dateRange.to) return 'daily';
     
     const daysDiff = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
     
-    // Removed single-day condition - always use daily for short periods
     if (daysDiff >= 6 && daysDiff <= 7) {
       return 'weekly';
-    }
-    // If it's a year range (more than 300 days)
-    else if (daysDiff > 300) {
+    } else if (daysDiff > 300) {
       return 'yearly';
-    }
-    // Default to daily for other ranges
-    else {
+    } else {
       return 'daily';
     }
   };
@@ -96,6 +91,7 @@ export const useNewSubscriptionsLineData = (
         }
 
         console.log('📊 Raw new subscriptions data:', newSubscriptions?.length || 0, 'records');
+        console.log('📊 Sample new subscription records:', newSubscriptions?.slice(0, 3));
 
         const chartPeriod = getChartPeriod();
         console.log('📊 Chart period:', chartPeriod);
@@ -106,9 +102,8 @@ export const useNewSubscriptionsLineData = (
             console.log('📊 No new subscriptions data found for the period');
             // Create empty data structure based on period
             if (chartPeriod === 'weekly') {
-              // Use the selected date range to determine the week
-              const weekStart = startOfWeek(dateRange.from, { weekStartsOn: 1 }); // Monday of selected week
-              const weekEnd = endOfWeek(dateRange.to, { weekStartsOn: 1 }); // Sunday of selected week
+              const weekStart = startOfWeek(dateRange.from, { weekStartsOn: 1 });
+              const weekEnd = endOfWeek(dateRange.to, { weekStartsOn: 1 });
               const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
               return days.map(day => ({
                 date: format(day, 'EEE dd/MM', { locale: ptBR })
@@ -136,9 +131,8 @@ export const useNewSubscriptionsLineData = (
           console.log('📊 Unique plans found:', uniquePlans);
 
           if (chartPeriod === 'weekly') {
-            // For weekly, use the selected date range to determine the week
-            const weekStart = startOfWeek(dateRange.from, { weekStartsOn: 1 }); // Monday of selected week
-            const weekEnd = endOfWeek(dateRange.to, { weekStartsOn: 1 }); // Sunday of selected week
+            const weekStart = startOfWeek(dateRange.from, { weekStartsOn: 1 });
+            const weekEnd = endOfWeek(dateRange.to, { weekStartsOn: 1 });
             const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
             
             console.log('📊 Weekly period - using selected week:', {
@@ -166,7 +160,8 @@ export const useNewSubscriptionsLineData = (
                   const subscriptionDateBrazil = toZonedTime(subscriptionDateUTC, BRAZIL_TIMEZONE);
                   
                   if (isSameDay(subscriptionDateBrazil, day)) {
-                    dayData[subscription.plan] = (dayData[subscription.plan] as number) + (Number(subscription.amount) || 0);
+                    const currentValue = dayData[subscription.plan] as number;
+                    dayData[subscription.plan] = currentValue + (Number(subscription.amount) || 0);
                   }
                 } catch {
                   // Skip invalid dates
@@ -178,7 +173,6 @@ export const useNewSubscriptionsLineData = (
           }
           
           else if (chartPeriod === 'yearly') {
-            // For yearly, show each month
             const yearStart = startOfYear(dateRange.from);
             const yearEnd = endOfYear(dateRange.to);
             const months = eachMonthOfInterval({ start: yearStart, end: yearEnd });
@@ -204,7 +198,8 @@ export const useNewSubscriptionsLineData = (
                   const subscriptionDateBrazil = toZonedTime(subscriptionDateUTC, BRAZIL_TIMEZONE);
                   
                   if (subscriptionDateBrazil >= monthStart && subscriptionDateBrazil <= monthEnd) {
-                    monthData[subscription.plan] = (monthData[subscription.plan] as number) + (Number(subscription.amount) || 0);
+                    const currentValue = monthData[subscription.plan] as number;
+                    monthData[subscription.plan] = currentValue + (Number(subscription.amount) || 0);
                   }
                 } catch {
                   // Skip invalid dates
@@ -241,7 +236,15 @@ export const useNewSubscriptionsLineData = (
                   const subscriptionDateBrazil = toZonedTime(subscriptionDateUTC, BRAZIL_TIMEZONE);
                   
                   if (isSameDay(subscriptionDateBrazil, day)) {
-                    dayData[subscription.plan] = (dayData[subscription.plan] as number) + (Number(subscription.amount) || 0);
+                    const currentValue = dayData[subscription.plan] as number;
+                    dayData[subscription.plan] = currentValue + (Number(subscription.amount) || 0);
+                    console.log('📊 Adding subscription:', {
+                      day: format(day, 'dd/MM'),
+                      plan: subscription.plan,
+                      amount: subscription.amount,
+                      subscriptionDate: format(subscriptionDateBrazil, 'yyyy-MM-dd HH:mm:ss'),
+                      newTotal: dayData[subscription.plan]
+                    });
                   }
                 } catch (error) {
                   console.warn('📊 Error parsing subscription date:', subscription.created_at, error);
@@ -259,7 +262,8 @@ export const useNewSubscriptionsLineData = (
         console.log('✅ New subscriptions line data processed:', {
           chartPeriod,
           totalDays: chartData.length,
-          sampleData: chartData.slice(0, 3)
+          sampleData: chartData.slice(0, 3),
+          totalSubscriptions: newSubscriptions?.length || 0
         });
 
       } catch (error) {

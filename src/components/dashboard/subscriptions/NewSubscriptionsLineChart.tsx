@@ -20,7 +20,7 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
     { plan: selectedProduct, status: 'all' }
   );
 
-  // Determine the chart period based on date range (removing single-day)
+  // Determine the chart period based on date range (removing single-day and hourly)
   const getChartPeriod = () => {
     if (!dateRange.from || !dateRange.to) return 'daily';
     
@@ -39,14 +39,7 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
 
   // Get chart title based on period
   const getChartTitle = () => {
-    switch (chartPeriod) {
-      case 'weekly':
-        return 'Novas Assinaturas da Semana';
-      case 'yearly':
-        return 'Novas Assinaturas por Mês';
-      default:
-        return 'Novas Assinaturas por Dia';
-    }
+    return 'Novas Assinaturas por Produto';
   };
 
   const getChartDescription = () => {
@@ -70,16 +63,26 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
 
   const loading = subscriptionsLoading;
   const hasData = subscriptionsData.length > 0 && subscriptionsData.some(item => 
-    Object.keys(item).some(key => key !== 'date' && item[key] > 0)
+    Object.keys(item).some(key => key !== 'date' && typeof item[key] === 'number' && item[key] > 0)
   );
 
   // Calculate totals for display
   const totalNewSubscriptions = subscriptionsData.reduce((acc, item) => {
     return acc + Object.keys(item).reduce((sum, key) => {
-      if (key !== 'date') {
-        return sum + (item[key] || 0);
+      if (key !== 'date' && typeof item[key] === 'number') {
+        return sum + item[key];
       }
       return sum;
+    }, 0);
+  }, 0);
+
+  // Calculate number of sales (count non-zero values)
+  const totalSales = subscriptionsData.reduce((acc, item) => {
+    return acc + Object.keys(item).reduce((count, key) => {
+      if (key !== 'date' && typeof item[key] === 'number' && item[key] > 0) {
+        return count + 1;
+      }
+      return count;
     }, 0);
   }, 0);
 
@@ -99,6 +102,7 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
     dataLength: subscriptionsData.length,
     hasData,
     totalNewSubscriptions,
+    totalSales,
     chartPeriod,
     selectedProduct,
     productNames,
@@ -119,9 +123,13 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
             </CardDescription>
             <div className="mt-2">
               <div className="text-sm text-slate-300">
-                <span className="text-slate-400">Total de Novas Assinaturas:</span>{' '}
+                <span className="text-slate-400">Total de Receita:</span>{' '}
                 <span className="font-semibold text-green-400">
                   {formatCurrency(totalNewSubscriptions)}
+                </span>
+                <span className="text-slate-400 ml-3">Vendas:</span>{' '}
+                <span className="font-semibold text-blue-400">
+                  {totalSales}
                 </span>
               </div>
             </div>
