@@ -81,24 +81,29 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
 
   return (
     <Card className="bg-slate-800/30 border-slate-700">
-      <CardHeader>
-        <div className="flex flex-col justify-between items-start gap-4">
-          <div>
-            <CardTitle className="text-white flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              {getChartTitle()}
-            </CardTitle>
-            <CardDescription className="text-slate-400">
-              {getChartDescription()}
-            </CardDescription>
-            <div className="mt-2">
-              <div className="text-sm text-slate-300">
-                <span className="text-slate-400">Total de Renovações:</span>{' '}
-                <span className="font-semibold text-blue-400">
-                  {formatCurrency(totalRenewals)}
-                </span>
-              </div>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <div className="space-y-1">
+          <CardTitle className="text-white flex items-center gap-2">
+            <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-blue-400" />
             </div>
+            <span className="text-sm font-medium text-slate-200">{getChartTitle()}</span>
+          </CardTitle>
+          <CardDescription className="text-slate-400">
+            {getChartDescription()}
+          </CardDescription>
+        </div>
+        <div className="text-right">
+          <div className="text-2xl font-bold text-white mb-1">
+            {formatCurrency(totalRenewals)}
+          </div>
+          <div className="flex items-center text-xs">
+            <span className="text-green-400">
+              +12.5%
+            </span>
+            <span className="text-slate-400 ml-1">
+              vs período anterior
+            </span>
           </div>
         </div>
       </CardHeader>
