@@ -5,6 +5,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSubscriptionRenewalsLineData } from "@/hooks/useSubscriptionRenewalsLineData";
 import { TrendingUp } from "lucide-react";
+import { formatCurrency } from "@/lib/dateUtils";
 
 interface SubscriptionRenewalsLineChartProps {
   dateRange: { from: Date; to: Date };
@@ -77,10 +78,6 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-  };
-
   const formatTooltipValue = (value: any, name: string) => {
     return [formatCurrency(value), 'Receita'];
   };
@@ -107,7 +104,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
 
   const hasData = processedData.some(item => item.revenue > 0);
 
-  // Calcular total de receita para exibição
+  // Calculate total revenue for display
   const totalRevenue = processedData.reduce((acc, item) => acc + item.revenue, 0);
 
   console.log('📊 Chart rendering state:', { 

@@ -5,8 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { formatForDisplay, parseDatabaseDate } from "@/lib/dateUtils";
 
 interface Sale {
   id: string;
@@ -70,6 +69,16 @@ export const SalesTable: React.FC<SalesTableProps> = ({
     }
   };
 
+  const formatSaleDate = (dateStr: string) => {
+    if (!dateStr) return '-';
+    try {
+      const date = parseDatabaseDate(dateStr);
+      return formatForDisplay(date, 'dateTime');
+    } catch {
+      return '-';
+    }
+  };
+
   return (
     <Card className="bg-slate-800/30 border-slate-700">
       <CardHeader className="flex flex-row items-center justify-between">
@@ -126,7 +135,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({
                       {sale.order_id}
                     </TableCell>
                     <TableCell className="text-slate-300">
-                      {sale.sale_date ? format(new Date(sale.sale_date), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : '-'}
+                      {formatSaleDate(sale.sale_date)}
                     </TableCell>
                     <TableCell className="text-slate-300">
                       {sale.customer_name}

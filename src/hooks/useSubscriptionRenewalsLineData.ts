@@ -1,9 +1,15 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { format, startOfDay, endOfDay, eachDayOfInterval, parseISO, eachMonthOfInterval, startOfMonth, endOfMonth, isSameDay, startOfYear, endOfYear, startOfWeek, endOfWeek } from 'date-fns';
-import { toZonedTime, fromZonedTime } from 'date-fns-tz';
+import { eachDayOfInterval, eachMonthOfInterval, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfYear, endOfYear } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { 
+  formatDateRangeForQuery, 
+  parseDatabaseDate, 
+  formatForDisplay, 
+  isSameDayBrazil,
+  BRAZIL_TIMEZONE 
+} from '@/lib/dateUtils';
 
 interface RenewalLineData {
   date: string;
@@ -20,8 +26,6 @@ interface Filters {
   plan: string;
   status: string;
 }
-
-const BRAZIL_TIMEZONE = 'America/Sao_Paulo';
 
 export const useSubscriptionRenewalsLineData = (
   dateRange: DateRange,
@@ -51,7 +55,7 @@ export const useSubscriptionRenewalsLineData = (
   };
 
   useEffect(() => {
-    // Verificar se dateRange é válido
+    // Verify if dateRange is valid
     if (!dateRange.from || !dateRange.to) {
       console.log('📊 Date range invalid, skipping fetch');
       setLoading(false);
@@ -63,18 +67,10 @@ export const useSubscriptionRenewalsLineData = (
         setLoading(true);
         console.log('📊 Fetching subscription renewals line data...');
 
-        // Converter para timezone do Brasil
-        const startDate = toZonedTime(startOfDay(dateRange.from), BRAZIL_TIMEZONE);
-        const endDate = toZonedTime(endOfDay(dateRange.to), BRAZIL_TIMEZONE);
-        
-        // Converter de volta para UTC para a query
-        const startDateUTC = fromZonedTime(startDate, BRAZIL_TIMEZONE);
-        const endDateUTC = fromZonedTime(endDate, BRAZIL_TIMEZONE);
-        
-        const startDateStr = format(startDateUTC, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        const endDateStr = format(endDateUTC, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        // Use standardized date formatting
+        const { startDateStr, endDateStr } = formatDateRangeForQuery(dateRange);
 
-        console.log('📊 Date range for renewals (Brazil timezone):', { 
+        console.log('📊 Date range for renewals (standardized):', { 
           originalStart: dateRange.from,
           originalEnd: dateRange.to,
           startDateStr, 
@@ -128,7 +124,7 @@ export const useSubscriptionRenewalsLineData = (
               const weekEnd = endOfWeek(dateRange.to, { weekStartsOn: 1 }); // Sunday of selected week
               const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
               return days.map(day => ({
-                date: format(day, 'EEE dd/MM', { locale: ptBR }),
+                date: formatForDisplay(day, 'weekDay'),
                 quantity: 0,
                 revenue: 0
               }));
@@ -137,17 +133,17 @@ export const useSubscriptionRenewalsLineData = (
               const yearEnd = endOfYear(dateRange.to);
               const months = eachMonthOfInterval({ start: yearStart, end: yearEnd });
               return months.map(month => ({
-                date: format(month, 'MMM', { locale: ptBR }),
+                date: formatForDisplay(month, 'month'),
                 quantity: 0,
                 revenue: 0
               }));
             } else {
               const allDays = eachDayOfInterval({ 
-                start: startOfDay(dateRange.from), 
-                end: endOfDay(dateRange.to) 
+                start: dateRange.from, 
+                end: dateRange.to 
               });
               return allDays.map(day => ({
-                date: format(day, 'dd/MM'),
+                date: formatForDisplay(day, 'dayMonth'),
                 quantity: 0,
                 revenue: 0
               }));
@@ -161,19 +157,17 @@ export const useSubscriptionRenewalsLineData = (
             const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
             
             console.log('📊 Weekly period - using selected week:', {
-              weekStart: format(weekStart, 'yyyy-MM-dd'),
-              weekEnd: format(weekEnd, 'yyyy-MM-dd'),
-              selectedFrom: format(dateRange.from, 'yyyy-MM-dd'),
-              selectedTo: format(dateRange.to, 'yyyy-MM-dd')
+              weekStart: formatForDisplay(weekStart, 'date'),
+              weekEnd: formatForDisplay(weekEnd, 'date'),
+              selectedFrom: formatForDisplay(dateRange.from, 'date'),
+              selectedTo: formatForDisplay(dateRange.to, 'date')
             });
             
             return days.map(day => {
               const dayRenewals = renewals.filter(renewal => {
                 if (!renewal.created_at) return false;
                 try {
-                  const renewalDateUTC = parseISO(renewal.created_at);
-                  const renewalDateLocal = toZonedTime(renewalDateUTC, BRAZIL_TIMEZONE);
-                  return isSameDay(renewalDateLocal, day);
+                  return isSameDayBrazil(renewal.created_at, day);
                 } catch {
                   return false;
                 }
@@ -182,7 +176,7 @@ export const useSubscriptionRenewalsLineData = (
               const dayRevenue = dayRenewals.reduce((sum, renewal) => sum + (Number(renewal.amount) || 0), 0);
               
               return {
-                date: format(day, 'EEE dd/MM', { locale: ptBR }),
+                date: formatForDisplay(day, 'weekDay'),
                 quantity: dayRenewals.length,
                 revenue: dayRevenue
               };
@@ -202,9 +196,8 @@ export const useSubscriptionRenewalsLineData = (
               const monthRenewals = renewals.filter(renewal => {
                 if (!renewal.created_at) return false;
                 try {
-                  const renewalDateUTC = parseISO(renewal.created_at);
-                  const renewalDateLocal = toZonedTime(renewalDateUTC, BRAZIL_TIMEZONE);
-                  return renewalDateLocal >= monthStart && renewalDateLocal <= monthEnd;
+                  const renewalDate = parseDatabaseDate(renewal.created_at);
+                  return renewalDate >= monthStart && renewalDate <= monthEnd;
                 } catch {
                   return false;
                 }
@@ -213,7 +206,7 @@ export const useSubscriptionRenewalsLineData = (
               const monthRevenue = monthRenewals.reduce((sum, renewal) => sum + (Number(renewal.amount) || 0), 0);
               
               return {
-                date: format(month, 'MMM', { locale: ptBR }),
+                date: formatForDisplay(month, 'month'),
                 quantity: monthRenewals.length,
                 revenue: monthRevenue
               };
@@ -223,8 +216,8 @@ export const useSubscriptionRenewalsLineData = (
           else {
             // Default daily view (including single day periods)
             const allDays = eachDayOfInterval({ 
-              start: startOfDay(dateRange.from), 
-              end: endOfDay(dateRange.to) 
+              start: dateRange.from, 
+              end: dateRange.to 
             });
             
             // Group renewals by date
@@ -232,7 +225,7 @@ export const useSubscriptionRenewalsLineData = (
             
             // Initialize all days with zero values
             allDays.forEach(day => {
-              const dateKey = format(day, 'yyyy-MM-dd');
+              const dateKey = formatForDisplay(day, 'date');
               renewalsByDate[dateKey] = { quantity: 0, revenue: 0 };
             });
 
@@ -240,10 +233,9 @@ export const useSubscriptionRenewalsLineData = (
             renewals.forEach(renewal => {
               if (renewal.created_at) {
                 try {
-                  // Parse the date from database and convert to Brazil timezone
-                  const renewalDateUTC = parseISO(renewal.created_at);
-                  const renewalDateLocal = toZonedTime(renewalDateUTC, BRAZIL_TIMEZONE);
-                  const dateKey = format(renewalDateLocal, 'yyyy-MM-dd');
+                  // Parse the date from database and use standardized handling
+                  const renewalDate = parseDatabaseDate(renewal.created_at);
+                  const dateKey = formatForDisplay(renewalDate, 'date');
                   
                   if (renewalsByDate[dateKey]) {
                     renewalsByDate[dateKey].quantity += 1;
@@ -257,8 +249,8 @@ export const useSubscriptionRenewalsLineData = (
 
             // Convert to array format for chart
             return allDays.map(day => {
-              const dateKey = format(day, 'yyyy-MM-dd');
-              const displayDate = format(day, 'dd/MM');
+              const dateKey = formatForDisplay(day, 'date');
+              const displayDate = formatForDisplay(day, 'dayMonth');
               
               return {
                 date: displayDate,
@@ -288,7 +280,7 @@ export const useSubscriptionRenewalsLineData = (
       }
     };
 
-    // Adicionar um pequeno delay para evitar múltiplas chamadas
+    // Add a small delay to avoid multiple calls
     const timeoutId = setTimeout(fetchLineData, 100);
     
     return () => clearTimeout(timeoutId);

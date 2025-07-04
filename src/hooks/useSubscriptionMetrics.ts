@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { format, startOfDay, endOfDay, subDays } from 'date-fns';
+import { subDays } from 'date-fns';
+import { formatDateRangeForQuery, formatDateForQuery } from '@/lib/dateUtils';
 
 interface SubscriptionMetrics {
   activeSubscriptions: number;
@@ -48,17 +49,15 @@ export const useSubscriptionMetrics = (
         setLoading(true);
         console.log('📊 [SUBSCRIPTION METRICS] Fetching metrics with filters:', filters);
 
-        const startDate = startOfDay(dateRange.from);
-        const endDate = endOfDay(dateRange.to);
-        const startDateStr = format(startDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        const endDateStr = format(endDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        // Use standardized date formatting
+        const { startDateStr, endDateStr } = formatDateRangeForQuery(dateRange);
 
         // Calculate previous period for growth comparison
-        const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-        const prevStartDate = subDays(startDate, daysDiff);
-        const prevEndDate = subDays(endDate, daysDiff);
-        const prevStartDateStr = format(prevStartDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        const prevEndDateStr = format(prevEndDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        const daysDiff = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
+        const prevStartDate = subDays(dateRange.from, daysDiff);
+        const prevEndDate = subDays(dateRange.to, daysDiff);
+        const prevStartDateStr = formatDateForQuery(prevStartDate);
+        const prevEndDateStr = formatDateForQuery(prevEndDate);
 
         // Get new subscriptions from subscription_status table (current period)
         let newSubsQuery = supabase

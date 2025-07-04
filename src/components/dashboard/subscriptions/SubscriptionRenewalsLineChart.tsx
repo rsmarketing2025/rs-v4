@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useSubscriptionRenewalsLineData } from "@/hooks/useSubscriptionRenewalsLineData";
 import { TrendingUp } from "lucide-react";
+import { formatCurrency } from "@/lib/dateUtils";
 
 interface SubscriptionRenewalsLineChartProps {
   dateRange: { from: Date; to: Date };
@@ -57,10 +58,6 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
       default:
         return 'Receita de renovações de assinaturas';
     }
-  };
-
-  const formatCurrency = (value: number) => {
-    return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
   };
 
   const formatTooltipValue = (value: any, name: string) => {

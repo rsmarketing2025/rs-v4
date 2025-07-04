@@ -2,8 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { startOfDay, endOfDay, format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { formatDateRangeForQuery, formatForDisplay } from '@/lib/dateUtils';
 
 interface CreativeMetrics {
   id: string;
@@ -52,18 +51,13 @@ export const useCreativesData = (
     try {
       setLoading(true);
       
-      // Get the start and end of the selected days in local time
-      const startDate = startOfDay(dateRange.from);
-      const endDate = endOfDay(dateRange.to);
-      
-      // Format dates to ISO string in local timezone
-      const startDateStr = format(startDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-      const endDateStr = format(endDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+      // Use standardized date formatting
+      const { startDateStr, endDateStr } = formatDateRangeForQuery(dateRange);
 
-      console.log('Date filtering - Start:', startDateStr, 'End:', endDateStr);
-      console.log('Original date range - From:', dateRange.from, 'To:', dateRange.to);
+      console.log('Date filtering (standardized):', { startDateStr, endDateStr });
+      console.log('Original date range:', { from: dateRange.from, to: dateRange.to });
       
-      // Buscar dados das campanhas
+      // Fetch campaign data
       let campaignQuery = supabase
         .from('creative_insights')
         .select('*');
@@ -162,7 +156,7 @@ export const useCreativesData = (
         const profit = grossSales - creative.amount_spent;
         const cpa = salesCount > 0 ? creative.amount_spent / salesCount : 0;
         
-        // Aplicar fórmula correta de ROI: (Receita - Investimento) / Investimento
+        // Apply correct ROI formula: (Revenue - Investment) / Investment
         const roi = creative.amount_spent > 0 ? (grossSales - creative.amount_spent) / creative.amount_spent : 0;
         
         const convBodyRate = creative.views_75_percent > 0 ? (salesCount / creative.views_75_percent) * 100 : 0;
@@ -189,8 +183,8 @@ export const useCreativesData = (
           id: `creative-${index}`,
           creative_name: creative.creative_name,
           campaign_name: creative.campaign_name,
-          start_date: dateRange.from.toLocaleDateString('pt-BR'),
-          end_date: dateRange.to.toLocaleDateString('pt-BR'),
+          start_date: formatForDisplay(dateRange.from, 'date'),
+          end_date: formatForDisplay(dateRange.to, 'date'),
           amount_spent: creative.amount_spent,
           views_3s: creative.views_3s,
           views_75_percent: creative.views_75_percent,

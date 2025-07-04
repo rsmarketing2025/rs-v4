@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { format, startOfDay, endOfDay } from 'date-fns';
+import { formatDateRangeForQuery } from '@/lib/dateUtils';
 
 interface RenewalMetrics {
   totalRenewals: number;
@@ -46,12 +46,10 @@ export const useSubscriptionRenewalMetrics = (
         setLoading(true);
         console.log('📊 [RENEWAL METRICS] Starting to fetch renewal metrics...');
 
-        const startDate = startOfDay(dateRange.from);
-        const endDate = endOfDay(dateRange.to);
-        const startDateStr = format(startDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        const endDateStr = format(endDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        // Use standardized date formatting
+        const { startDateStr, endDateStr } = formatDateRangeForQuery(dateRange);
 
-        console.log('📊 [RENEWAL METRICS] Date range:', { startDateStr, endDateStr });
+        console.log('📊 [RENEWAL METRICS] Date range (standardized):', { startDateStr, endDateStr });
 
         let query = supabase
           .from('subscription_renewals')

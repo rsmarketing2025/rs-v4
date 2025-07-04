@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { startOfDay, endOfDay, format } from 'date-fns';
+import { formatDateRangeForQuery } from '@/lib/dateUtils';
 
 interface MonthlyKPIs {
   totalSpent: number;
@@ -27,18 +27,13 @@ export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
     try {
       setLoading(true);
       
-      // Get the start and end of the selected days in local time
-      const startDate = startOfDay(dateRange.from);
-      const endDate = endOfDay(dateRange.to);
-      
-      // Format dates to ISO string in local timezone - same as SalesTab
-      const startDateStr = format(startDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-      const endDateStr = format(endDate, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+      // Use standardized date formatting
+      const { startDateStr, endDateStr } = formatDateRangeForQuery(dateRange);
 
-      console.log('KPI Date filtering - Start:', startDateStr, 'End:', endDateStr);
-      console.log('KPI Original date range - From:', dateRange.from, 'To:', dateRange.to);
+      console.log('KPI Date filtering (standardized):', { startDateStr, endDateStr });
+      console.log('KPI Original date range:', { from: dateRange.from, to: dateRange.to });
 
-      // Buscar dados de campanhas no período selecionado
+      // Fetch campaign data for the selected period
       const { data: campaignData, error: campaignError } = await supabase
         .from('creative_insights')
         .select('amount_spent, clicks')
@@ -63,18 +58,18 @@ export const useMonthlyKPIs = (dateRange: { from: Date; to: Date }) => {
 
       console.log('KPI Campaign data:', campaignData?.length, 'KPI Sales data:', salesData?.length);
 
-      // Calcular métricas
+      // Calculate metrics
       const totalSpent = campaignData?.reduce((acc, campaign) => acc + (campaign.amount_spent || 0), 0) || 0;
       
       // Use net_value for revenue calculation
       const totalRevenue = salesData?.reduce((acc, sale) => acc + (sale.net_value || 0), 0) || 0;
       const totalOrders = salesData?.length || 0;
       
-      // Calcular ticket médio
+      // Calculate average ticket
       const avgTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
       
-      // Calcular ROI usando a fórmula: (Receita Total - Total Investido) / Total Investido
-      // Limitado a 2 casas decimais
+      // Calculate ROI using the formula: (Total Revenue - Total Invested) / Total Invested
+      // Limited to 2 decimal places
       const avgROI = totalSpent > 0 ? Number(((totalRevenue - totalSpent) / totalSpent).toFixed(2)) : 0;
 
       console.log('🔍 KPI ROI Calculation Debug:', {
