@@ -3,19 +3,14 @@ import React, { useState } from 'react';
 import { SubscriptionsSummaryCards } from "./subscriptions/SubscriptionsSummaryCards";
 import { SubscriptionsTable } from "./subscriptions/SubscriptionsTable";
 import { SubscriptionRenewalsSummaryCards } from "./subscriptions/SubscriptionRenewalsSummaryCards";
-import { SubscriptionRenewalsLineChart } from "./subscriptions/SubscriptionRenewalsLineChart";
 import { SubscriptionRenewalsTable } from "./subscriptions/SubscriptionRenewalsTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useMonthlyKPIs } from "@/hooks/useMonthlyKPIs";
 
 interface SubscriptionsTabProps {
   dateRange: { from: Date; to: Date };
 }
 
 export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange }) => {
-  // Get total sales revenue for the line chart
-  const { kpis } = useMonthlyKPIs(dateRange);
-
   // Default filters without product selection
   const filters = {
     plan: "all",
@@ -53,10 +48,6 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({ dateRange })
         
         <TabsContent value="renewals" className="space-y-6 mt-6">
           <SubscriptionRenewalsSummaryCards dateRange={dateRange} filters={filters} />
-          <SubscriptionRenewalsLineChart 
-            dateRange={dateRange} 
-            totalSalesRevenue={kpis.totalRevenue}
-          />
           <SubscriptionRenewalsTable 
             dateRange={dateRange} 
             filters={filters} 
