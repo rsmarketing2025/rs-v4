@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -5,7 +6,6 @@ import { SalesFilters } from "./sales/SalesFilters";
 import { SalesTable } from "./sales/SalesTable";
 import { SalesChart } from "./SalesChart";
 import { CountrySalesChart } from "./sales/CountrySalesChart";
-import { SubscriptionRenewalsLineChart } from "./sales/SubscriptionRenewalsLineChart";
 import { format, startOfDay, endOfDay } from "date-fns";
 
 interface Sale {
@@ -40,15 +40,10 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   const [stateFilter, setStateFilter] = useState("all");
   const [chartCountryFilter, setChartCountryFilter] = useState("all");
   
-  // Subscription renewals chart filters
-  const [renewalPlanFilter, setRenewalPlanFilter] = useState("all");
-  const [availablePlans, setAvailablePlans] = useState<string[]>([]);
-  
   const { toast } = useToast();
 
   useEffect(() => {
     fetchSales();
-    fetchAvailablePlans();
   }, [dateRange]);
 
   // Resetar filtro de estado quando o país mudar
@@ -101,25 +96,6 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchAvailablePlans = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('subscription_renewals')
-        .select('plan')
-        .not('plan', 'is', null);
-
-      if (error) {
-        console.error('Error fetching plans:', error);
-        return;
-      }
-
-      const uniquePlans = [...new Set(data?.map(item => item.plan).filter(Boolean))].sort();
-      setAvailablePlans(uniquePlans);
-    } catch (error) {
-      console.error('Error fetching available plans:', error);
     }
   };
 
@@ -219,14 +195,6 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
     document.body.removeChild(link);
   };
 
-  // Replace subscription renewals chart filters with revenue filter
-  const [revenueFilter, setRevenueFilter] = useState("renewal");
-
-  // Calculate total sales revenue for the revenue filter calculation
-  const totalSalesRevenue = sales
-    .filter(sale => sale.status === 'completed' || sale.status === 'Unfulfilled')
-    .reduce((acc, sale) => acc + (sale.net_value || 0), 0);
-
   return (
     <div className="space-y-6">
       {/* Charts Section */}
@@ -235,16 +203,10 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
         <SalesChart sales={sales} dateRange={dateRange} />
         
         {/* Regional Analysis Charts */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-1 gap-6">
           <CountrySalesChart 
             sales={sales} 
             countryFilter={chartCountryFilter}
-          />
-          <SubscriptionRenewalsLineChart
-            dateRange={dateRange}
-            revenueFilter={revenueFilter}
-            onRevenueFilterChange={setRevenueFilter}
-            totalSalesRevenue={totalSalesRevenue}
           />
         </div>
       </div>
