@@ -111,13 +111,15 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
             <CardDescription className="text-slate-400">
               {getChartDescription()}
             </CardDescription>
-            <div className="mt-2">
+            <div className="mt-2 flex flex-wrap gap-6">
               <div className="text-sm text-slate-300">
                 <span className="text-slate-400">Total de Receita:</span>{' '}
                 <span className="font-semibold text-green-400">
                   {formatCurrency(totalNewSubscriptions)}
                 </span>
-                <span className="text-slate-400 ml-3">Assinaturas:</span>{' '}
+              </div>
+              <div className="text-sm text-slate-300">
+                <span className="text-slate-400">Novas Assinaturas:</span>{' '}
                 <span className="font-semibold text-blue-400">
                   {totalSubscriptions}
                 </span>
