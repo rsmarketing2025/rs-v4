@@ -1,0 +1,375 @@
+
+import React, { useState, useMemo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useSubscriptionStatusData } from "@/hooks/useSubscriptionStatusData";
+import { TrendingUp } from "lucide-react";
+import { formatCurrency } from "@/lib/dateUtils";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface NewSubscribersLineChartProps {
+  dateRange: { from: Date; to: Date };
+}
+
+// Cores para diferentes planos
+const PLAN_COLORS = [
+  '#3b82f6', // blue
+  '#10b981', // green
+  '#f59e0b', // yellow
+  '#ef4444', // red
+  '#8b5cf6', // purple
+  '#06b6d4', // cyan
+  '#f97316', // orange
+  '#84cc16', // lime
+  '#ec4899', // pink
+  '#6366f1', // indigo
+];
+
+type FilterMode = 'all' | 'specific' | 'comparison';
+
+export const NewSubscribersLineChart: React.FC<NewSubscribersLineChartProps> = ({
+  dateRange
+}) => {
+  const [filterMode, setFilterMode] = useState<FilterMode>('all');
+  const [selectedPlan, setSelectedPlan] = useState<string>('all');
+
+  // Use memoized filters to prevent unnecessary re-renders
+  const filters = useMemo(() => ({
+    plan: 'all',
+    eventType: 'all',
+    paymentMethod: 'all',
+    status: 'all'
+  }), []);
+
+  const { subscriptions, loading, totalCount } = useSubscriptionStatusData(
+    dateRange,
+    filters,
+    1,
+    500, // Reduced page size to improve performance
+    ''
+  );
+
+  console.log('📊 New subscribers data:', { subscriptions: subscriptions?.length || 0, loading, totalCount });
+
+  // Filtrar apenas novos assinantes (active status)
+  const newSubscribers = useMemo(() => {
+    if (!subscriptions || subscriptions.length === 0) return [];
+    
+    return subscriptions.filter(sub => 
+      sub.subscription_status && 
+      ['active', 'ativo', 'Active', 'Ativo'].includes(sub.subscription_status)
+    );
+  }, [subscriptions]);
+
+  // Obter planos únicos disponíveis
+  const availablePlans = useMemo(() => {
+    if (!newSubscribers || newSubscribers.length === 0) return [];
+    
+    const plans = [...new Set(newSubscribers.map(sub => sub.plan))].filter(Boolean);
+    console.log('📋 Available plans:', plans);
+    return plans.sort();
+  }, [newSubscribers]);
+
+  // Processar dados para o gráfico
+  const chartData = useMemo(() => {
+    if (!newSubscribers || newSubscribers.length === 0) {
+      console.log('📊 No new subscribers data available');
+      return [];
+    }
+    
+    console.log('📊 Processing chart data from new subscribers:', newSubscribers.length);
+    
+    // Agrupar dados por data
+    const groupedByDate = newSubscribers.reduce((acc, subscriber) => {
+      if (!subscriber.created_at) return acc;
+      
+      const date = new Date(subscriber.created_at).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit'
+      });
+      
+      if (!acc[date]) {
+        acc[date] = { 
+          date, 
+          total: 0,
+          totalCount: 0,
+          // Inicializar com 0 para todos os planos disponíveis
+          ...Object.fromEntries(availablePlans.map(plan => [plan, 0])),
+          ...Object.fromEntries(availablePlans.map(plan => [`${plan}_count`, 0]))
+        };
+      }
+      
+      const amount = subscriber.amount || 0;
+      acc[date].total += amount;
+      acc[date].totalCount += 1;
+      if (subscriber.plan) {
+        acc[date][subscriber.plan] = (acc[date][subscriber.plan] || 0) + amount;
+        acc[date][`${subscriber.plan}_count`] = (acc[date][`${subscriber.plan}_count`] || 0) + 1;
+      }
+      
+      return acc;
+    }, {} as Record<string, any>);
+    
+    const processedData = Object.values(groupedByDate).sort((a: any, b: any) => 
+      a.date.localeCompare(b.date)
+    );
+    
+    console.log('📊 Processed chart data:', processedData);
+    return processedData;
+  }, [newSubscribers, availablePlans]);
+
+  // Calcular receita total baseada no filtro selecionado
+  const totalRevenue = useMemo(() => {
+    if (filterMode === 'all') {
+      return chartData.reduce((acc, item) => acc + (item.total || 0), 0);
+    } else if (filterMode === 'specific' && selectedPlan && selectedPlan !== 'all') {
+      return chartData.reduce((acc, item) => acc + (item[selectedPlan] || 0), 0);
+    } else if (filterMode === 'comparison') {
+      return chartData.reduce((acc, item) => {
+        const planTotal = availablePlans.reduce((planAcc, plan) => planAcc + (item[plan] || 0), 0);
+        return acc + planTotal;
+      }, 0);
+    }
+    return 0;
+  }, [chartData, filterMode, selectedPlan, availablePlans]);
+
+  // Renderizar linhas baseado no modo de filtro
+  const renderLines = () => {
+    console.log('📊 Rendering lines for mode:', filterMode);
+    
+    if (filterMode === 'all') {
+      return (
+        <Line
+          type="monotone"
+          dataKey="total"
+          stroke={PLAN_COLORS[0]}
+          strokeWidth={2}
+          dot={{ r: 4, fill: PLAN_COLORS[0] }}
+          name="Todos os Planos"
+        />
+      );
+    } else if (filterMode === 'specific' && selectedPlan && selectedPlan !== 'all') {
+      return (
+        <Line
+          type="monotone"
+          dataKey={selectedPlan}
+          stroke={PLAN_COLORS[0]}
+          strokeWidth={2}
+          dot={{ r: 4, fill: PLAN_COLORS[0] }}
+          name={selectedPlan}
+        />
+      );
+    } else if (filterMode === 'comparison') {
+      return availablePlans.map((plan, index) => (
+        <Line
+          key={plan}
+          type="monotone"
+          dataKey={plan}
+          stroke={PLAN_COLORS[index % PLAN_COLORS.length]}
+          strokeWidth={2}
+          dot={{ r: 4, fill: PLAN_COLORS[index % PLAN_COLORS.length] }}
+          name={plan}
+        />
+      ));
+    }
+    return null;
+  };
+
+  // Tooltip personalizado
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-lg">
+          <p className="text-white font-medium mb-2">{label}</p>
+          {payload.map((entry: any, index: number) => {
+            const planName = entry.dataKey;
+            const revenue = entry.value || 0;
+            
+            // Obter a quantidade baseada no modo de filtro
+            let count = 0;
+            if (filterMode === 'all') {
+              count = entry.payload.totalCount || 0;
+            } else if (filterMode === 'specific' && selectedPlan && selectedPlan !== 'all') {
+              count = entry.payload[`${selectedPlan}_count`] || 0;
+            } else if (filterMode === 'comparison') {
+              count = entry.payload[`${planName}_count`] || 0;
+            }
+            
+            return (
+              <div key={index} style={{ color: entry.color }}>
+                <p className="text-white text-sm">
+                  {entry.name}: {formatCurrency(revenue)}
+                </p>
+                <p className="text-white text-xs opacity-80">
+                  Quantidade: {count} novos assinantes
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const getChartTitle = () => {
+    switch (filterMode) {
+      case 'all':
+        return 'Novos Assinantes - Todos os Planos';
+      case 'specific':
+        return `Novos Assinantes - ${selectedPlan !== 'all' ? selectedPlan : 'Plano Específico'}`;
+      case 'comparison':
+        return 'Novos Assinantes - Comparação entre Planos';
+      default:
+        return 'Novos Assinantes';
+    }
+  };
+
+  const getChartDescription = () => {
+    switch (filterMode) {
+      case 'all':
+        return 'Receita total de novos assinantes ao longo do tempo';
+      case 'specific':
+        return `Receita de novos assinantes do plano selecionado`;
+      case 'comparison':
+        return 'Comparação da receita entre diferentes planos';
+      default:
+        return 'Evolução dos novos assinantes';
+    }
+  };
+
+  const hasData = chartData.length > 0;
+
+  console.log('📊 Chart rendering state:', { 
+    loading, 
+    hasData,
+    dataLength: chartData.length,
+    totalRevenue,
+    filterMode,
+    selectedPlan,
+    availablePlans,
+    newSubscribersCount: newSubscribers.length
+  });
+
+  // Componente de loading melhorado
+  if (loading) {
+    return (
+      <Card className="bg-slate-800/30 border-slate-700">
+        <CardHeader>
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div className="flex-1">
+              <Skeleton className="h-6 w-48 mb-2 bg-slate-700" />
+              <Skeleton className="h-4 w-64 bg-slate-700" />
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-48 bg-slate-700" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[400px] flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+              <div className="text-slate-400">Carregando dados de novos assinantes...</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="bg-slate-800/30 border-slate-700">
+      <CardHeader>
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+          <div>
+            <CardTitle className="text-white flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              {getChartTitle()}
+            </CardTitle>
+            <CardDescription className="text-slate-400">
+              {getChartDescription()}
+            </CardDescription>
+            {hasData && (
+              <div className="mt-2">
+                <div className="text-sm text-slate-300">
+                  <span className="text-slate-400">Total:</span>{' '}
+                  <span className="font-semibold text-blue-400">
+                    {formatCurrency(totalRevenue)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            {/* Seletor de modo de filtro */}
+            <Select value={filterMode} onValueChange={(value: FilterMode) => setFilterMode(value)}>
+              <SelectTrigger className="bg-slate-800/50 border-slate-700/50 text-white backdrop-blur-sm w-full sm:w-48">
+                <SelectValue placeholder="Modo de visualização" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-900/95 border-slate-700/50 backdrop-blur-sm">
+                <SelectItem value="all">Todos os Planos</SelectItem>
+                <SelectItem value="specific">Plano Específico</SelectItem>
+                <SelectItem value="comparison">Comparação</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Seletor de plano específico */}
+            {filterMode === 'specific' && availablePlans.length > 0 && (
+              <Select value={selectedPlan} onValueChange={setSelectedPlan}>
+                <SelectTrigger className="bg-slate-800/50 border-slate-700/50 text-white backdrop-blur-sm w-full sm:w-48">
+                  <SelectValue placeholder="Selecione o plano" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900/95 border-slate-700/50 backdrop-blur-sm">
+                  {availablePlans.map((plan) => (
+                    <SelectItem key={plan} value={plan}>
+                      {plan}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent>
+        {!hasData ? (
+          <div className="h-[400px] flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-slate-400 text-lg mb-2">📊 Nenhum dado encontrado</div>
+              <div className="text-slate-500 text-sm">
+                Não há dados de novos assinantes para o período selecionado
+              </div>
+            </div>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+              <XAxis 
+                dataKey="date" 
+                stroke="#94a3b8"
+                fontSize={12}
+              />
+              <YAxis 
+                stroke="#94a3b8" 
+                fontSize={12}
+                tickFormatter={(value) => formatCurrency(value)}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              {(filterMode === 'comparison' || (filterMode === 'specific' && selectedPlan !== 'all')) && (
+                <Legend 
+                  wrapperStyle={{ color: '#94a3b8' }}
+                />
+              )}
+              {renderLines()}
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
