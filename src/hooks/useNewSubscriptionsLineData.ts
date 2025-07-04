@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfDay, endOfDay, eachDayOfInterval, parseISO, eachMonthOfInterval, startOfMonth, endOfMonth, isSameDay, startOfYear, endOfYear, startOfWeek, endOfWeek } from 'date-fns';
-import { toZonedTime, fromZonedTime } from 'date-fns-tz';
+import { toZonedTime } from 'date-fns-tz';
 import { ptBR } from 'date-fns/locale';
 
 interface NewSubscriptionLineData {
@@ -67,18 +67,12 @@ export const useNewSubscriptionsLineData = (
         setLoading(true);
         console.log('📊 Fetching new subscriptions line data...');
 
-        // Converter para timezone do Brasil
-        const startDate = toZonedTime(startOfDay(dateRange.from), BRAZIL_TIMEZONE);
-        const endDate = toZonedTime(endOfDay(dateRange.to), BRAZIL_TIMEZONE);
-        
-        // Converter de volta para UTC para a query
-        const startDateUTC = fromZonedTime(startDate, BRAZIL_TIMEZONE);
-        const endDateUTC = fromZonedTime(endDate, BRAZIL_TIMEZONE);
-        
-        const startDateStr = format(startDateUTC, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        const endDateStr = format(endDateUTC, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        // Simplificar a lógica de timezone - usar as datas como estão no dateRange
+        // e converter apenas para formatação da query
+        const startDateStr = format(startOfDay(dateRange.from), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        const endDateStr = format(endOfDay(dateRange.to), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
-        console.log('📊 Date range for new subscriptions (Brazil timezone):', { 
+        console.log('📊 Date range for new subscriptions:', { 
           originalStart: dateRange.from,
           originalEnd: dateRange.to,
           startDateStr, 
@@ -168,14 +162,24 @@ export const useNewSubscriptionsLineData = (
             newSubscriptions.forEach(subscription => {
               if (subscription.created_at) {
                 try {
+                  // Parse the UTC date from database
                   const subscriptionDateUTC = parseISO(subscription.created_at);
-                  const subscriptionDateLocal = toZonedTime(subscriptionDateUTC, BRAZIL_TIMEZONE);
+                  // Convert to Brazil timezone for display
+                  const subscriptionDateBrazil = toZonedTime(subscriptionDateUTC, BRAZIL_TIMEZONE);
                   
-                  const hour = format(subscriptionDateLocal, 'HH:00');
+                  const hour = format(subscriptionDateBrazil, 'HH:00');
                   if (hourlyRevenue[hour]) {
                     hourlyRevenue[hour].quantity += 1;
                     hourlyRevenue[hour].revenue += Number(subscription.amount) || 0;
                   }
+
+                  console.log('📊 Subscription processed:', {
+                    originalDate: subscription.created_at,
+                    utcDate: subscriptionDateUTC,
+                    brazilDate: subscriptionDateBrazil,
+                    hour: hour,
+                    amount: subscription.amount
+                  });
                 } catch (error) {
                   console.warn('📊 Error parsing subscription date:', subscription.created_at, error);
                 }
@@ -209,8 +213,8 @@ export const useNewSubscriptionsLineData = (
                 if (!subscription.created_at) return false;
                 try {
                   const subscriptionDateUTC = parseISO(subscription.created_at);
-                  const subscriptionDateLocal = toZonedTime(subscriptionDateUTC, BRAZIL_TIMEZONE);
-                  return isSameDay(subscriptionDateLocal, day);
+                  const subscriptionDateBrazil = toZonedTime(subscriptionDateUTC, BRAZIL_TIMEZONE);
+                  return isSameDay(subscriptionDateBrazil, day);
                 } catch {
                   return false;
                 }
@@ -240,8 +244,8 @@ export const useNewSubscriptionsLineData = (
                 if (!subscription.created_at) return false;
                 try {
                   const subscriptionDateUTC = parseISO(subscription.created_at);
-                  const subscriptionDateLocal = toZonedTime(subscriptionDateUTC, BRAZIL_TIMEZONE);
-                  return subscriptionDateLocal >= monthStart && subscriptionDateLocal <= monthEnd;
+                  const subscriptionDateBrazil = toZonedTime(subscriptionDateUTC, BRAZIL_TIMEZONE);
+                  return subscriptionDateBrazil >= monthStart && subscriptionDateBrazil <= monthEnd;
                 } catch {
                   return false;
                 }
@@ -277,10 +281,10 @@ export const useNewSubscriptionsLineData = (
             newSubscriptions.forEach(subscription => {
               if (subscription.created_at) {
                 try {
-                  // Parse the date from database and convert to Brazil timezone
+                  // Parse the UTC date from database and convert to Brazil timezone
                   const subscriptionDateUTC = parseISO(subscription.created_at);
-                  const subscriptionDateLocal = toZonedTime(subscriptionDateUTC, BRAZIL_TIMEZONE);
-                  const dateKey = format(subscriptionDateLocal, 'yyyy-MM-dd');
+                  const subscriptionDateBrazil = toZonedTime(subscriptionDateUTC, BRAZIL_TIMEZONE);
+                  const dateKey = format(subscriptionDateBrazil, 'yyyy-MM-dd');
                   
                   if (subscriptionsByDate[dateKey]) {
                     subscriptionsByDate[dateKey].quantity += 1;
