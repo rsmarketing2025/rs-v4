@@ -20,43 +20,53 @@ export const ProductFilter: React.FC<ProductFilterProps> = ({
       try {
         setLoading(true);
         
-        // Buscar produtos únicos da tabela product_sales
-        const { data: productSales, error: productError } = await supabase
-          .from('product_sales')
-          .select('product_name')
-          .not('product_name', 'is', null);
+        // Buscar planos únicos das tabelas de assinaturas
+        const { data: subscriptionStatus, error: statusError } = await supabase
+          .from('subscription_status')
+          .select('plan')
+          .not('plan', 'is', null);
 
-        // Buscar planos únicos da tabela subscription_events
-        const { data: subscriptionEvents, error: subscriptionError } = await supabase
+        const { data: subscriptionEvents, error: eventsError } = await supabase
           .from('subscription_events')
           .select('plan')
           .not('plan', 'is', null);
 
-        if (productError || subscriptionError) {
-          console.error('Error fetching products:', productError || subscriptionError);
+        const { data: subscriptionRenewals, error: renewalsError } = await supabase
+          .from('subscription_renewals')
+          .select('plan')
+          .not('plan', 'is', null);
+
+        if (statusError || eventsError || renewalsError) {
+          console.error('Error fetching subscription plans:', statusError || eventsError || renewalsError);
           return;
         }
 
         // Combinar e remover duplicatas
-        const allProducts = new Set<string>();
+        const allPlans = new Set<string>();
         
-        productSales?.forEach(item => {
-          if (item.product_name) {
-            allProducts.add(item.product_name);
+        subscriptionStatus?.forEach(item => {
+          if (item.plan) {
+            allPlans.add(item.plan);
           }
         });
 
         subscriptionEvents?.forEach(item => {
           if (item.plan) {
-            allProducts.add(item.plan);
+            allPlans.add(item.plan);
           }
         });
 
-        const uniqueProducts = Array.from(allProducts).sort();
-        setProducts(uniqueProducts);
+        subscriptionRenewals?.forEach(item => {
+          if (item.plan) {
+            allPlans.add(item.plan);
+          }
+        });
+
+        const uniquePlans = Array.from(allPlans).sort();
+        setProducts(uniquePlans);
 
       } catch (error) {
-        console.error('Error fetching products:', error);
+        console.error('Error fetching subscription plans:', error);
       } finally {
         setLoading(false);
       }
@@ -67,17 +77,17 @@ export const ProductFilter: React.FC<ProductFilterProps> = ({
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-slate-300 text-sm font-medium">Filtrar por Produto:</span>
+      <span className="text-slate-300 text-sm font-medium">Filtrar por Plano:</span>
       <Select
         value={selectedProduct}
         onValueChange={onProductChange}
         disabled={loading}
       >
         <SelectTrigger className="w-60 bg-slate-800 border-slate-700 text-white">
-          <SelectValue placeholder={loading ? "Carregando..." : "Selecione um produto"} />
+          <SelectValue placeholder={loading ? "Carregando..." : "Selecione um plano"} />
         </SelectTrigger>
         <SelectContent className="bg-slate-800 border-slate-700 max-h-60">
-          <SelectItem value="all">Todos os Produtos</SelectItem>
+          <SelectItem value="all">Todos os Planos</SelectItem>
           {products.map((product) => (
             <SelectItem key={product} value={product}>
               {product}

@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useNewSubscriptionsLineData } from "@/hooks/useNewSubscriptionsLineData";
+import { ProductFilter } from "./ProductFilter";
 import { TrendingUp } from "lucide-react";
 
 interface NewSubscriptionsLineChartProps {
@@ -12,9 +13,11 @@ interface NewSubscriptionsLineChartProps {
 export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps> = ({
   dateRange
 }) => {
+  const [selectedProduct, setSelectedProduct] = useState<string>('all');
+
   const { lineData: subscriptionsData, loading: subscriptionsLoading } = useNewSubscriptionsLineData(
     dateRange,
-    { plan: 'all', status: 'all' }
+    { plan: selectedProduct, status: 'all' }
   );
 
   // Determine the chart period based on date range
@@ -83,6 +86,7 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
     hasData,
     totalNewSubscriptions,
     chartPeriod,
+    selectedProduct,
     sampleData: subscriptionsData.slice(0, 2)
   });
 
@@ -107,6 +111,10 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
               </div>
             </div>
           </div>
+          <ProductFilter
+            selectedProduct={selectedProduct}
+            onProductChange={setSelectedProduct}
+          />
         </div>
       </CardHeader>
       <CardContent>
