@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfDay, endOfDay, eachDayOfInterval, parseISO, eachMonthOfInterval, startOfMonth, endOfMonth, isSameDay, startOfYear, endOfYear, startOfWeek, endOfWeek } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
+import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { ptBR } from 'date-fns/locale';
 
 interface NewSubscriptionLineData {
@@ -58,13 +58,25 @@ export const useNewSubscriptionsLineData = (
         setLoading(true);
         console.log('📊 Fetching new subscriptions line data...');
 
-        // Use subscription_status table for new subscriptions data
-        const startDateStr = format(startOfDay(dateRange.from), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        const endDateStr = format(endOfDay(dateRange.to), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        // TIMEZONE FIX: Convert user's date range (Brazil timezone) to UTC for database query
+        // The user selects dates in their local timezone (Brazil), but we need to query in UTC
+        const startOfDayBrazil = startOfDay(dateRange.from);
+        const endOfDayBrazil = endOfDay(dateRange.to);
+        
+        // Convert Brazil timezone dates to UTC for database filtering
+        const startDateUTC = fromZonedTime(startOfDayBrazil, BRAZIL_TIMEZONE);
+        const endDateUTC = fromZonedTime(endOfDayBrazil, BRAZIL_TIMEZONE);
+        
+        const startDateStr = format(startDateUTC, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        const endDateStr = format(endDateUTC, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
-        console.log('📊 Date range for new subscriptions:', { 
+        console.log('📊 TIMEZONE CORRECTION - Date range for new subscriptions:', { 
           originalStart: dateRange.from,
           originalEnd: dateRange.to,
+          startOfDayBrazil,
+          endOfDayBrazil,
+          startDateUTC,
+          endDateUTC,
           startDateStr, 
           endDateStr 
         });
@@ -126,11 +138,11 @@ export const useNewSubscriptionsLineData = (
         const chartPeriod = getChartPeriod();
         console.log('📊 Chart period:', chartPeriod);
 
-        // Prepare data based on chart period with SIMPLIFIED date logic
+        // Prepare data based on chart period with TIMEZONE CONSISTENT logic
         const prepareChartData = () => {
           if (!newSubscriptions || newSubscriptions.length === 0) {
             console.log('📊 No new subscriptions data found for the period');
-            // Create empty data structure based on period
+            // Create empty data structure based on period using Brazil timezone
             if (chartPeriod === 'weekly') {
               const weekStart = startOfWeek(dateRange.from, { weekStartsOn: 1 });
               const weekEnd = endOfWeek(dateRange.to, { weekStartsOn: 1 });
@@ -160,19 +172,19 @@ export const useNewSubscriptionsLineData = (
           const uniquePlans = [...new Set(newSubscriptions.map(sub => sub.plan))].sort();
           console.log('📊 Unique plans found:', uniquePlans);
 
-          // SIMPLIFIED DATE GROUPING LOGIC - Group by date string only
+          // TIMEZONE CONSISTENT GROUPING LOGIC - Both filter and group use same timezone conversion
           const subscriptionsByDateStr: { [dateStr: string]: typeof newSubscriptions } = {};
           
-          console.log('📊 GROUPING SUBSCRIPTIONS BY DATE:');
+          console.log('📊 GROUPING SUBSCRIPTIONS BY DATE (TIMEZONE CONSISTENT):');
           newSubscriptions.forEach(subscription => {
             if (!subscription.created_at) return;
             
             try {
-              // Parse UTC date and convert to Brazil timezone
+              // Parse UTC date from database and convert to Brazil timezone - SAME AS FILTERING
               const subscriptionDateUTC = parseISO(subscription.created_at);
               const subscriptionDateBrazil = toZonedTime(subscriptionDateUTC, BRAZIL_TIMEZONE);
               
-              // Create date string based on period
+              // Create date string based on period using Brazil timezone
               let dateStr: string;
               if (chartPeriod === 'weekly') {
                 dateStr = format(subscriptionDateBrazil, 'EEE dd/MM', { locale: ptBR });
@@ -182,20 +194,29 @@ export const useNewSubscriptionsLineData = (
                 dateStr = format(subscriptionDateBrazil, 'dd/MM');
               }
               
-              if (!subscriptionsByDateStr[dateStr]) {
-                subscriptionsByDateStr[dateStr] = [];
-              }
-              subscriptionsByDateStr[dateStr].push(subscription);
+              // Check if this date falls within our Brazil timezone range
+              const subscriptionDayBrazil = startOfDay(subscriptionDateBrazil);
+              const startDayBrazil = startOfDay(dateRange.from);
+              const endDayBrazil = startOfDay(dateRange.to);
               
-              console.log(`📊 Grouped: ${subscription.plan} (${subscription.amount}) -> ${dateStr}`);
+              if (subscriptionDayBrazil >= startDayBrazil && subscriptionDayBrazil <= endDayBrazil) {
+                if (!subscriptionsByDateStr[dateStr]) {
+                  subscriptionsByDateStr[dateStr] = [];
+                }
+                subscriptionsByDateStr[dateStr].push(subscription);
+                
+                console.log(`📊 Grouped: ${subscription.plan} (${subscription.amount}) -> ${dateStr} (Brazil: ${format(subscriptionDateBrazil, 'yyyy-MM-dd HH:mm:ss')})`);
+              } else {
+                console.log(`📊 EXCLUDED: ${subscription.plan} outside Brazil date range. Brazil date: ${format(subscriptionDateBrazil, 'yyyy-MM-dd')}, Range: ${format(startDayBrazil, 'yyyy-MM-dd')} to ${format(endDayBrazil, 'yyyy-MM-dd')}`);
+              }
             } catch (error) {
               console.warn('📊 Error parsing subscription date:', subscription.created_at, error);
             }
           });
           
-          console.log('📊 GROUPED SUBSCRIPTIONS:', subscriptionsByDateStr);
+          console.log('📊 GROUPED SUBSCRIPTIONS (TIMEZONE CONSISTENT):', subscriptionsByDateStr);
 
-          // Generate chart data based on period
+          // Generate chart data based on period using Brazil timezone dates
           let chartData: NewSubscriptionLineData[] = [];
           
           if (chartPeriod === 'weekly') {
@@ -245,7 +266,7 @@ export const useNewSubscriptionsLineData = (
               return monthData;
             });
           } else {
-            // Default daily view
+            // Default daily view using Brazil timezone dates
             const allDays = eachDayOfInterval({ 
               start: startOfDay(dateRange.from), 
               end: endOfDay(dateRange.to) 
@@ -288,11 +309,11 @@ export const useNewSubscriptionsLineData = (
         }, 0);
 
         // VALIDATION: Compare direct calculation vs chart calculation
-        console.log('📊 REVENUE VALIDATION:');
+        console.log('📊 TIMEZONE CORRECTED REVENUE VALIDATION:');
         console.log('📊 Direct calculation total:', directTotalRevenue);
         console.log('📊 Chart calculation total:', chartTotalRevenue);
         console.log('📊 Expected total (user reported):', 1577.55);
-        console.log('📊 Match between direct and chart:', directTotalRevenue === chartTotalRevenue);
+        console.log('📊 Match between direct and chart:', Math.abs(directTotalRevenue - chartTotalRevenue) < 0.01);
         
         if (Math.abs(directTotalRevenue - chartTotalRevenue) > 0.01) {
           console.error('❌ REVENUE MISMATCH DETECTED!');
@@ -300,10 +321,10 @@ export const useNewSubscriptionsLineData = (
           console.error('❌ Chart:', chartTotalRevenue);
           console.error('❌ Difference:', Math.abs(directTotalRevenue - chartTotalRevenue));
         } else {
-          console.log('✅ Revenue calculations match');
+          console.log('✅ Revenue calculations match after timezone correction');
         }
 
-        console.log('✅ New subscriptions line data processed:', {
+        console.log('✅ New subscriptions line data processed with timezone correction:', {
           chartPeriod,
           totalDays: chartData.length,
           sampleData: chartData.slice(0, 3),
@@ -312,7 +333,8 @@ export const useNewSubscriptionsLineData = (
           directRevenue: directTotalRevenue,
           chartRevenue: chartTotalRevenue,
           expectedRevenue: 1577.55,
-          revenueMatch: directTotalRevenue === chartTotalRevenue
+          revenueMatch: Math.abs(directTotalRevenue - chartTotalRevenue) < 0.01,
+          timezoneConsistent: true
         });
 
       } catch (error) {
