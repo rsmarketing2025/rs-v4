@@ -58,8 +58,7 @@ export const useNewSubscriptionsLineData = (
         setLoading(true);
         console.log('📊 Fetching new subscriptions line data...');
 
-        // Simplificar a lógica de timezone - usar as datas como estão no dateRange
-        // e converter apenas para formatação da query
+        // Use subscription_status table for new subscriptions data
         const startDateStr = format(startOfDay(dateRange.from), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         const endDateStr = format(endOfDay(dateRange.to), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
@@ -95,17 +94,11 @@ export const useNewSubscriptionsLineData = (
         console.log('📊 Raw new subscriptions data:', newSubscriptions?.length || 0, 'records');
         console.log('📊 Sample new subscription records:', newSubscriptions?.slice(0, 3));
 
-        // Calculate total unique subscriptions for the period
-        const uniqueSubscriptions = new Set();
-        newSubscriptions?.forEach(subscription => {
-          if (subscription.subscription_id) {
-            uniqueSubscriptions.add(subscription.subscription_id);
-          }
-        });
-        const totalUniqueSubscriptions = uniqueSubscriptions.size;
+        // Count total new subscriptions (all records in the period)
+        const totalUniqueSubscriptions = newSubscriptions?.length || 0;
         setTotalSubscriptions(totalUniqueSubscriptions);
 
-        console.log('📊 Total unique subscriptions:', totalUniqueSubscriptions);
+        console.log('📊 Total new subscriptions:', totalUniqueSubscriptions);
 
         const chartPeriod = getChartPeriod();
         console.log('📊 Chart period:', chartPeriod);
