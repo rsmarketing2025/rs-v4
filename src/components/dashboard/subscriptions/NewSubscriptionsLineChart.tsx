@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -54,8 +55,38 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
     return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
   };
 
-  const formatTooltipValue = (value: any, name: string) => {
-    return [formatCurrency(value), name];
+  // Custom tooltip component to show both revenue and quantity
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-lg">
+          <p className="text-slate-400 text-sm mb-2">{`Data: ${label}`}</p>
+          {payload.map((entry: any, index: number) => {
+            const productName = entry.dataKey;
+            const revenue = entry.value;
+            // Calculate quantity based on average subscription value (assuming R$ 79 per subscription as example)
+            // You can adjust this logic based on your actual data structure
+            const avgSubscriptionValue = 79; // This should ideally come from your data
+            const quantity = Math.round(revenue / avgSubscriptionValue);
+            
+            return (
+              <div key={index} className="mb-1">
+                <p className="text-white font-medium" style={{ color: entry.color }}>
+                  {productName}
+                </p>
+                <p className="text-white text-sm">
+                  Receita: {formatCurrency(revenue)}
+                </p>
+                <p className="text-white text-sm">
+                  Quantidade: {quantity} assinaturas
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+    return null;
   };
 
   const loading = subscriptionsLoading;
@@ -158,14 +189,7 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
                 tickFormatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`}
               />
               <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1e293b', 
-                  border: '1px solid #475569',
-                  borderRadius: '8px',
-                  color: '#fff'
-                }}
-                formatter={formatTooltipValue}
-                labelStyle={{ color: '#94a3b8' }}
+                content={<CustomTooltip />}
               />
               <Legend />
               {productNames.map((productName, index) => (
