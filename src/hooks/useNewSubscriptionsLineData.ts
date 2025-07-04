@@ -7,8 +7,7 @@ import { ptBR } from 'date-fns/locale';
 
 interface NewSubscriptionLineData {
   date: string;
-  quantity: number;
-  revenue: number;
+  [productName: string]: string | number; // Dynamic product names as keys
 }
 
 interface DateRange {
@@ -30,18 +29,14 @@ export const useNewSubscriptionsLineData = (
   const [lineData, setLineData] = useState<NewSubscriptionLineData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Determine the chart period based on date range (same logic as SalesChart)
+  // Determine the chart period based on date range (removing single-day)
   const getChartPeriod = () => {
     if (!dateRange.from || !dateRange.to) return 'daily';
     
     const daysDiff = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
     
-    // If it's exactly 1 day (today or yesterday)
-    if (daysDiff <= 1) {
-      return 'single-day';
-    }
-    // If it's 6 or 7 days, treat as weekly (covers different week selection scenarios)
-    else if (daysDiff >= 6 && daysDiff <= 7) {
+    // Removed single-day condition - always use daily for short periods
+    if (daysDiff >= 6 && daysDiff <= 7) {
       return 'weekly';
     }
     // If it's a year range (more than 300 days)
@@ -110,30 +105,20 @@ export const useNewSubscriptionsLineData = (
           if (!newSubscriptions || newSubscriptions.length === 0) {
             console.log('📊 No new subscriptions data found for the period');
             // Create empty data structure based on period
-            if (chartPeriod === 'single-day') {
-              return Array.from({ length: 24 }, (_, hour) => ({
-                date: hour.toString().padStart(2, '0') + ':00',
-                quantity: 0,
-                revenue: 0
-              }));
-            } else if (chartPeriod === 'weekly') {
+            if (chartPeriod === 'weekly') {
               // Use the selected date range to determine the week
               const weekStart = startOfWeek(dateRange.from, { weekStartsOn: 1 }); // Monday of selected week
               const weekEnd = endOfWeek(dateRange.to, { weekStartsOn: 1 }); // Sunday of selected week
               const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
               return days.map(day => ({
-                date: format(day, 'EEE dd/MM', { locale: ptBR }),
-                quantity: 0,
-                revenue: 0
+                date: format(day, 'EEE dd/MM', { locale: ptBR })
               }));
             } else if (chartPeriod === 'yearly') {
               const yearStart = startOfYear(dateRange.from);
               const yearEnd = endOfYear(dateRange.to);
               const months = eachMonthOfInterval({ start: yearStart, end: yearEnd });
               return months.map(month => ({
-                date: format(month, 'MMM', { locale: ptBR }),
-                quantity: 0,
-                revenue: 0
+                date: format(month, 'MMM', { locale: ptBR })
               }));
             } else {
               const allDays = eachDayOfInterval({ 
@@ -141,61 +126,16 @@ export const useNewSubscriptionsLineData = (
                 end: endOfDay(dateRange.to) 
               });
               return allDays.map(day => ({
-                date: format(day, 'dd/MM'),
-                quantity: 0,
-                revenue: 0
+                date: format(day, 'dd/MM')
               }));
             }
           }
 
-          if (chartPeriod === 'single-day') {
-            // For single day, show hourly breakdown
-            const hourlyRevenue: Record<string, { quantity: number; revenue: number }> = {};
-            
-            // Initialize all hours
-            for (let hour = 0; hour < 24; hour++) {
-              const hourStr = hour.toString().padStart(2, '0') + ':00';
-              hourlyRevenue[hourStr] = { quantity: 0, revenue: 0 };
-            }
-            
-            // Process all new subscriptions
-            newSubscriptions.forEach(subscription => {
-              if (subscription.created_at) {
-                try {
-                  // Parse the UTC date from database
-                  const subscriptionDateUTC = parseISO(subscription.created_at);
-                  // Convert to Brazil timezone for display
-                  const subscriptionDateBrazil = toZonedTime(subscriptionDateUTC, BRAZIL_TIMEZONE);
-                  
-                  const hour = format(subscriptionDateBrazil, 'HH:00');
-                  if (hourlyRevenue[hour]) {
-                    hourlyRevenue[hour].quantity += 1;
-                    hourlyRevenue[hour].revenue += Number(subscription.amount) || 0;
-                  }
+          // Get all unique plans from the data
+          const uniquePlans = [...new Set(newSubscriptions.map(sub => sub.plan))].sort();
+          console.log('📊 Unique plans found:', uniquePlans);
 
-                  console.log('📊 Subscription processed:', {
-                    originalDate: subscription.created_at,
-                    utcDate: subscriptionDateUTC,
-                    brazilDate: subscriptionDateBrazil,
-                    hour: hour,
-                    amount: subscription.amount
-                  });
-                } catch (error) {
-                  console.warn('📊 Error parsing subscription date:', subscription.created_at, error);
-                }
-              }
-            });
-
-            return Object.entries(hourlyRevenue)
-              .map(([hour, data]) => ({ 
-                date: hour, 
-                quantity: data.quantity,
-                revenue: data.revenue 
-              }))
-              .sort((a, b) => a.date.localeCompare(b.date));
-          }
-          
-          else if (chartPeriod === 'weekly') {
+          if (chartPeriod === 'weekly') {
             // For weekly, use the selected date range to determine the week
             const weekStart = startOfWeek(dateRange.from, { weekStartsOn: 1 }); // Monday of selected week
             const weekEnd = endOfWeek(dateRange.to, { weekStartsOn: 1 }); // Sunday of selected week
@@ -209,24 +149,31 @@ export const useNewSubscriptionsLineData = (
             });
             
             return days.map(day => {
-              const daySubscriptions = newSubscriptions.filter(subscription => {
-                if (!subscription.created_at) return false;
+              const dayData: NewSubscriptionLineData = {
+                date: format(day, 'EEE dd/MM', { locale: ptBR })
+              };
+
+              // Initialize all plans with 0
+              uniquePlans.forEach(plan => {
+                dayData[plan] = 0;
+              });
+
+              // Add revenue for each plan on this day
+              newSubscriptions.forEach(subscription => {
+                if (!subscription.created_at) return;
                 try {
                   const subscriptionDateUTC = parseISO(subscription.created_at);
                   const subscriptionDateBrazil = toZonedTime(subscriptionDateUTC, BRAZIL_TIMEZONE);
-                  return isSameDay(subscriptionDateBrazil, day);
+                  
+                  if (isSameDay(subscriptionDateBrazil, day)) {
+                    dayData[subscription.plan] = (dayData[subscription.plan] as number) + (Number(subscription.amount) || 0);
+                  }
                 } catch {
-                  return false;
+                  // Skip invalid dates
                 }
               });
               
-              const dayRevenue = daySubscriptions.reduce((sum, subscription) => sum + (Number(subscription.amount) || 0), 0);
-              
-              return {
-                date: format(day, 'EEE dd/MM', { locale: ptBR }),
-                quantity: daySubscriptions.length,
-                revenue: dayRevenue
-              };
+              return dayData;
             });
           }
           
@@ -240,24 +187,31 @@ export const useNewSubscriptionsLineData = (
               const monthStart = startOfMonth(month);
               const monthEnd = endOfMonth(month);
               
-              const monthSubscriptions = newSubscriptions.filter(subscription => {
-                if (!subscription.created_at) return false;
+              const monthData: NewSubscriptionLineData = {
+                date: format(month, 'MMM', { locale: ptBR })
+              };
+
+              // Initialize all plans with 0
+              uniquePlans.forEach(plan => {
+                monthData[plan] = 0;
+              });
+
+              // Add revenue for each plan in this month
+              newSubscriptions.forEach(subscription => {
+                if (!subscription.created_at) return;
                 try {
                   const subscriptionDateUTC = parseISO(subscription.created_at);
                   const subscriptionDateBrazil = toZonedTime(subscriptionDateUTC, BRAZIL_TIMEZONE);
-                  return subscriptionDateBrazil >= monthStart && subscriptionDateBrazil <= monthEnd;
+                  
+                  if (subscriptionDateBrazil >= monthStart && subscriptionDateBrazil <= monthEnd) {
+                    monthData[subscription.plan] = (monthData[subscription.plan] as number) + (Number(subscription.amount) || 0);
+                  }
                 } catch {
-                  return false;
+                  // Skip invalid dates
                 }
               });
               
-              const monthRevenue = monthSubscriptions.reduce((sum, subscription) => sum + (Number(subscription.amount) || 0), 0);
-              
-              return {
-                date: format(month, 'MMM', { locale: ptBR }),
-                quantity: monthSubscriptions.length,
-                revenue: monthRevenue
-              };
+              return monthData;
             });
           }
           
@@ -268,44 +222,33 @@ export const useNewSubscriptionsLineData = (
               end: endOfDay(dateRange.to) 
             });
             
-            // Group subscriptions by date
-            const subscriptionsByDate: Record<string, { quantity: number; revenue: number }> = {};
-            
-            // Initialize all days with zero values
-            allDays.forEach(day => {
-              const dateKey = format(day, 'yyyy-MM-dd');
-              subscriptionsByDate[dateKey] = { quantity: 0, revenue: 0 };
-            });
+            return allDays.map(day => {
+              const dayData: NewSubscriptionLineData = {
+                date: format(day, 'dd/MM')
+              };
 
-            // Process subscriptions data
-            newSubscriptions.forEach(subscription => {
-              if (subscription.created_at) {
+              // Initialize all plans with 0
+              uniquePlans.forEach(plan => {
+                dayData[plan] = 0;
+              });
+
+              // Add revenue for each plan on this day
+              newSubscriptions.forEach(subscription => {
+                if (!subscription.created_at) return;
                 try {
                   // Parse the UTC date from database and convert to Brazil timezone
                   const subscriptionDateUTC = parseISO(subscription.created_at);
                   const subscriptionDateBrazil = toZonedTime(subscriptionDateUTC, BRAZIL_TIMEZONE);
-                  const dateKey = format(subscriptionDateBrazil, 'yyyy-MM-dd');
                   
-                  if (subscriptionsByDate[dateKey]) {
-                    subscriptionsByDate[dateKey].quantity += 1;
-                    subscriptionsByDate[dateKey].revenue += Number(subscription.amount) || 0;
+                  if (isSameDay(subscriptionDateBrazil, day)) {
+                    dayData[subscription.plan] = (dayData[subscription.plan] as number) + (Number(subscription.amount) || 0);
                   }
                 } catch (error) {
                   console.warn('📊 Error parsing subscription date:', subscription.created_at, error);
                 }
-              }
-            });
+              });
 
-            // Convert to array format for chart
-            return allDays.map(day => {
-              const dateKey = format(day, 'yyyy-MM-dd');
-              const displayDate = format(day, 'dd/MM');
-              
-              return {
-                date: displayDate,
-                quantity: subscriptionsByDate[dateKey]?.quantity || 0,
-                revenue: subscriptionsByDate[dateKey]?.revenue || 0
-              };
+              return dayData;
             });
           }
         };
@@ -316,8 +259,6 @@ export const useNewSubscriptionsLineData = (
         console.log('✅ New subscriptions line data processed:', {
           chartPeriod,
           totalDays: chartData.length,
-          totalSubscriptions: chartData.reduce((sum, item) => sum + item.quantity, 0),
-          totalRevenue: chartData.reduce((sum, item) => sum + item.revenue, 0),
           sampleData: chartData.slice(0, 3)
         });
 

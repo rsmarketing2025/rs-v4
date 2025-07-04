@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useNewSubscriptionsLineData } from "@/hooks/useNewSubscriptionsLineData";
 import { ProductFilter } from "./ProductFilter";
 import { TrendingUp } from "lucide-react";
@@ -20,15 +20,13 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
     { plan: selectedProduct, status: 'all' }
   );
 
-  // Determine the chart period based on date range
+  // Determine the chart period based on date range (removing single-day)
   const getChartPeriod = () => {
     if (!dateRange.from || !dateRange.to) return 'daily';
     
     const daysDiff = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24));
     
-    if (daysDiff <= 1) {
-      return 'single-day';
-    } else if (daysDiff >= 6 && daysDiff <= 7) {
+    if (daysDiff >= 6 && daysDiff <= 7) {
       return 'weekly';
     } else if (daysDiff > 300) {
       return 'yearly';
@@ -42,27 +40,23 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
   // Get chart title based on period
   const getChartTitle = () => {
     switch (chartPeriod) {
-      case 'single-day':
-        return 'Novas Assinaturas por Hora';
       case 'weekly':
         return 'Novas Assinaturas da Semana';
       case 'yearly':
         return 'Novas Assinaturas por Mês';
       default:
-        return 'Novas Assinaturas';
+        return 'Novas Assinaturas por Dia';
     }
   };
 
   const getChartDescription = () => {
     switch (chartPeriod) {
-      case 'single-day':
-        return 'Receita de novas assinaturas ao longo do dia';
       case 'weekly':
-        return 'Receita de novas assinaturas da semana';
+        return 'Receita de novas assinaturas da semana por produto';
       case 'yearly':
-        return 'Receita de novas assinaturas por mês';
+        return 'Receita de novas assinaturas por mês por produto';
       default:
-        return 'Receita de novas assinaturas';
+        return 'Receita de novas assinaturas por dia por produto';
     }
   };
 
@@ -71,14 +65,34 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
   };
 
   const formatTooltipValue = (value: any, name: string) => {
-    return [formatCurrency(value), 'Novas Assinaturas'];
+    return [formatCurrency(value), name];
   };
 
   const loading = subscriptionsLoading;
-  const hasData = subscriptionsData.some(item => item.revenue > 0);
+  const hasData = subscriptionsData.length > 0 && subscriptionsData.some(item => 
+    Object.keys(item).some(key => key !== 'date' && item[key] > 0)
+  );
 
   // Calculate totals for display
-  const totalNewSubscriptions = subscriptionsData.reduce((acc, item) => acc + item.revenue, 0);
+  const totalNewSubscriptions = subscriptionsData.reduce((acc, item) => {
+    return acc + Object.keys(item).reduce((sum, key) => {
+      if (key !== 'date') {
+        return sum + (item[key] || 0);
+      }
+      return sum;
+    }, 0);
+  }, 0);
+
+  // Get all product names for lines (excluding 'date')
+  const productNames = subscriptionsData.length > 0 
+    ? Object.keys(subscriptionsData[0]).filter(key => key !== 'date')
+    : [];
+
+  // Generate colors for each product line
+  const colors = [
+    '#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', 
+    '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'
+  ];
 
   console.log('📊 New subscriptions chart rendering state:', { 
     loading, 
@@ -87,6 +101,7 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
     totalNewSubscriptions,
     chartPeriod,
     selectedProduct,
+    productNames,
     sampleData: subscriptionsData.slice(0, 2)
   });
 
@@ -155,14 +170,18 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
                 formatter={formatTooltipValue}
                 labelStyle={{ color: '#94a3b8' }}
               />
-              <Line
-                type="monotone"
-                dataKey="revenue"
-                stroke="#10b981"
-                strokeWidth={2}
-                dot={false}
-                name="newSubscriptions"
-              />
+              <Legend />
+              {productNames.map((productName, index) => (
+                <Line
+                  key={productName}
+                  type="monotone"
+                  dataKey={productName}
+                  stroke={colors[index % colors.length]}
+                  strokeWidth={2}
+                  dot={false}
+                  name={productName}
+                />
+              ))}
             </LineChart>
           </ResponsiveContainer>
         )}
