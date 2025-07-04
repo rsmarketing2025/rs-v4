@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfDay, endOfDay } from 'date-fns';
 
@@ -43,13 +43,30 @@ export const useSubscriptionRenewals = (
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  
+  // Use refs to track current request and prevent race conditions
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef<string>('');
 
   useEffect(() => {
     const fetchRenewals = async () => {
       try {
+        // Cancel previous request if it exists
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+
+        // Create new abort controller for this request
+        const abortController = new AbortController();
+        abortControllerRef.current = abortController;
+
+        // Generate unique request ID
+        const requestId = Date.now().toString();
+        requestIdRef.current = requestId;
+
         setLoading(true);
         setError(null);
-        console.log('📊 Fetching subscription renewals...');
+        console.log('📊 Fetching subscription renewals...', { requestId });
 
         const startDate = startOfDay(dateRange.from);
         const endDate = endOfDay(dateRange.to);
@@ -82,7 +99,13 @@ export const useSubscriptionRenewals = (
           query = query.or(`customer_name.ilike.%${searchTerm}%,customer_email.ilike.%${searchTerm}%,subscription_id.ilike.%${searchTerm}%`);
         }
 
-        const { data, error: queryError, count } = await query;
+        const { data, error: queryError, count } = await query.abortSignal(abortController.signal);
+
+        // Check if this is still the current request
+        if (requestIdRef.current !== requestId) {
+          console.log('📊 Request superseded, ignoring response', { requestId });
+          return;
+        }
 
         if (queryError) {
           console.error('❌ Error fetching subscription renewals:', queryError);
@@ -108,26 +131,50 @@ export const useSubscriptionRenewals = (
           page,
           pageSize,
           searchTerm,
+          requestId,
           dateRange: { from: startDateStr, to: endDateStr }
         });
 
-      } catch (error) {
+      } catch (error: any) {
+        // Ignore aborted requests
+        if (error.name === 'AbortError') {
+          console.log('📊 Request aborted', { requestId: requestIdRef.current });
+          return;
+        }
+
         console.error('❌ Error fetching subscription renewals:', error);
         setError(error instanceof Error ? error.message : 'Erro desconhecido');
         setRenewals([]);
         setTotalCount(0);
       } finally {
-        setLoading(false);
+        // Only set loading to false if this is still the current request
+        if (requestIdRef.current === requestIdRef.current) {
+          setLoading(false);
+        }
       }
     };
 
-    // Adicionar um pequeno delay para evitar muitas requisições
+    // Debounce requests to prevent excessive API calls
     const timeoutId = setTimeout(() => {
       fetchRenewals();
-    }, 100);
+    }, 300);
 
-    return () => clearTimeout(timeoutId);
+    return () => {
+      clearTimeout(timeoutId);
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [dateRange, filters, page, pageSize, searchTerm]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   return { renewals, loading, totalCount, error };
 };

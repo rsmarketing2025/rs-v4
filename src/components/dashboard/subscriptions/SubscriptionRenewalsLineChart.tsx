@@ -34,11 +34,20 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
   const [selectedPlan, setSelectedPlan] = useState<string>('all');
 
+  // Use memoized filters to prevent unnecessary re-renders
+  const filters = useMemo(() => ({
+    plan: 'all',
+    eventType: 'all',
+    paymentMethod: 'all',
+    status: 'all'
+  }), []);
+
   const { renewals, loading, totalCount } = useSubscriptionRenewals(
     dateRange,
-    { plan: 'all', eventType: 'all', paymentMethod: 'all', status: 'all' },
+    filters,
     1,
-    1000
+    500, // Reduced page size to improve performance
+    ''
   );
 
   console.log('📊 Renewals data:', { renewals: renewals?.length || 0, loading, totalCount });
