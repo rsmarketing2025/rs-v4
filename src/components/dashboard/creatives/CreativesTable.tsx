@@ -75,35 +75,39 @@ export const CreativesTable: React.FC<CreativesTableProps> = ({
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
-            <div className="min-w-[1400px]">
-              <Table>
-              <TableHeader sticky={true}>
-                <TableRow className="border-slate-700">
-                  <TableHead className="text-slate-300 min-w-[150px]">Criativo</TableHead>
-                  <TableHead className="text-slate-300 min-w-[120px]">Campanha</TableHead>
-                  <TableHead className="text-slate-300 min-w-[120px]">Produtos</TableHead>
-                  <TableHead className="text-slate-300 min-w-[120px]">Tags</TableHead>
-                  <TableHead className="text-slate-300 min-w-[140px]">Período</TableHead>
-                  <TableHead className="text-slate-300 min-w-[100px]">Valor Gasto</TableHead>
-                  <TableHead className="text-slate-300">Views 3s</TableHead>
-                  <TableHead className="text-slate-300">Views 75%</TableHead>
-                  <TableHead className="text-slate-300">Views Total</TableHead>
-                  <TableHead className="text-slate-300">Clicks</TableHead>
-                  <TableHead className="text-slate-300">PR Hook %</TableHead>
-                  <TableHead className="text-slate-300">Hook Rate %</TableHead>
-                  <TableHead className="text-slate-300">Body Rate %</TableHead>
-                  <TableHead className="text-slate-300">CTA %</TableHead>
-                  <TableHead className="text-slate-300">CTR %</TableHead>
-                  <TableHead className="text-slate-300">Conv. Body %</TableHead>
-                  <TableHead className="text-slate-300">Qtd Vendas</TableHead>
-                  <TableHead className="text-slate-300">Vendas Bruto</TableHead>
-                  <TableHead className="text-slate-300">Lucro</TableHead>
-                  <TableHead className="text-slate-300">CPA</TableHead>
-                  <TableHead className="text-slate-300">ROI</TableHead>
-                  <TableHead className="text-slate-300">Status</TableHead>
-                </TableRow>
-              </TableHeader>
+          <div className="w-full max-h-[600px] overflow-y-auto">
+            <div className="overflow-x-auto">
+              <div className="min-w-[2400px]">
+                <Table>
+                <TableHeader className="sticky top-0 z-10 bg-slate-800/95 backdrop-blur-sm">
+                  <TableRow className="border-slate-700">
+                    {/* Priority Columns - Always Visible */}
+                    <TableHead className="text-slate-300 w-[200px] min-w-[200px]">Criativo</TableHead>
+                    <TableHead className="text-slate-300 w-[150px] min-w-[150px]">Campanha</TableHead>
+                    <TableHead className="text-slate-300 w-[120px] min-w-[120px]">Valor Gasto</TableHead>
+                    <TableHead className="text-slate-300 w-[100px] min-w-[100px]">Views Total</TableHead>
+                    <TableHead className="text-slate-300 w-[100px] min-w-[100px]">CTR %</TableHead>
+                    <TableHead className="text-slate-300 w-[100px] min-w-[100px]">ROI</TableHead>
+                    
+                    {/* Secondary Columns - Horizontal Scroll */}
+                    <TableHead className="text-slate-300 w-[120px] min-w-[120px]">Produtos</TableHead>
+                    <TableHead className="text-slate-300 w-[120px] min-w-[120px]">Tags</TableHead>
+                    <TableHead className="text-slate-300 w-[140px] min-w-[140px]">Período</TableHead>
+                    <TableHead className="text-slate-300 w-[100px] min-w-[100px]">Views 3s</TableHead>
+                    <TableHead className="text-slate-300 w-[100px] min-w-[100px]">Views 75%</TableHead>
+                    <TableHead className="text-slate-300 w-[100px] min-w-[100px]">Clicks</TableHead>
+                    <TableHead className="text-slate-300 w-[100px] min-w-[100px]">PR Hook %</TableHead>
+                    <TableHead className="text-slate-300 w-[100px] min-w-[100px]">Hook Rate %</TableHead>
+                    <TableHead className="text-slate-300 w-[100px] min-w-[100px]">Body Rate %</TableHead>
+                    <TableHead className="text-slate-300 w-[100px] min-w-[100px]">CTA %</TableHead>
+                    <TableHead className="text-slate-300 w-[120px] min-w-[120px]">Conv. Body %</TableHead>
+                    <TableHead className="text-slate-300 w-[100px] min-w-[100px]">Qtd Vendas</TableHead>
+                    <TableHead className="text-slate-300 w-[120px] min-w-[120px]">Vendas Bruto</TableHead>
+                    <TableHead className="text-slate-300 w-[100px] min-w-[100px]">Lucro</TableHead>
+                    <TableHead className="text-slate-300 w-[100px] min-w-[100px]">CPA</TableHead>
+                    <TableHead className="text-slate-300 w-[100px] min-w-[100px]">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
@@ -120,12 +124,27 @@ export const CreativesTable: React.FC<CreativesTableProps> = ({
                 ) : (
                   displayedCreatives.map((creative) => (
                     <TableRow key={creative.id} className="border-slate-700 hover:bg-slate-800/50">
+                      {/* Priority Columns - Always Visible */}
                       <TableCell className="text-white font-medium">
                         {creative.creative_name}
                       </TableCell>
                       <TableCell className="text-slate-300">
                         {creative.campaign_name}
                       </TableCell>
+                      <TableCell className="text-slate-300">
+                        R$ {creative.amount_spent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.views_total.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-slate-300">
+                        {creative.ctr.toFixed(2)}%
+                      </TableCell>
+                      <TableCell className={`${creative.roi >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {creative.roi.toFixed(2)}x
+                      </TableCell>
+                      
+                      {/* Secondary Columns - Horizontal Scroll */}
                       <TableCell className="text-slate-300">
                         {creative.products && creative.products.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
@@ -176,16 +195,10 @@ export const CreativesTable: React.FC<CreativesTableProps> = ({
                         {creative.start_date} - {creative.end_date}
                       </TableCell>
                       <TableCell className="text-slate-300">
-                        R$ {creative.amount_spent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </TableCell>
-                      <TableCell className="text-slate-300">
                         {creative.views_3s.toLocaleString()}
                       </TableCell>
                       <TableCell className="text-slate-300">
                         {creative.views_75_percent.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        {creative.views_total.toLocaleString()}
                       </TableCell>
                       <TableCell className="text-slate-300">
                         {creative.clicks.toLocaleString()}
@@ -203,9 +216,6 @@ export const CreativesTable: React.FC<CreativesTableProps> = ({
                         {creative.cta_rate.toFixed(1)}%
                       </TableCell>
                       <TableCell className="text-slate-300">
-                        {creative.ctr.toFixed(2)}%
-                      </TableCell>
-                      <TableCell className="text-slate-300">
                         {creative.conv_body_rate.toFixed(2)}%
                       </TableCell>
                       <TableCell className="text-slate-300">
@@ -219,9 +229,6 @@ export const CreativesTable: React.FC<CreativesTableProps> = ({
                       </TableCell>
                       <TableCell className="text-slate-300">
                         R$ {creative.cpa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </TableCell>
-                      <TableCell className={`${creative.roi >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {creative.roi.toFixed(2)}x
                       </TableCell>
                       <TableCell>
                         <Badge 
@@ -241,7 +248,8 @@ export const CreativesTable: React.FC<CreativesTableProps> = ({
                   ))
                 )}
               </TableBody>
-            </Table>
+                </Table>
+              </div>
             </div>
           </div>
         </CardContent>
