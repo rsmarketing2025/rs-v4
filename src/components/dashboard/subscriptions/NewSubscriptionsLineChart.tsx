@@ -15,7 +15,7 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<string>('all');
 
-  const { lineData: subscriptionsData, loading: subscriptionsLoading } = useNewSubscriptionsLineData(
+  const { lineData: subscriptionsData, loading: subscriptionsLoading, totalSubscriptions } = useNewSubscriptionsLineData(
     dateRange,
     { plan: selectedProduct, status: 'all' }
   );
@@ -76,16 +76,6 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
     }, 0);
   }, 0);
 
-  // Calculate number of sales (count non-zero values)
-  const totalSales = subscriptionsData.reduce((acc, item) => {
-    return acc + Object.keys(item).reduce((count, key) => {
-      if (key !== 'date' && typeof item[key] === 'number' && item[key] > 0) {
-        return count + 1;
-      }
-      return count;
-    }, 0);
-  }, 0);
-
   // Get all product names for lines (excluding 'date')
   const productNames = subscriptionsData.length > 0 
     ? Object.keys(subscriptionsData[0]).filter(key => key !== 'date')
@@ -102,7 +92,7 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
     dataLength: subscriptionsData.length,
     hasData,
     totalNewSubscriptions,
-    totalSales,
+    totalSubscriptions,
     chartPeriod,
     selectedProduct,
     productNames,
@@ -127,9 +117,9 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
                 <span className="font-semibold text-green-400">
                   {formatCurrency(totalNewSubscriptions)}
                 </span>
-                <span className="text-slate-400 ml-3">Vendas:</span>{' '}
+                <span className="text-slate-400 ml-3">Assinaturas:</span>{' '}
                 <span className="font-semibold text-blue-400">
-                  {totalSales}
+                  {totalSubscriptions}
                 </span>
               </div>
             </div>

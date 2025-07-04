@@ -28,6 +28,7 @@ export const useNewSubscriptionsLineData = (
 ) => {
   const [lineData, setLineData] = useState<NewSubscriptionLineData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalSubscriptions, setTotalSubscriptions] = useState(0);
 
   // Determine the chart period based on date range (removing single-day and hourly)
   const getChartPeriod = () => {
@@ -87,11 +88,24 @@ export const useNewSubscriptionsLineData = (
         if (error) {
           console.error('❌ Error fetching new subscriptions line data:', error);
           setLineData([]);
+          setTotalSubscriptions(0);
           return;
         }
 
         console.log('📊 Raw new subscriptions data:', newSubscriptions?.length || 0, 'records');
         console.log('📊 Sample new subscription records:', newSubscriptions?.slice(0, 3));
+
+        // Calculate total unique subscriptions for the period
+        const uniqueSubscriptions = new Set();
+        newSubscriptions?.forEach(subscription => {
+          if (subscription.subscription_id) {
+            uniqueSubscriptions.add(subscription.subscription_id);
+          }
+        });
+        const totalUniqueSubscriptions = uniqueSubscriptions.size;
+        setTotalSubscriptions(totalUniqueSubscriptions);
+
+        console.log('📊 Total unique subscriptions:', totalUniqueSubscriptions);
 
         const chartPeriod = getChartPeriod();
         console.log('📊 Chart period:', chartPeriod);
@@ -263,12 +277,14 @@ export const useNewSubscriptionsLineData = (
           chartPeriod,
           totalDays: chartData.length,
           sampleData: chartData.slice(0, 3),
-          totalSubscriptions: newSubscriptions?.length || 0
+          totalSubscriptions: newSubscriptions?.length || 0,
+          uniqueSubscriptions: totalUniqueSubscriptions
         });
 
       } catch (error) {
         console.error('❌ Error in fetchLineData:', error);
         setLineData([]);
+        setTotalSubscriptions(0);
       } finally {
         setLoading(false);
       }
@@ -280,5 +296,5 @@ export const useNewSubscriptionsLineData = (
     return () => clearTimeout(timeoutId);
   }, [dateRange.from?.getTime(), dateRange.to?.getTime(), filters.plan, filters.status]);
 
-  return { lineData, loading };
+  return { lineData, loading, totalSubscriptions };
 };
