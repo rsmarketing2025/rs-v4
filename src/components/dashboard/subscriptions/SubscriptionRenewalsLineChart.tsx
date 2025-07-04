@@ -40,17 +40,25 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
     1000
   );
 
+  console.log('📊 Renewals data:', renewals);
+
   // Obter planos únicos disponíveis
   const availablePlans = useMemo(() => {
     if (!renewals || renewals.length === 0) return [];
     
     const plans = [...new Set(renewals.map(renewal => renewal.plan))].filter(Boolean);
+    console.log('📋 Available plans:', plans);
     return plans.sort();
   }, [renewals]);
 
   // Processar dados para o gráfico
   const chartData = useMemo(() => {
-    if (!renewals || renewals.length === 0) return [];
+    if (!renewals || renewals.length === 0) {
+      console.log('📊 No renewals data available');
+      return [];
+    }
+    
+    console.log('📊 Processing chart data from renewals:', renewals.length);
     
     // Agrupar dados por data
     const groupedByDate = renewals.reduce((acc, renewal) => {
@@ -60,26 +68,34 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
       });
       
       if (!acc[date]) {
-        acc[date] = { date, total: 0 };
-        // Inicializar todos os planos com 0
-        availablePlans.forEach(plan => {
-          acc[date][plan] = 0;
-        });
+        acc[date] = { 
+          date, 
+          total: 0,
+          // Inicializar com 0 para todos os planos disponíveis
+          ...Object.fromEntries(availablePlans.map(plan => [plan, 0]))
+        };
       }
       
       acc[date].total += renewal.amount;
-      acc[date][renewal.plan] = (acc[date][renewal.plan] || 0) + renewal.amount;
+      if (renewal.plan) {
+        acc[date][renewal.plan] = (acc[date][renewal.plan] || 0) + renewal.amount;
+      }
       
       return acc;
     }, {} as Record<string, any>);
     
-    return Object.values(groupedByDate).sort((a: any, b: any) => 
+    const processedData = Object.values(groupedByDate).sort((a: any, b: any) => 
       a.date.localeCompare(b.date)
     );
+    
+    console.log('📊 Processed chart data:', processedData);
+    return processedData;
   }, [renewals, availablePlans]);
 
   // Renderizar linhas baseado no modo de filtro
   const renderLines = () => {
+    console.log('📊 Rendering lines for mode:', filterMode);
+    
     if (filterMode === 'all') {
       return (
         <Line
@@ -87,18 +103,18 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
           dataKey="total"
           stroke={PLAN_COLORS[0]}
           strokeWidth={2}
-          dot={{ r: 4 }}
+          dot={{ r: 4, fill: PLAN_COLORS[0] }}
           name="Todos os Planos"
         />
       );
-    } else if (filterMode === 'specific' && selectedPlan !== 'all') {
+    } else if (filterMode === 'specific' && selectedPlan && selectedPlan !== 'all') {
       return (
         <Line
           type="monotone"
           dataKey={selectedPlan}
           stroke={PLAN_COLORS[0]}
           strokeWidth={2}
-          dot={{ r: 4 }}
+          dot={{ r: 4, fill: PLAN_COLORS[0] }}
           name={selectedPlan}
         />
       );
@@ -110,7 +126,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
           dataKey={plan}
           stroke={PLAN_COLORS[index % PLAN_COLORS.length]}
           strokeWidth={2}
-          dot={{ r: 4 }}
+          dot={{ r: 4, fill: PLAN_COLORS[index % PLAN_COLORS.length] }}
           name={plan}
         />
       ));
@@ -126,7 +142,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
           <p className="text-white font-medium mb-2">{label}</p>
           {payload.map((entry: any, index: number) => (
             <p key={index} className="text-white text-sm" style={{ color: entry.color }}>
-              {entry.name}: {formatCurrency(entry.value)}
+              {entry.name}: {formatCurrency(entry.value || 0)}
             </p>
           ))}
         </div>
@@ -161,6 +177,19 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
     }
   };
 
+  const hasData = chartData.length > 0;
+  const totalRevenue = chartData.reduce((acc, item) => acc + (item.total || 0), 0);
+
+  console.log('📊 Chart rendering state:', { 
+    loading, 
+    hasData,
+    dataLength: chartData.length,
+    totalRevenue,
+    filterMode,
+    selectedPlan,
+    availablePlans
+  });
+
   return (
     <Card className="bg-slate-800/30 border-slate-700">
       <CardHeader>
@@ -173,6 +202,16 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
             <CardDescription className="text-slate-400">
               {getChartDescription()}
             </CardDescription>
+            {hasData && (
+              <div className="mt-2">
+                <div className="text-sm text-slate-300">
+                  <span className="text-slate-400">Total:</span>{' '}
+                  <span className="font-semibold text-blue-400">
+                    {formatCurrency(totalRevenue)}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
@@ -188,8 +227,8 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
               </SelectContent>
             </Select>
 
-            {/* Seletor de plano específico (apenas quando filterMode === 'specific') */}
-            {filterMode === 'specific' && (
+            {/* Seletor de plano específico */}
+            {filterMode === 'specific' && availablePlans.length > 0 && (
               <Select value={selectedPlan} onValueChange={setSelectedPlan}>
                 <SelectTrigger className="bg-slate-800/50 border-slate-700/50 text-white backdrop-blur-sm w-full sm:w-48">
                   <SelectValue placeholder="Selecione o plano" />
@@ -212,7 +251,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
           <div className="h-[400px] flex items-center justify-center">
             <div className="text-slate-400">Carregando dados...</div>
           </div>
-        ) : chartData.length === 0 ? (
+        ) : !hasData ? (
           <div className="h-[400px] flex items-center justify-center">
             <div className="text-center">
               <div className="text-slate-400 text-lg mb-2">📊 Nenhum dado encontrado</div>
@@ -236,7 +275,7 @@ export const SubscriptionRenewalsLineChart: React.FC<SubscriptionRenewalsLineCha
                 tickFormatter={(value) => formatCurrency(value)}
               />
               <Tooltip content={<CustomTooltip />} />
-              {(filterMode === 'comparison' || filterMode === 'specific') && (
+              {(filterMode === 'comparison' || (filterMode === 'specific' && selectedPlan !== 'all')) && (
                 <Legend 
                   wrapperStyle={{ color: '#94a3b8' }}
                 />
