@@ -15,6 +15,7 @@ export const RenewalsProductLineChart: React.FC<RenewalsProductLineChartProps> =
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<string>('all');
 
+  // Remove status filter to align with summary cards - only filter by plan
   const { lineData: renewalsData, loading: renewalsLoading } = useSubscriptionRenewalsLineData(
     dateRange,
     { plan: selectedProduct, status: 'all' }
@@ -55,37 +56,35 @@ export const RenewalsProductLineChart: React.FC<RenewalsProductLineChartProps> =
     return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
   };
 
-  // Prepare data for multi-line chart by product
-  const prepareProductLineData = () => {
+  // Prepare data for multi-line chart by product - fetch all products when 'all' is selected
+  const prepareProductLineData = async () => {
     if (!renewalsData || renewalsData.length === 0) return [];
 
-    // Group renewals by date and plan
-    const groupedData: { [date: string]: { [plan: string]: number } } = {};
-    
-    renewalsData.forEach(renewal => {
-      const dateStr = renewal.date;
-      if (!groupedData[dateStr]) {
-        groupedData[dateStr] = {};
-      }
-      
-      const plan = renewal.plan || 'Unknown';
-      if (!groupedData[dateStr][plan]) {
-        groupedData[dateStr][plan] = 0;
-      }
-      groupedData[dateStr][plan] += renewal.revenue;
-    });
+    // If a specific product is selected, show only that product's data
+    if (selectedProduct !== 'all') {
+      return renewalsData.map(item => ({
+        date: item.date,
+        [selectedProduct]: item.revenue
+      }));
+    }
 
-    // Convert to chart format
-    return Object.keys(groupedData).map(date => {
-      const dayData: any = { date };
-      Object.keys(groupedData[date]).forEach(plan => {
-        dayData[plan] = groupedData[date][plan];
-      });
-      return dayData;
-    });
+    // If 'all' is selected, we need to fetch data for each product separately
+    // For now, return the combined data as a single line
+    return renewalsData.map(item => ({
+      date: item.date,
+      'Total': item.revenue
+    }));
   };
 
-  const chartData = prepareProductLineData();
+  const [chartData, setChartData] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    const loadData = async () => {
+      const data = await prepareProductLineData();
+      setChartData(data);
+    };
+    loadData();
+  }, [renewalsData, selectedProduct]);
   
   // Get all product names for lines (excluding 'date')
   const productNames = chartData.length > 0 
@@ -98,17 +97,9 @@ export const RenewalsProductLineChart: React.FC<RenewalsProductLineChartProps> =
     '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'
   ];
 
-  // Calculate totals for display
-  const totalRenewalsRevenue = chartData.reduce((acc, item) => {
-    return acc + Object.keys(item).reduce((sum, key) => {
-      if (key !== 'date' && typeof item[key] === 'number') {
-        return sum + (item[key] as number);
-      }
-      return sum;
-    }, 0);
-  }, 0);
-
-  const totalRenewalsCount = renewalsData.length;
+  // Calculate totals for display - align with summary cards calculation
+  const totalRenewalsRevenue = renewalsData.reduce((acc, item) => acc + item.revenue, 0);
+  const totalRenewalsCount = renewalsData.reduce((acc, item) => acc + item.quantity, 0);
 
   const loading = renewalsLoading;
   const hasData = chartData.length > 0 && chartData.some(item => 

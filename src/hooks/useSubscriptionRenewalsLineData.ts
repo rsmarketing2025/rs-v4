@@ -8,6 +8,7 @@ interface RenewalLineData {
   date: string;
   quantity: number;
   revenue: number;
+  plan?: string; // Add plan property for product-specific data
 }
 
 interface DateRange {
@@ -96,15 +97,8 @@ export const useSubscriptionRenewalsLineData = (
           query = query.eq('plan', filters.plan);
         }
 
-        // Fix status filter to use correct Portuguese values
-        if (filters.status && filters.status !== 'all') {
-          if (filters.status === 'active') {
-            // Map 'active' to Portuguese equivalents
-            query = query.in('subscription_status', ['ativo', 'active', 'Ativo', 'Active', 'renovação']);
-          } else {
-            query = query.eq('subscription_status', filters.status);
-          }
-        }
+        // Remove status filter to align with summary cards calculation
+        // The summary cards don't filter by status, so we shouldn't either
 
         const { data: renewals, error } = await query;
 
@@ -115,7 +109,6 @@ export const useSubscriptionRenewalsLineData = (
         }
 
         console.log('📊 Raw renewals data:', renewals?.length || 0, 'records');
-        console.log('📊 Sample renewal statuses:', renewals?.slice(0, 5).map(r => r.subscription_status));
 
         const chartPeriod = getChartPeriod();
         console.log('📊 Chart period:', chartPeriod);
@@ -125,13 +118,7 @@ export const useSubscriptionRenewalsLineData = (
           if (!renewals || renewals.length === 0) {
             console.log('📊 No renewals data found for the period');
             // Create empty data structure based on period
-            if (chartPeriod === 'single-day') {
-              return Array.from({ length: 24 }, (_, hour) => ({
-                date: hour.toString().padStart(2, '0') + ':00',
-                quantity: 0,
-                revenue: 0
-              }));
-            } else if (chartPeriod === 'weekly') {
+            if (chartPeriod === 'weekly') {
               // Use the selected date range to determine the week
               const weekStart = startOfWeek(dateRange.from, { weekStartsOn: 1 }); // Monday of selected week
               const weekEnd = endOfWeek(dateRange.to, { weekStartsOn: 1 }); // Sunday of selected week
@@ -151,6 +138,7 @@ export const useSubscriptionRenewalsLineData = (
                 revenue: 0
               }));
             } else {
+              // For all other periods (including single-day), show daily view
               const allDays = eachDayOfInterval({ 
                 start: startOfDay(dateRange.from), 
                 end: endOfDay(dateRange.to) 
@@ -163,45 +151,8 @@ export const useSubscriptionRenewalsLineData = (
             }
           }
 
-          if (chartPeriod === 'single-day') {
-            // For single day, show hourly breakdown
-            const hourlyRevenue: Record<string, { quantity: number; revenue: number }> = {};
-            
-            // Initialize all hours
-            for (let hour = 0; hour < 24; hour++) {
-              const hourStr = hour.toString().padStart(2, '0') + ':00';
-              hourlyRevenue[hourStr] = { quantity: 0, revenue: 0 };
-            }
-            
-            // Process all renewals without additional date filtering
-            // The SQL query already filtered by the correct date range
-            renewals.forEach(renewal => {
-              if (renewal.created_at) {
-                try {
-                  const renewalDateUTC = parseISO(renewal.created_at);
-                  const renewalDateLocal = toZonedTime(renewalDateUTC, BRAZIL_TIMEZONE);
-                  
-                  const hour = format(renewalDateLocal, 'HH:00');
-                  if (hourlyRevenue[hour]) {
-                    hourlyRevenue[hour].quantity += 1;
-                    hourlyRevenue[hour].revenue += Number(renewal.amount) || 0;
-                  }
-                } catch (error) {
-                  console.warn('📊 Error parsing renewal date:', renewal.created_at, error);
-                }
-              }
-            });
-
-            return Object.entries(hourlyRevenue)
-              .map(([hour, data]) => ({ 
-                date: hour, 
-                quantity: data.quantity,
-                revenue: data.revenue 
-              }))
-              .sort((a, b) => a.date.localeCompare(b.date));
-          }
-          
-          else if (chartPeriod === 'weekly') {
+          // Remove single-day hourly breakdown - always show daily view
+          if (chartPeriod === 'weekly') {
             // For weekly, use the selected date range to determine the week
             const weekStart = startOfWeek(dateRange.from, { weekStartsOn: 1 }); // Monday of selected week
             const weekEnd = endOfWeek(dateRange.to, { weekStartsOn: 1 }); // Sunday of selected week
@@ -268,7 +219,7 @@ export const useSubscriptionRenewalsLineData = (
           }
           
           else {
-            // Default daily view
+            // Default daily view (including single-day)
             const allDays = eachDayOfInterval({ 
               start: startOfDay(dateRange.from), 
               end: endOfDay(dateRange.to) 
