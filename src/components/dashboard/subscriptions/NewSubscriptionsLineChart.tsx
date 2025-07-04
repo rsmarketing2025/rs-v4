@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -20,7 +19,6 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
     { plan: selectedProduct, status: 'all' }
   );
 
-  // Determine the chart period based on date range (removing single-day and hourly)
   const getChartPeriod = () => {
     if (!dateRange.from || !dateRange.to) return 'daily';
     
@@ -37,7 +35,6 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
 
   const chartPeriod = getChartPeriod();
 
-  // Get chart title based on period
   const getChartTitle = () => {
     return 'Novas Assinaturas por Produto';
   };
@@ -66,11 +63,11 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
     Object.keys(item).some(key => key !== 'date' && typeof item[key] === 'number' && item[key] > 0)
   );
 
-  // Calculate totals for display
-  const totalNewSubscriptions = subscriptionsData.reduce((acc, item) => {
+  // Calculate totals for display with improved precision
+  const totalNewSubscriptionsRevenue = subscriptionsData.reduce((acc, item) => {
     return acc + Object.keys(item).reduce((sum, key) => {
       if (key !== 'date' && typeof item[key] === 'number') {
-        return sum + item[key];
+        return sum + (item[key] as number);
       }
       return sum;
     }, 0);
@@ -91,7 +88,7 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
     loading, 
     dataLength: subscriptionsData.length,
     hasData,
-    totalNewSubscriptions,
+    totalNewSubscriptionsRevenue,
     totalSubscriptions,
     chartPeriod,
     selectedProduct,
@@ -115,7 +112,7 @@ export const NewSubscriptionsLineChart: React.FC<NewSubscriptionsLineChartProps>
               <div className="text-sm text-slate-300">
                 <span className="text-slate-400">Total de Receita:</span>{' '}
                 <span className="font-semibold text-green-400">
-                  {formatCurrency(totalNewSubscriptions)}
+                  {formatCurrency(totalNewSubscriptionsRevenue)}
                 </span>
               </div>
               <div className="text-sm text-slate-300">
