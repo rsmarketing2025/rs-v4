@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Save, Copy, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 // ID fixo do agente
 const AGENT_ID = 'agent-copy-chief-001';
@@ -43,7 +44,19 @@ export const GeneralTab: React.FC = () => {
     setIsLoading(true);
     
     try {
-      console.log('Enviando configurações para o webhook:', config);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Prepare data for webhook
+      const webhookData = {
+        agent_name: config.name,
+        agent_description: config.description,
+        voice_tone: config.tone,
+        default_language: config.language,
+        user_id: user.id
+      };
+
+      console.log('Enviando configurações para o webhook:', webhookData);
       
       const response = await fetch('https://webhook-automatios-rsmtk.abbadigital.com.br/webhook/rag-rs-copy-geral', {
         method: 'POST',
@@ -51,11 +64,10 @@ export const GeneralTab: React.FC = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id: config.id,
-          name: config.name,
-          description: config.description,
-          language: config.language,
-          tone: config.tone
+          agent_id: AGENT_ID,
+          tab_name: 'general',
+          data: webhookData,
+          timestamp: new Date().toISOString()
         })
       });
 
