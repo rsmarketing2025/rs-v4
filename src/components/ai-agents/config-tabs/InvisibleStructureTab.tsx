@@ -276,15 +276,35 @@ export const InvisibleStructureTab: React.FC = () => {
 
       if (error) throw error;
 
-      // Prepare data for webhook
+      // Reload all data from database to ensure consistency
+      const [promptData, filesData, linksData] = await Promise.all([
+        supabase
+          .from('agent_manual_contexts')
+          .select('context_content')
+          .eq('user_id', user.id)
+          .eq('context_title', `${tabName}_manual_prompt`)
+          .maybeSingle(),
+        supabase
+          .from('agent_training_files')
+          .select('id, file_name, file_type, file_url')
+          .eq('user_id', user.id)
+          .eq('status', 'active'),
+        supabase
+          .from('agent_reference_links')
+          .select('id, link_title, link_url, link_description')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+      ]);
+
+      // Prepare data for webhook using reloaded data from database
       const webhookData = {
-        manual_prompt: manualPrompt,
-        files: files,
-        links: links,
+        manual_prompt: promptData.data?.context_content || '',
+        files: filesData.data || [],
+        links: linksData.data || [],
         user_id: user.id
       };
 
-      // Trigger webhook
+      // Trigger webhook with database-consistent data
       await triggerWebhook(webhookData);
 
       toast({
