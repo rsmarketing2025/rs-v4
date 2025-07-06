@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,7 @@ interface TrainingFile {
   file_type: string;
   file_url?: string;
   file_content?: string;
-  status: string;
+  file_size?: number;
   created_at: string;
 }
 
@@ -35,13 +34,26 @@ export const TrainingFiles: React.FC = () => {
       if (!user) return;
 
       const { data, error } = await supabase
-        .from('agent_training_files')
+        .from('agent_training_data')
         .select('*')
         .eq('user_id', user.id)
+        .eq('tab_name', 'training_files')
+        .eq('data_type', 'file')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setFiles(data || []);
+      
+      const trainingFiles = (data || []).map(item => ({
+        id: item.id,
+        file_name: item.file_name || 'Arquivo sem nome',
+        file_type: item.file_type || 'unknown',
+        file_url: item.file_url,
+        file_content: item.file_content,
+        file_size: item.file_size,
+        created_at: item.created_at
+      }));
+      
+      setFiles(trainingFiles);
     } catch (error) {
       console.error('Error loading files:', error);
       toast({
@@ -58,12 +70,30 @@ export const TrainingFiles: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Verificar tipo de arquivo
-    const allowedTypes = ['text/plain', 'application/pdf', 'text/csv', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Erro",
+        description: "Arquivo muito grande. Tamanho máximo: 10MB.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate file type
+    const allowedTypes = [
+      'text/plain',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/csv',
+      'application/json'
+    ];
+
     if (!allowedTypes.includes(file.type)) {
       toast({
         title: "Erro",
-        description: "Tipo de arquivo não suportado. Use TXT, PDF, CSV ou DOCX.",
+        description: "Tipo de arquivo não suportado. Use: TXT, PDF, DOC, DOCX, CSV, JSON.",
         variant: "destructive"
       });
       return;
@@ -74,18 +104,22 @@ export const TrainingFiles: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Ler conteúdo do arquivo se for texto
-      let fileContent = '';
-      if (file.type === 'text/plain' || file.type === 'text/csv') {
+      // Read file content for text files
+      let fileContent = null;
+      if (file.type === 'text/plain' || file.type === 'application/json' || file.type === 'text/csv') {
         fileContent = await file.text();
       }
 
       const { data, error } = await supabase
-        .from('agent_training_files')
+        .from('agent_training_data')
         .insert({
           user_id: user.id,
+          tab_name: 'training_files',
+          data_type: 'file',
+          title: file.name,
           file_name: file.name,
           file_type: file.type,
+          file_size: file.size,
           file_content: fileContent,
           status: 'active'
         })
@@ -94,30 +128,39 @@ export const TrainingFiles: React.FC = () => {
 
       if (error) throw error;
 
-      setFiles(prev => [data, ...prev]);
+      const newFile: TrainingFile = {
+        id: data.id,
+        file_name: data.file_name,
+        file_type: data.file_type,
+        file_size: data.file_size,
+        file_content: data.file_content,
+        created_at: data.created_at
+      };
+
+      setFiles(prev => [newFile, ...prev]);
+      
       toast({
         title: "Sucesso",
-        description: "Arquivo enviado com sucesso!"
+        description: "Arquivo carregado com sucesso!"
       });
-
-      // Limpar input
-      event.target.value = '';
     } catch (error) {
       console.error('Error uploading file:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível enviar o arquivo.",
+        description: "Não foi possível carregar o arquivo.",
         variant: "destructive"
       });
     } finally {
       setUploading(false);
+      // Clear the input
+      event.target.value = '';
     }
   };
 
   const deleteFile = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('agent_training_files')
+        .from('agent_training_data')
         .delete()
         .eq('id', id);
 
@@ -138,81 +181,109 @@ export const TrainingFiles: React.FC = () => {
     }
   };
 
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return 'Tamanho desconhecido';
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+  };
+
+  const getFileIcon = (fileType: string) => {
+    if (fileType.includes('pdf')) return '📄';
+    if (fileType.includes('word') || fileType.includes('document')) return '📝';
+    if (fileType.includes('text')) return '📃';
+    if (fileType.includes('json')) return '🔧';
+    if (fileType.includes('csv')) return '📊';
+    return '📁';
+  };
+
   return (
-    <Card className="bg-neutral-900 border-neutral-700">
+    <Card className="bg-neutral-900 border-neutral-700 h-full">
       <CardHeader>
         <CardTitle className="text-white flex items-center gap-2">
-          <Upload className="w-5 h-5" />
+          <FileText className="w-5 h-5" />
           Arquivos de Treinamento
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="border-2 border-dashed border-neutral-600 rounded-lg p-6 text-center">
-          <Upload className="w-12 h-12 mx-auto text-neutral-400 mb-4" />
-          <div className="space-y-2">
-            <Label htmlFor="file-upload" className="text-white cursor-pointer hover:text-blue-400">
-              Clique para enviar arquivos ou arraste aqui
-            </Label>
-            <p className="text-sm text-neutral-400">
-              Suporte para TXT, PDF, CSV, DOCX (máx. 10MB)
-            </p>
-            <Input
-              id="file-upload"
-              type="file"
-              onChange={handleFileUpload}
-              disabled={uploading}
-              className="hidden"
-              accept=".txt,.pdf,.csv,.docx"
-            />
-          </div>
-        </div>
+      <CardContent className="h-[calc(100%-80px)] flex flex-col space-y-6">
+        <Card className="bg-neutral-800 border-neutral-600">
+          <CardHeader>
+            <CardTitle className="text-white text-lg">Carregar Arquivo</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="file-upload" className="text-white">
+                Selecionar Arquivo
+              </Label>
+              <div className="flex items-center gap-4">
+                <Input
+                  id="file-upload"
+                  type="file"
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                  className="bg-neutral-700 border-neutral-600 text-white file:mr-2 file:px-2 file:py-1 file:rounded file:border-0 file:bg-blue-600 file:text-white"
+                  accept=".txt,.pdf,.doc,.docx,.csv,.json"
+                />
+                {uploading && (
+                  <div className="flex items-center gap-2 text-blue-400">
+                    <Upload className="w-4 h-4 animate-pulse" />
+                    <span className="text-sm">Carregando...</span>
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-neutral-500">
+                Formatos suportados: TXT, PDF, DOC, DOCX, CSV, JSON (máx. 10MB)
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
-        {uploading && (
-          <div className="text-center py-4">
-            <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
-            <p className="text-neutral-400 mt-2">Enviando arquivo...</p>
-          </div>
-        )}
-
-        <div className="space-y-3">
-          <h3 className="text-white font-medium">Arquivos Enviados</h3>
+        <div className="flex-1 flex flex-col space-y-3">
+          <h3 className="text-white font-medium">Arquivos Carregados</h3>
           {loading ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="animate-pulse bg-neutral-800 rounded-lg p-4 h-16"></div>
+                <div key={i} className="animate-pulse bg-neutral-800 rounded-lg p-4 h-20"></div>
               ))}
             </div>
           ) : files.length === 0 ? (
             <p className="text-neutral-400 text-center py-8">
-              Nenhum arquivo enviado ainda
+              Nenhum arquivo carregado ainda
             </p>
           ) : (
-            <div className="space-y-2">
+            <div className="flex-1 overflow-y-auto space-y-3">
               {files.map((file) => (
-                <div
-                  key={file.id}
-                  className="bg-neutral-800 rounded-lg p-4 flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <FileText className="w-5 h-5 text-blue-400" />
-                    <div>
-                      <p className="text-white font-medium">{file.file_name}</p>
-                      <p className="text-sm text-neutral-400">
-                        {new Date(file.created_at).toLocaleDateString('pt-BR')}
-                      </p>
+                <Card key={file.id} className="bg-neutral-800 border-neutral-600">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3 flex-1">
+                        <span className="text-2xl">{getFileIcon(file.file_type)}</span>
+                        <div className="flex-1">
+                          <h4 className="text-white font-medium mb-1">{file.file_name}</h4>
+                          <div className="space-y-1">
+                            <p className="text-xs text-neutral-400">
+                              Tipo: {file.file_type}
+                            </p>
+                            <p className="text-xs text-neutral-400">
+                              Tamanho: {formatFileSize(file.file_size)}
+                            </p>
+                            <p className="text-xs text-neutral-500">
+                              Carregado em {new Date(file.created_at).toLocaleDateString('pt-BR')}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => deleteFile(file.id)}
+                        className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white ml-4"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => deleteFile(file.id)}
-                      className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}

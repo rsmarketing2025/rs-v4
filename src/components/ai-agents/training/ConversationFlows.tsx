@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,17 +13,17 @@ interface ConversationFlow {
   flow_name: string;
   flow_description?: string;
   flow_steps: string[];
-  conditions: Record<string, any>;
-  escalation_rules: Record<string, any>;
-  status: string;
   created_at: string;
 }
 
+interface FlowData {
+  flows: ConversationFlow[];
+}
+
 export const ConversationFlows: React.FC = () => {
-  const [flows, setFlows] = useState<ConversationFlow[]>([]);
+  const [flowData, setFlowData] = useState<FlowData>({ flows: [] });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [editingFlow, setEditingFlow] = useState<string | null>(null);
   const [newFlow, setNewFlow] = useState({
     name: '',
     description: '',
@@ -44,32 +43,21 @@ export const ConversationFlows: React.FC = () => {
       if (!user) return;
 
       const { data, error } = await supabase
-        .from('agent_conversation_flows')
+        .from('agent_training_data')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .eq('tab_name', 'conversation_flows')
+        .eq('data_type', 'manual_prompt')
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error && error.code !== 'PGRST116') throw error;
       
-      // Transform the data to match our interface
-      const transformedFlows = (data || []).map(flow => ({
-        id: flow.id,
-        flow_name: flow.flow_name,
-        flow_description: flow.flow_description,
-        flow_steps: Array.isArray(flow.flow_steps) 
-          ? flow.flow_steps.map(step => String(step)) 
-          : [],
-        conditions: flow.conditions && typeof flow.conditions === 'object' && !Array.isArray(flow.conditions) 
-          ? flow.conditions as Record<string, any> 
-          : {},
-        escalation_rules: flow.escalation_rules && typeof flow.escalation_rules === 'object' && !Array.isArray(flow.escalation_rules) 
-          ? flow.escalation_rules as Record<string, any> 
-          : {},
-        status: flow.status,
-        created_at: flow.created_at
-      }));
-      
-      setFlows(transformedFlows);
+      if (data && data.metadata) {
+        const metadata = data.metadata as any;
+        setFlowData({
+          flows: Array.isArray(metadata.flows) ? metadata.flows : []
+        });
+      }
     } catch (error) {
       console.error('Error loading flows:', error);
       toast({
@@ -112,44 +100,19 @@ export const ConversationFlows: React.FC = () => {
 
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      const { data, error } = await supabase
-        .from('agent_conversation_flows')
-        .insert({
-          user_id: user.id,
-          flow_name: newFlow.name.trim(),
-          flow_description: newFlow.description.trim() || null,
-          flow_steps: newFlow.steps,
-          conditions: {},
-          escalation_rules: {},
-          status: 'active'
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Transform the new flow to match our interface
-      const transformedFlow: ConversationFlow = {
-        id: data.id,
-        flow_name: data.flow_name,
-        flow_description: data.flow_description,
-        flow_steps: Array.isArray(data.flow_steps) 
-          ? data.flow_steps.map(step => String(step)) 
-          : [],
-        conditions: data.conditions && typeof data.conditions === 'object' && !Array.isArray(data.conditions) 
-          ? data.conditions as Record<string, any> 
-          : {},
-        escalation_rules: data.escalation_rules && typeof data.escalation_rules === 'object' && !Array.isArray(data.escalation_rules) 
-          ? data.escalation_rules as Record<string, any> 
-          : {},
-        status: data.status,
-        created_at: data.created_at
+      const newFlowObj: ConversationFlow = {
+        id: Date.now().toString(),
+        flow_name: newFlow.name.trim(),
+        flow_description: newFlow.description.trim() || undefined,
+        flow_steps: newFlow.steps,
+        created_at: new Date().toISOString()
       };
 
-      setFlows(prev => [transformedFlow, ...prev]);
+      const updatedFlows = [...flowData.flows, newFlowObj];
+      
+      await saveFlows(updatedFlows);
+      
+      setFlowData({ flows: updatedFlows });
       setNewFlow({ name: '', description: '', steps: [] });
       
       toast({
@@ -170,14 +133,10 @@ export const ConversationFlows: React.FC = () => {
 
   const deleteFlow = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('agent_conversation_flows')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setFlows(prev => prev.filter(flow => flow.id !== id));
+      const updatedFlows = flowData.flows.filter(flow => flow.id !== id);
+      await saveFlows(updatedFlows);
+      
+      setFlowData({ flows: updatedFlows });
       toast({
         title: "Sucesso",
         description: "Fluxo removido com sucesso!"
@@ -190,6 +149,37 @@ export const ConversationFlows: React.FC = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const saveFlows = async (flows: ConversationFlow[]) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    // Convert flows to JSON-serializable format
+    const serializedFlows = flows.map(flow => ({
+      id: flow.id,
+      flow_name: flow.flow_name,
+      flow_description: flow.flow_description || null,
+      flow_steps: flow.flow_steps,
+      created_at: flow.created_at
+    }));
+
+    const metadata = { flows: serializedFlows };
+
+    const { error } = await supabase
+      .from('agent_training_data')
+      .upsert({
+        user_id: user.id,
+        tab_name: 'conversation_flows',
+        data_type: 'manual_prompt',
+        title: 'Conversation Flows',
+        metadata: metadata,
+        status: 'active'
+      }, {
+        onConflict: 'user_id,tab_name,data_type'
+      });
+    
+    if (error) throw error;
   };
 
   return (
@@ -296,14 +286,14 @@ export const ConversationFlows: React.FC = () => {
                 <div key={i} className="animate-pulse bg-neutral-800 rounded-lg p-4 h-32"></div>
               ))}
             </div>
-          ) : flows.length === 0 ? (
+          ) : flowData.flows.length === 0 ? (
             <p className="text-neutral-400 text-center py-8">
               Nenhum fluxo criado ainda
             </p>
           ) : (
             <ScrollArea className="flex-1">
               <div className="space-y-3 pr-4">
-                {flows.map((flow) => (
+                {flowData.flows.map((flow) => (
                   <Card key={flow.id} className="bg-neutral-800 border-neutral-600">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
