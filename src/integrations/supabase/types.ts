@@ -9,45 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      agent_behavior_settings: {
-        Row: {
-          created_at: string
-          default_responses: Json | null
-          fallback_message: string | null
-          id: string
-          max_response_length: number | null
-          preferred_format: string | null
-          prohibited_words: string[] | null
-          response_examples: string[] | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          default_responses?: Json | null
-          fallback_message?: string | null
-          id?: string
-          max_response_length?: number | null
-          preferred_format?: string | null
-          prohibited_words?: string[] | null
-          response_examples?: string[] | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          default_responses?: Json | null
-          fallback_message?: string | null
-          id?: string
-          max_response_length?: number | null
-          preferred_format?: string | null
-          prohibited_words?: string[] | null
-          response_examples?: string[] | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       agent_configurations: {
         Row: {
           agent_description: string | null
@@ -81,45 +42,6 @@ export type Database = {
         }
         Relationships: []
       }
-      agent_conversation_flows: {
-        Row: {
-          conditions: Json | null
-          created_at: string
-          escalation_rules: Json | null
-          flow_description: string | null
-          flow_name: string
-          flow_steps: Json
-          id: string
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          conditions?: Json | null
-          created_at?: string
-          escalation_rules?: Json | null
-          flow_description?: string | null
-          flow_name: string
-          flow_steps?: Json
-          id?: string
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          conditions?: Json | null
-          created_at?: string
-          escalation_rules?: Json | null
-          flow_description?: string | null
-          flow_name?: string
-          flow_steps?: Json
-          id?: string
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       agent_conversations: {
         Row: {
           created_at: string
@@ -142,39 +64,6 @@ export type Database = {
           id?: string
           status?: Database["public"]["Enums"]["agent_conversation_status"]
           title?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      agent_manual_contexts: {
-        Row: {
-          context_content: string
-          context_title: string
-          created_at: string
-          id: string
-          status: string
-          tags: string[] | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          context_content: string
-          context_title: string
-          created_at?: string
-          id?: string
-          status?: string
-          tags?: string[] | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          context_content?: string
-          context_title?: string
-          created_at?: string
-          id?: string
-          status?: string
-          tags?: string[] | null
           updated_at?: string
           user_id?: string
         }
@@ -215,141 +104,69 @@ export type Database = {
           },
         ]
       }
-      agent_reference_links: {
-        Row: {
-          created_at: string
-          id: string
-          link_description: string | null
-          link_title: string
-          link_url: string
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          link_description?: string | null
-          link_title: string
-          link_url: string
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          link_description?: string | null
-          link_title?: string
-          link_url?: string
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       agent_training_data: {
         Row: {
-          answer: string
           created_at: string
-          id: string
-          question: string
-          status: Database["public"]["Enums"]["training_data_status"]
-          updated_at: string
-          user_id: string
-          webhook_response: Json | null
-        }
-        Insert: {
-          answer: string
-          created_at?: string
-          id?: string
-          question: string
-          status?: Database["public"]["Enums"]["training_data_status"]
-          updated_at?: string
-          user_id: string
-          webhook_response?: Json | null
-        }
-        Update: {
-          answer?: string
-          created_at?: string
-          id?: string
-          question?: string
-          status?: Database["public"]["Enums"]["training_data_status"]
-          updated_at?: string
-          user_id?: string
-          webhook_response?: Json | null
-        }
-        Relationships: []
-      }
-      agent_training_files: {
-        Row: {
-          created_at: string
+          data_type: string
+          description: string | null
           file_content: string | null
-          file_name: string
-          file_type: string
+          file_name: string | null
+          file_size: number | null
+          file_type: string | null
           file_url: string | null
           id: string
+          link_description: string | null
+          link_title: string | null
+          link_url: string | null
+          manual_prompt: string | null
+          metadata: Json | null
           status: string
+          tab_name: string
+          title: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          data_type: string
+          description?: string | null
           file_content?: string | null
-          file_name: string
-          file_type: string
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
           file_url?: string | null
           id?: string
+          link_description?: string | null
+          link_title?: string | null
+          link_url?: string | null
+          manual_prompt?: string | null
+          metadata?: Json | null
           status?: string
+          tab_name: string
+          title?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          data_type?: string
+          description?: string | null
           file_content?: string | null
-          file_name?: string
-          file_type?: string
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
           file_url?: string | null
           id?: string
+          link_description?: string | null
+          link_title?: string | null
+          link_url?: string | null
+          manual_prompt?: string | null
+          metadata?: Json | null
           status?: string
+          tab_name?: string
+          title?: string | null
           updated_at?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      agent_user_feedback: {
-        Row: {
-          comments: string | null
-          conversation_id: string
-          created_at: string
-          feedback_type: string
-          feedback_value: string | null
-          id: string
-          message_id: string | null
-          rating: number | null
-          user_id: string | null
-        }
-        Insert: {
-          comments?: string | null
-          conversation_id: string
-          created_at?: string
-          feedback_type: string
-          feedback_value?: string | null
-          id?: string
-          message_id?: string | null
-          rating?: number | null
-          user_id?: string | null
-        }
-        Update: {
-          comments?: string | null
-          conversation_id?: string
-          created_at?: string
-          feedback_type?: string
-          feedback_value?: string | null
-          id?: string
-          message_id?: string | null
-          rating?: number | null
-          user_id?: string | null
         }
         Relationships: []
       }

@@ -27,60 +27,36 @@ interface ReferenceLink {
 }
 
 export const TrainingTab: React.FC = () => {
-  const [manualText, setManualText] = useState('');
+  const [manualPrompt, setManualPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const { toast } = useToast();
 
+  const tabName = "training";
+
   useEffect(() => {
-    loadManualText();
+    loadData();
   }, []);
 
-  const loadManualText = async () => {
+  const loadData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data, error } = await supabase
-        .from('agent_manual_contexts')
-        .select('context_content')
+      // Load manual prompt from unified table
+      const { data: promptData } = await supabase
+        .from('agent_training_data')
+        .select('manual_prompt')
         .eq('user_id', user.id)
-        .eq('context_title', 'Training Manual Text')
+        .eq('tab_name', tabName)
+        .eq('data_type', 'manual_prompt')
         .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading manual text:', error);
-        return;
-      }
-
-      if (data) {
-        setManualText(data.context_content || '');
+      if (promptData) {
+        setManualPrompt(promptData.manual_prompt || '');
       }
     } catch (error) {
-      console.error('Error loading manual text:', error);
-    }
-  };
-
-  const saveManualText = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { error } = await supabase
-        .from('agent_manual_contexts')
-        .upsert({
-          user_id: user.id,
-          context_title: 'Training Manual Text',
-          context_content: manualText,
-          status: 'active'
-        }, {
-          onConflict: 'user_id,context_title'
-        });
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error saving manual text:', error);
-      throw error;
+      console.error('Error loading data:', error);
     }
   };
 
@@ -89,28 +65,25 @@ export const TrainingTab: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Get training files
-      const { data: files, error: filesError } = await supabase
-        .from('agent_training_files')
+      // Get all training data for this tab
+      const { data: trainingData, error } = await supabase
+        .from('agent_training_data')
         .select('*')
         .eq('user_id', user.id)
+        .eq('tab_name', tabName)
         .eq('status', 'active');
 
-      if (filesError) throw filesError;
+      if (error) throw error;
 
-      // Get reference links
-      const { data: links, error: linksError } = await supabase
-        .from('agent_reference_links')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'active');
-
-      if (linksError) throw linksError;
+      // Separate by type
+      const files = trainingData?.filter(item => item.data_type === 'file') || [];
+      const links = trainingData?.filter(item => item.data_type === 'link') || [];
+      const promptData = trainingData?.find(item => item.data_type === 'manual_prompt');
 
       return {
-        files: files || [],
-        links: links || [],
-        manualText
+        files,
+        links,
+        manualText: promptData?.manual_prompt || ''
       };
     } catch (error) {
       console.error('Error collecting training data:', error);
@@ -124,8 +97,23 @@ export const TrainingTab: React.FC = () => {
     try {
       console.log('Salvando dados de treinamento...');
       
-      // Save manual text first
-      await saveManualText();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Save or update manual prompt
+      const { error } = await supabase
+        .from('agent_training_data')
+        .upsert({
+          user_id: user.id,
+          tab_name: tabName,
+          data_type: 'manual_prompt',
+          manual_prompt: manualPrompt,
+          status: 'active'
+        }, {
+          onConflict: 'user_id,tab_name,data_type'
+        });
+
+      if (error) throw error;
       
       // Collect all training data
       const trainingData = await collectTrainingData();
@@ -226,8 +214,8 @@ export const TrainingTab: React.FC = () => {
             </Label>
             <Textarea
               id="manual-text"
-              value={manualText}
-              onChange={(e) => setManualText(e.target.value)}
+              value={manualPrompt}
+              onChange={(e) => setManualPrompt(e.target.value)}
               placeholder="Adicione informações específicas, instruções especiais, ou conhecimento que o agente deve ter..."
               className="bg-neutral-800 border-neutral-700 text-white resize-none"
               rows={6}

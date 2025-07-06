@@ -17,18 +17,26 @@ interface ConfigTabBaseProps {
   icon: React.ComponentType<{ className?: string }>;
 }
 
-interface FileItem {
+interface TrainingDataItem {
   id: string;
-  file_name: string;
-  file_type: string;
-  file_url?: string;
-}
-
-interface LinkItem {
-  id: string;
-  link_title: string;
-  link_url: string;
-  link_description?: string;
+  user_id: string;
+  tab_name: string;
+  data_type: 'file' | 'link' | 'manual_prompt';
+  file_name?: string | null;
+  file_type?: string | null;
+  file_size?: number | null;
+  file_url?: string | null;
+  file_content?: string | null;
+  link_title?: string | null;
+  link_url?: string | null;
+  link_description?: string | null;
+  manual_prompt?: string | null;
+  title?: string | null;
+  description?: string | null;
+  metadata?: any;
+  status: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
@@ -38,8 +46,8 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
   icon: Icon
 }) => {
   const [manualPrompt, setManualPrompt] = useState('');
-  const [files, setFiles] = useState<FileItem[]>([]);
-  const [links, setLinks] = useState<LinkItem[]>([]);
+  const [files, setFiles] = useState<TrainingDataItem[]>([]);
+  const [links, setLinks] = useState<TrainingDataItem[]>([]);
   const [newLink, setNewLink] = useState({ title: '', url: '', description: '' });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -53,37 +61,25 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Load manual prompt
-      const { data: promptData } = await supabase
-        .from('agent_manual_contexts')
-        .select('context_content')
+      // Load all training data for this tab
+      const { data: trainingData } = await supabase
+        .from('agent_training_data')
+        .select('*')
         .eq('user_id', user.id)
-        .eq('context_title', `${tabName}_manual_prompt`)
-        .maybeSingle();
-
-      if (promptData) {
-        setManualPrompt(promptData.context_content || '');
-      }
-
-      // Load files - removed the non-existent file_category filter
-      const { data: filesData } = await supabase
-        .from('agent_training_files')
-        .select('id, file_name, file_type, file_url')
-        .eq('user_id', user.id)
+        .eq('tab_name', tabName)
         .eq('status', 'active');
 
-      if (filesData) {
+      if (trainingData) {
+        // Type assertion for database results
+        const typedData = trainingData as TrainingDataItem[];
+        
+        // Separate data by type
+        const promptData = typedData.find(item => item.data_type === 'manual_prompt');
+        const filesData = typedData.filter(item => item.data_type === 'file'); 
+        const linksData = typedData.filter(item => item.data_type === 'link');
+
+        setManualPrompt(promptData?.manual_prompt || '');
         setFiles(filesData);
-      }
-
-      // Load links - removed the non-existent link_category filter
-      const { data: linksData } = await supabase
-        .from('agent_reference_links')
-        .select('id, link_title, link_url, link_description')
-        .eq('user_id', user.id)
-        .eq('status', 'active');
-
-      if (linksData) {
         setLinks(linksData);
       }
     } catch (error) {
@@ -111,19 +107,22 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
       if (!user) return;
 
       const { data, error } = await supabase
-        .from('agent_training_files')
+        .from('agent_training_data')
         .insert({
           user_id: user.id,
+          tab_name: tabName,
+          data_type: 'file',
           file_name: file.name,
           file_type: file.type,
+          file_size: file.size,
           status: 'active'
         })
-        .select('id, file_name, file_type, file_url')
+        .select()
         .single();
 
       if (error) throw error;
       if (data) {
-        setFiles(prev => [...prev, data]);
+        setFiles(prev => [...prev, data as TrainingDataItem]);
       }
 
       toast({
@@ -155,20 +154,22 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
       if (!user) return;
 
       const { data, error } = await supabase
-        .from('agent_reference_links')
+        .from('agent_training_data')
         .insert({
           user_id: user.id,
+          tab_name: tabName,
+          data_type: 'link',
           link_title: newLink.title,
           link_url: newLink.url,
           link_description: newLink.description,
           status: 'active'
         })
-        .select('id, link_title, link_url, link_description')
+        .select()
         .single();
 
       if (error) throw error;
       if (data) {
-        setLinks(prev => [...prev, data]);
+        setLinks(prev => [...prev, data as TrainingDataItem]);
       }
       setNewLink({ title: '', url: '', description: '' });
 
@@ -179,7 +180,7 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
     } catch (error) {
       console.error('Error adding link:', error);
       toast({
-        title: "Erro",
+        title: "Erro", 
         description: "Erro ao adicionar link.",
         variant: "destructive",
       });
@@ -189,7 +190,7 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
   const handleDeleteFile = async (fileId: string) => {
     try {
       const { error } = await supabase
-        .from('agent_training_files')
+        .from('agent_training_data')
         .update({ status: 'deleted' })
         .eq('id', fileId);
 
@@ -214,7 +215,7 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
   const handleDeleteLink = async (linkId: string) => {
     try {
       const { error } = await supabase
-        .from('agent_reference_links')
+        .from('agent_training_data')
         .update({ status: 'deleted' })
         .eq('id', linkId);
 
@@ -243,16 +244,17 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Save manual prompt
+      // Save or update manual prompt
       const { error } = await supabase
-        .from('agent_manual_contexts')
+        .from('agent_training_data')
         .upsert({
           user_id: user.id,
-          context_title: `${tabName}_manual_prompt`,
-          context_content: manualPrompt,
+          tab_name: tabName,
+          data_type: 'manual_prompt',
+          manual_prompt: manualPrompt,
           status: 'active'
         }, {
-          onConflict: 'user_id,context_title'
+          onConflict: 'user_id,tab_name,data_type'
         });
 
       if (error) throw error;

@@ -15,9 +15,22 @@ import { ptBR } from 'date-fns/locale';
 
 interface TrainingDataItem {
   id: string;
-  question: string;
-  answer: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  user_id: string;
+  tab_name: string;
+  data_type: 'file' | 'link' | 'manual_prompt' | 'question_answer';
+  file_name?: string | null;
+  file_type?: string | null;
+  file_size?: number | null;
+  file_url?: string | null;
+  file_content?: string | null;
+  link_title?: string | null;
+  link_url?: string | null;
+  link_description?: string | null;
+  manual_prompt?: string | null;
+  title?: string | null;
+  description?: string | null;
+  metadata?: any;
+  status: string;
   created_at: string;
   updated_at: string;
 }
@@ -38,13 +51,18 @@ export const TrainingData: React.FC = () => {
   const loadTrainingData = async () => {
     try {
       setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { data, error } = await supabase
         .from('agent_training_data')
         .select('*')
+        .eq('user_id', user.id)
+        .eq('data_type', 'question_answer')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTrainingData(data || []);
+      setTrainingData(data as TrainingDataItem[] || []);
     } catch (error) {
       console.error('Error loading training data:', error);
       toast({
@@ -76,8 +94,10 @@ export const TrainingData: React.FC = () => {
         .from('agent_training_data')
         .insert({
           user_id: user.id,
-          question: question.trim(),
-          answer: answer.trim(),
+          tab_name: 'training',
+          data_type: 'question_answer',
+          title: question.trim(),
+          description: answer.trim(),
           status: 'pending'
         });
 
@@ -241,13 +261,13 @@ export const TrainingData: React.FC = () => {
                             {getStatusBadge(item.status)}
                           </div>
                           <p className="text-slate-300 bg-slate-700/50 p-3 rounded">
-                            {item.question}
+                            {item.title}
                           </p>
                         </div>
                         <div>
                           <h4 className="font-medium text-white mb-2">Resposta</h4>
                           <p className="text-slate-300 bg-slate-700/50 p-3 rounded">
-                            {item.answer}
+                            {item.description}
                           </p>
                         </div>
                         <p className="text-xs text-slate-400 flex items-center gap-1">
