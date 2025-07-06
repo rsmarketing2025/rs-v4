@@ -47,24 +47,27 @@ export const BehaviorSettings: React.FC = () => {
       if (!user) return;
 
       const { data, error } = await supabase
-        .from('agent_behavior_settings')
+        .from('agent_training_data')
         .select('*')
         .eq('user_id', user.id)
+        .eq('tab_name', 'behavior')
+        .eq('data_type', 'manual_prompt')
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') throw error;
       
-      if (data) {
+      if (data && data.metadata) {
+        const metadata = data.metadata as any; // Type cast for metadata access
         setSettings({
           id: data.id,
-          prohibited_words: Array.isArray(data.prohibited_words) ? data.prohibited_words : [],
-          default_responses: data.default_responses && typeof data.default_responses === 'object' && !Array.isArray(data.default_responses) 
-            ? data.default_responses as Record<string, string> 
+          prohibited_words: Array.isArray(metadata.prohibited_words) ? metadata.prohibited_words : [],
+          default_responses: metadata.default_responses && typeof metadata.default_responses === 'object' && !Array.isArray(metadata.default_responses) 
+            ? metadata.default_responses as Record<string, string> 
             : {},
-          fallback_message: data.fallback_message || 'Desculpe, não consegui entender sua pergunta. Pode reformular?',
-          response_examples: Array.isArray(data.response_examples) ? data.response_examples : [],
-          max_response_length: data.max_response_length || 1000,
-          preferred_format: data.preferred_format || 'text'
+          fallback_message: metadata.fallback_message || 'Desculpe, não consegui entender sua pergunta. Pode reformular?',
+          response_examples: Array.isArray(metadata.response_examples) ? metadata.response_examples : [],
+          max_response_length: metadata.max_response_length || 1000,
+          preferred_format: metadata.preferred_format || 'text'
         });
       }
     } catch (error) {
@@ -85,29 +88,33 @@ export const BehaviorSettings: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      const settingsData = {
-        ...settings,
-        user_id: user.id
+      const metadata = {
+        prohibited_words: settings.prohibited_words,
+        default_responses: settings.default_responses,
+        fallback_message: settings.fallback_message,
+        response_examples: settings.response_examples,
+        max_response_length: settings.max_response_length,
+        preferred_format: settings.preferred_format
       };
 
-      if (settings.id) {
-        const { error } = await supabase
-          .from('agent_behavior_settings')
-          .update(settingsData)
-          .eq('id', settings.id);
-        
-        if (error) throw error;
-      } else {
-        const { data, error } = await supabase
-          .from('agent_behavior_settings')
-          .insert(settingsData)
-          .select()
-          .single();
-        
-        if (error) throw error;
-        if (data) {
-          setSettings(prev => ({ ...prev, id: data.id }));
-        }
+      const { data, error } = await supabase
+        .from('agent_training_data')
+        .upsert({
+          user_id: user.id,
+          tab_name: 'behavior',
+          data_type: 'manual_prompt',
+          title: 'Behavior Settings',
+          metadata: metadata,
+          status: 'active'
+        }, {
+          onConflict: 'user_id,tab_name,data_type'
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      if (data && !settings.id) {
+        setSettings(prev => ({ ...prev, id: data.id }));
       }
 
       toast({
