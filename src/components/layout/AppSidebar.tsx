@@ -30,22 +30,38 @@ const menuItems = [{
 export function AppSidebar() {
   const location = useLocation();
   const { user, isAdmin, signOut } = useAuth();
-  const { canAccessPage, loading } = usePermissions();
+  const { canAccessPage, loading, permissions } = usePermissions();
+  
+  console.log('🎨 AppSidebar render - User:', user?.id);
+  console.log('🎨 AppSidebar render - Loading:', loading);
+  console.log('🎨 AppSidebar render - IsAdmin:', isAdmin);
+  console.log('🎨 AppSidebar render - Permissions:', permissions);
   
   // Filtrar itens baseado nas permissões
   const filteredMenuItems = menuItems.filter(item => {
     // Se não tem página de permissão definida, sempre mostrar
-    if (!item.permissionPage) return true;
+    if (!item.permissionPage) {
+      console.log('✅ Showing item without permission check:', item.title);
+      return true;
+    }
     
     // Se é admin, sempre mostrar
-    if (isAdmin) return true;
+    if (isAdmin) {
+      console.log('✅ Showing item for admin:', item.title);
+      return true;
+    }
     
     // Verificar permissão específica da página
-    return canAccessPage(item.permissionPage);
+    const hasAccess = canAccessPage(item.permissionPage);
+    console.log(`🔐 Item ${item.title} (${item.permissionPage}): ${hasAccess ? 'ALLOWED' : 'BLOCKED'}`);
+    return hasAccess;
   });
+  
+  console.log('📋 Filtered menu items:', filteredMenuItems.map(item => item.title));
   
   // Mostrar skeleton enquanto carrega permissões
   if (loading) {
+    console.log('⏳ Showing loading skeleton');
     return (
       <Sidebar className="bg-slate-950 border-slate-800">
         <SidebarHeader className="p-6 bg-slate-900 flex items-center justify-center">

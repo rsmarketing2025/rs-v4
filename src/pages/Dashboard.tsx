@@ -24,12 +24,8 @@ import { useLocation } from "react-router-dom";
 import { startOfDay, endOfDay } from "date-fns";
 
 const Dashboard = () => {
-  const {
-    isAdmin
-  } = useAuth();
-  const {
-    canAccessPage
-  } = usePermissions();
+  const { isAdmin } = useAuth();
+  const { canAccessPage, loading: permissionsLoading } = usePermissions();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState(() => {
     if (location.pathname === '/users') return "users";
@@ -43,10 +39,8 @@ const Dashboard = () => {
     to: endOfDay(new Date())
   });
   const [dateRange, setDateRange] = useState(getTodayRange);
-  const {
-    kpis,
-    loading: kipsLoading
-  } = useMonthlyKPIs(dateRange);
+  const { kpis, loading: kipsLoading } = useMonthlyKPIs(dateRange);
+
   React.useEffect(() => {
     if (activeTab === "users") {
       window.history.pushState({}, '', '/users');
@@ -71,9 +65,28 @@ const Dashboard = () => {
     return "Dashboard completo de métricas e análises";
   };
 
+  console.log('🎯 Dashboard render - Current path:', location.pathname);
+  console.log('🎯 Dashboard render - Permissions loading:', permissionsLoading);
+  console.log('🎯 Dashboard render - Can access users:', canAccessPage('users'));
+  console.log('🎯 Dashboard render - Can access business-managers:', canAccessPage('business-managers'));
+
+  // Mostrar loading enquanto as permissões estão carregando
+  if (permissionsLoading) {
+    console.log('⏳ Dashboard showing permissions loading');
+    return (
+      <SidebarInset>
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+          <div className="text-white">Carregando permissões...</div>
+        </div>
+      </SidebarInset>
+    );
+  }
+
   // Verificar acesso às páginas especiais
   if (location.pathname === '/users') {
+    console.log('🔐 Checking users page access...');
     if (!canAccessPage('users')) {
+      console.log('❌ Access denied to users page');
       return (
         <SidebarInset>
           <AccessDenied 
@@ -83,6 +96,7 @@ const Dashboard = () => {
         </SidebarInset>
       );
     }
+    console.log('✅ Access granted to users page');
     return <SidebarInset>
         <div className="min-h-screen bg-slate-900">
           <div className="container mx-auto p-3 md:p-6">
@@ -107,8 +121,11 @@ const Dashboard = () => {
         </div>
       </SidebarInset>;
   }
+
   if (location.pathname === '/business-managers') {
+    console.log('🔐 Checking business-managers page access...');
     if (!canAccessPage('business-managers')) {
+      console.log('❌ Access denied to business-managers page');
       return (
         <SidebarInset>
           <AccessDenied 
@@ -118,6 +135,7 @@ const Dashboard = () => {
         </SidebarInset>
       );
     }
+    console.log('✅ Access granted to business-managers page');
     return <SidebarInset>
         <div className="min-h-screen bg-slate-900">
           <div className="container mx-auto p-3 md:p-6">
@@ -142,6 +160,8 @@ const Dashboard = () => {
         </div>
       </SidebarInset>;
   }
+
+  console.log('✅ Showing main dashboard');
   return <SidebarInset>
       <div className="min-h-screen bg-slate-900">
         <div className="container mx-auto p-3 md:p-6 bg-transparent">
