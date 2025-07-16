@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -18,45 +18,60 @@ export const usePermissions = () => {
     pages: []
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchPermissions = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
+  const fetchPermissions = useCallback(async () => {
+    if (!user) {
+      setPermissions({ pages: [] });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setError(null);
+      // Buscar apenas permissões de páginas
+      const { data: pagePermissions, error: fetchError } = await supabase
+        .from('user_page_permissions')
+        .select('page, can_access')
+        .eq('user_id', user.id);
+
+      if (fetchError) {
+        throw fetchError;
       }
 
-      try {
-        // Buscar apenas permissões de páginas
-        const { data: pagePermissions } = await supabase
-          .from('user_page_permissions')
-          .select('page, can_access')
-          .eq('user_id', user.id);
-
-        setPermissions({
-          pages: pagePermissions || []
-        });
-      } catch (error) {
-        console.error('Error fetching permissions:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPermissions();
+      setPermissions({
+        pages: pagePermissions || []
+      });
+    } catch (error) {
+      console.error('Error fetching permissions:', error);
+      setError('Erro ao carregar permissões');
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
-  const canAccessPage = (page: string): boolean => {
+  useEffect(() => {
+    fetchPermissions();
+  }, [fetchPermissions]);
+
+  const canAccessPage = useCallback((page: string): boolean => {
     // Admins têm acesso total
     if (isAdmin) return true;
     
     const permission = permissions.pages.find(p => p.page === page);
     return permission ? permission.can_access : false;
-  };
+  }, [isAdmin, permissions.pages]);
+
+  const refreshPermissions = useCallback(() => {
+    setLoading(true);
+    fetchPermissions();
+  }, [fetchPermissions]);
 
   return {
     permissions,
     loading,
-    canAccessPage
+    error,
+    canAccessPage,
+    refreshPermissions
   };
 };

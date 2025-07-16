@@ -16,6 +16,7 @@ import { BusinessManagersTab } from "@/components/dashboard/BusinessManagersTab"
 import { KPICard } from "@/components/dashboard/KPICard";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { PermissionWrapper } from "@/components/common/PermissionWrapper";
+import { AccessDenied } from "@/components/common/AccessDenied";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useMonthlyKPIs } from "@/hooks/useMonthlyKPIs";
@@ -73,14 +74,14 @@ const Dashboard = () => {
   // Verificar acesso às páginas especiais
   if (location.pathname === '/users') {
     if (!isAdmin && !canAccessPage('users')) {
-      return <SidebarInset>
-          <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-            <div className="text-center">
-              <h1 className="text-xl md:text-2xl font-bold text-white mb-4">Acesso Negado</h1>
-              <p className="text-slate-300 text-sm md:text-base">Você não tem permissão para acessar esta página.</p>
-            </div>
-          </div>
-        </SidebarInset>;
+      return (
+        <SidebarInset>
+          <AccessDenied 
+            title="Acesso Negado - Usuários"
+            message="Você não tem permissão para gerenciar usuários. Esta funcionalidade requer privilégios administrativos."
+          />
+        </SidebarInset>
+      );
     }
     return <SidebarInset>
         <div className="min-h-screen bg-slate-900">
@@ -108,14 +109,14 @@ const Dashboard = () => {
   }
   if (location.pathname === '/business-managers') {
     if (!isAdmin && !canAccessPage('business-managers')) {
-      return <SidebarInset>
-          <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-            <div className="text-center">
-              <h1 className="text-xl md:text-2xl font-bold text-white mb-4">Acesso Negado</h1>
-              <p className="text-slate-300 text-sm md:text-base">Você não tem permissão para acessar esta página.</p>
-            </div>
-          </div>
-        </SidebarInset>;
+      return (
+        <SidebarInset>
+          <AccessDenied 
+            title="Acesso Negado - Business Managers"
+            message="Você não tem permissão para gerenciar Business Managers. Entre em contato com um administrador para solicitar acesso."
+          />
+        </SidebarInset>
+      );
     }
     return <SidebarInset>
         <div className="min-h-screen bg-slate-900">

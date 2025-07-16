@@ -7,8 +7,10 @@ import { MessageSquare, Settings } from "lucide-react";
 import { ConversationHistory } from "@/components/ai-agents/ConversationHistory";
 import { AgentChat } from "@/components/ai-agents/AgentChat";
 import { AgentConfigArea } from "@/components/ai-agents/AgentConfigArea";
+import { PermissionWrapper } from "@/components/common/PermissionWrapper";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 type ActiveView = 'chat' | 'config';
 const AIAgents = () => {
   const [activeView, setActiveView] = useState<ActiveView>('chat');
@@ -16,9 +18,8 @@ const AIAgents = () => {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+  const { user } = useAuth();
   useEffect(() => {
     loadConversations();
   }, []);
@@ -110,7 +111,13 @@ const AIAgents = () => {
       });
     }
   };
-  return <SidebarInset>
+  // Se o usuário não está autenticado, não renderizar nada
+  if (!user) {
+    return null;
+  }
+
+  return (
+    <SidebarInset>
       <div className="min-h-screen bg-slate-900">
         <div className="container mx-auto p-3 md:p-6 h-screen flex flex-col">
           <div className="flex flex-col space-y-2 mb-4 flex-shrink-0">
@@ -129,7 +136,10 @@ const AIAgents = () => {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0">
             {/* Conversation History - Left Sidebar */}
             <div className="lg:col-span-1 flex flex-col min-h-0">
-              <ConversationHistory onSelectConversation={handleConversationSelect} refreshTrigger={refreshTrigger} />
+              <ConversationHistory 
+                onSelectConversation={handleConversationSelect} 
+                refreshTrigger={refreshTrigger} 
+              />
             </div>
 
             {/* Main Content Area with Tabs */}
@@ -137,11 +147,27 @@ const AIAgents = () => {
               {/* Main Navigation Tabs */}
               <div className="mb-6">
                 <div className="flex space-x-1 bg-neutral-900 p-1 rounded-lg border border-neutral-800">
-                  <Button onClick={() => setActiveView('chat')} variant={activeView === 'chat' ? 'default' : 'ghost'} className={`flex-1 flex items-center gap-2 text-sm font-medium transition-all ${activeView === 'chat' ? 'bg-neutral-950 text-white shadow-sm' : 'text-neutral-400 hover:text-white hover:bg-neutral-800'}`}>
+                  <Button 
+                    onClick={() => setActiveView('chat')} 
+                    variant={activeView === 'chat' ? 'default' : 'ghost'} 
+                    className={`flex-1 flex items-center gap-2 text-sm font-medium transition-all ${
+                      activeView === 'chat' 
+                        ? 'bg-neutral-950 text-white shadow-sm' 
+                        : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+                    }`}
+                  >
                     <MessageSquare className="w-4 h-4" />
                     Chat
                   </Button>
-                  <Button onClick={() => setActiveView('config')} variant={activeView === 'config' ? 'default' : 'ghost'} className={`flex-1 flex items-center gap-2 text-sm font-medium transition-all ${activeView === 'config' ? 'bg-neutral-950 text-white shadow-sm' : 'text-neutral-400 hover:text-white hover:bg-neutral-800'}`}>
+                  <Button 
+                    onClick={() => setActiveView('config')} 
+                    variant={activeView === 'config' ? 'default' : 'ghost'} 
+                    className={`flex-1 flex items-center gap-2 text-sm font-medium transition-all ${
+                      activeView === 'config' 
+                        ? 'bg-neutral-950 text-white shadow-sm' 
+                        : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+                    }`}
+                  >
                     <Settings className="w-4 h-4" />
                     Configuração do Agente
                   </Button>
@@ -150,14 +176,22 @@ const AIAgents = () => {
 
               {/* Content Area */}
               <div className="flex-1 min-h-0">
-                {activeView === 'chat' ? <AgentChat conversationId={activeConversation} onConversationChange={handleConversationChange} /> : <div className="h-full">
+                {activeView === 'chat' ? (
+                  <AgentChat 
+                    conversationId={activeConversation} 
+                    onConversationChange={handleConversationChange} 
+                  />
+                ) : (
+                  <div className="h-full">
                     <AgentConfigArea />
-                  </div>}
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
-    </SidebarInset>;
+    </SidebarInset>
+  );
 };
 export default AIAgents;
