@@ -73,12 +73,12 @@ const Dashboard = () => {
 
   // Verificar acesso às páginas especiais
   if (location.pathname === '/users') {
-    if (!isAdmin && !canAccessPage('users')) {
+    if (!canAccessPage('users')) {
       return (
         <SidebarInset>
           <AccessDenied 
             title="Acesso Negado - Usuários"
-            message="Você não tem permissão para gerenciar usuários. Esta funcionalidade requer privilégios administrativos."
+            message="Você não tem permissão para gerenciar usuários."
           />
         </SidebarInset>
       );
@@ -108,12 +108,12 @@ const Dashboard = () => {
       </SidebarInset>;
   }
   if (location.pathname === '/business-managers') {
-    if (!isAdmin && !canAccessPage('business-managers')) {
+    if (!canAccessPage('business-managers')) {
       return (
         <SidebarInset>
           <AccessDenied 
             title="Acesso Negado - Business Managers"
-            message="Você não tem permissão para gerenciar Business Managers. Entre em contato com um administrador para solicitar acesso."
+            message="Você não tem permissão para gerenciar Business Managers."
           />
         </SidebarInset>
       );
