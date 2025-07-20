@@ -65,14 +65,7 @@ export const usePermissions = () => {
 
   const canAccessPage = useCallback((page: string): boolean => {
     console.log('🔐 Checking access for page:', page);
-    console.log('👤 User is admin:', isAdmin);
     console.log('📋 Current permissions:', permissions.pages);
-    
-    // Admins têm acesso total
-    if (isAdmin) {
-      console.log('✅ Admin access granted for page:', page);
-      return true;
-    }
     
     const permission = permissions.pages.find(p => p.page === page);
     const hasAccess = permission ? permission.can_access : false;
@@ -81,15 +74,15 @@ export const usePermissions = () => {
     console.log(`✅ Access result for ${page}:`, hasAccess);
     
     return hasAccess;
-  }, [isAdmin, permissions.pages]);
+  }, [permissions.pages]);
 
   const canManageUsers = useCallback((): boolean => {
-    return isAdmin || canAccessPage('users');
-  }, [isAdmin, canAccessPage]);
+    return canAccessPage('users');
+  }, [canAccessPage]);
 
   const canManageBusinessManagers = useCallback((): boolean => {
-    return isAdmin || canAccessPage('business-managers');
-  }, [isAdmin, canAccessPage]);
+    return canAccessPage('business-managers');
+  }, [canAccessPage]);
 
   const refreshPermissions = useCallback(() => {
     console.log('🔄 Refreshing permissions manually');
