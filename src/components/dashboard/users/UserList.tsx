@@ -18,6 +18,7 @@ import { DeleteUserDialog } from "./DeleteUserDialog";
 import { UserDetailModal } from "./UserDetailModal";
 import { UserWithPermissions } from './types';
 import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface UserListProps {
   refreshTrigger?: number;
@@ -39,8 +40,10 @@ export const UserList: React.FC<UserListProps> = ({
   const [selectedUser, setSelectedUser] = useState<UserWithPermissions | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { canManageUsers } = usePermissions();
 
   console.log('🎯 UserList render - currentUserRole:', currentUserRole);
+  console.log('🎯 UserList render - canManageUsers:', canManageUsers());
 
   useEffect(() => {
     fetchUsers();
@@ -145,8 +148,8 @@ export const UserList: React.FC<UserListProps> = ({
     );
   });
 
-  const isAdmin = currentUserRole === 'admin';
-  console.log('🔐 Is admin check:', isAdmin, 'Role:', currentUserRole);
+  const hasManagePermission = canManageUsers();
+  console.log('🔐 Has manage permission:', hasManagePermission);
 
   if (loading) {
     return (
@@ -166,7 +169,7 @@ export const UserList: React.FC<UserListProps> = ({
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-md bg-neutral-700 text-white placeholder:text-slate-400 border-neutral-600 focus-visible:ring-neutral-500"
         />
-        {isAdmin && (
+        {hasManagePermission && (
           <Button
             onClick={() => setIsCreateModalOpen(true)}
             className="bg-sky-500 hover:bg-sky-600 text-white"
@@ -227,7 +230,7 @@ export const UserList: React.FC<UserListProps> = ({
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
-                      {isAdmin && (
+                      {hasManagePermission && (
                         <>
                           <Button
                             variant="outline" 

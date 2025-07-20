@@ -83,6 +83,14 @@ export const usePermissions = () => {
     return hasAccess;
   }, [isAdmin, permissions.pages]);
 
+  const canManageUsers = useCallback((): boolean => {
+    return isAdmin || canAccessPage('users');
+  }, [isAdmin, canAccessPage]);
+
+  const canManageBusinessManagers = useCallback((): boolean => {
+    return isAdmin || canAccessPage('business-managers');
+  }, [isAdmin, canAccessPage]);
+
   const refreshPermissions = useCallback(() => {
     console.log('🔄 Refreshing permissions manually');
     setLoading(true);
@@ -94,6 +102,9 @@ export const usePermissions = () => {
     loading,
     error,
     canAccessPage,
-    refreshPermissions
+    canManageUsers,
+    canManageBusinessManagers,
+    refreshPermissions,
+    isAdmin // Manter compatibilidade durante transição
   };
 };

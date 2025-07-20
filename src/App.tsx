@@ -42,7 +42,7 @@ const App = () => (
                           <Route 
                             path="/users" 
                             element={
-                              <ProtectedRoute requireAdmin={true}>
+                              <ProtectedRoute requirePage="users">
                                 <Dashboard />
                               </ProtectedRoute>
                             } 
@@ -50,7 +50,7 @@ const App = () => (
                           <Route 
                             path="/business-managers" 
                             element={
-                              <ProtectedRoute requireAdmin={true}>
+                              <ProtectedRoute requirePage="business-managers">
                                 <Dashboard />
                               </ProtectedRoute>
                             } 

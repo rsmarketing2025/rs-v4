@@ -3,17 +3,17 @@ import React, { useState, useCallback } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { UserList } from "./users/UserList";
 import { PermissionWrapper } from "@/components/common/PermissionWrapper";
-import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export const UsersTab: React.FC = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const { user, isAdmin } = useAuth();
+  const { canManageUsers } = usePermissions();
   
   const handleUserUpdated = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);
   }, []);
 
-  const currentUserRole = isAdmin ? 'admin' : 'user';
+  const currentUserRole = canManageUsers() ? 'admin' : 'user';
 
   return (
     <PermissionWrapper requirePage="users">

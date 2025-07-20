@@ -24,7 +24,7 @@ import { useLocation } from "react-router-dom";
 import { startOfDay, endOfDay } from "date-fns";
 
 const Dashboard = () => {
-  const { isAdmin } = useAuth();
+  const { user } = useAuth();
   const { canAccessPage, loading: permissionsLoading } = usePermissions();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState(() => {
@@ -97,7 +97,8 @@ const Dashboard = () => {
       );
     }
     console.log('✅ Access granted to users page');
-    return <SidebarInset>
+    return (
+      <SidebarInset>
         <div className="min-h-screen bg-slate-900">
           <div className="container mx-auto p-3 md:p-6">
             <div className="flex flex-col space-y-2 mb-4">
@@ -119,7 +120,8 @@ const Dashboard = () => {
             </Card>
           </div>
         </div>
-      </SidebarInset>;
+      </SidebarInset>
+    );
   }
 
   if (location.pathname === '/business-managers') {
@@ -136,7 +138,8 @@ const Dashboard = () => {
       );
     }
     console.log('✅ Access granted to business-managers page');
-    return <SidebarInset>
+    return (
+      <SidebarInset>
         <div className="min-h-screen bg-slate-900">
           <div className="container mx-auto p-3 md:p-6">
             <div className="flex flex-col space-y-2 mb-4">
@@ -158,11 +161,13 @@ const Dashboard = () => {
             </Card>
           </div>
         </div>
-      </SidebarInset>;
+      </SidebarInset>
+    );
   }
 
   console.log('✅ Showing main dashboard');
-  return <SidebarInset>
+  return (
+    <SidebarInset>
       <div className="min-h-screen bg-slate-900">
         <div className="container mx-auto p-3 md:p-6 bg-transparent">
           <div className="flex flex-col space-y-2 mb-4">
@@ -256,7 +261,8 @@ const Dashboard = () => {
           </Card>
         </div>
       </div>
-    </SidebarInset>;
+    </SidebarInset>
+  );
 };
 
 export default Dashboard;
