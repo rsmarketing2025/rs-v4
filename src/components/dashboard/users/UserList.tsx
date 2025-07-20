@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from "@/components/ui/button";
@@ -128,6 +129,12 @@ export const UserList: React.FC<UserListProps> = ({
     }
   };
 
+  const handleEditUser = (user: UserWithPermissions) => {
+    console.log('Editando usuário:', user);
+    setSelectedUser(user);
+    setIsEditModalOpen(true);
+  };
+
   const filteredUsers = users.filter(user => {
     const searchTermLower = searchTerm.toLowerCase();
     return (
@@ -136,9 +143,17 @@ export const UserList: React.FC<UserListProps> = ({
     );
   });
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-white">Carregando usuários...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <Input
           type="search"
           placeholder="Buscar usuário..."
@@ -165,69 +180,78 @@ export const UserList: React.FC<UserListProps> = ({
               <TableHead className="text-slate-300">Email</TableHead>
               <TableHead className="text-slate-300">Função</TableHead>
               <TableHead className="text-slate-300">Criado em</TableHead>
-              <TableHead className="text-slate-300">Ações</TableHead>
+              <TableHead className="text-slate-300 text-center">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredUsers.map((user) => (
-              <TableRow key={user.id} className="border-slate-700 hover:bg-slate-800/30">
-                <TableCell className="text-white">
-                  {user.full_name || 'N/A'}
-                </TableCell>
-                <TableCell className="text-slate-300">
-                  {user.email || 'N/A'}
-                </TableCell>
-                <TableCell>
-                  <Badge className="bg-sky-500 hover:bg-sky-600">
-                    {user.role}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-slate-300">
-                  {new Date(user.created_at || '').toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedUser(user);
-                        setIsDetailModalOpen(true);
-                      }}
-                      className="text-slate-300 border-slate-600"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    {currentUserRole === 'admin' && (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setIsEditModalOpen(true);
-                          }}
-                          className="text-slate-300 border-slate-600"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setIsDeleteDialogOpen(true);
-                          }}
-                          className="text-red-400 border-red-600 hover:bg-red-600/20"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
+            {filteredUsers.length === 0 ? (
+              <TableRow className="border-slate-700">
+                <TableCell colSpan={5} className="text-center text-slate-400 py-8">
+                  {searchTerm ? 'Nenhum usuário encontrado com esse critério' : 'Nenhum usuário encontrado'}
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filteredUsers.map((user) => (
+                <TableRow key={user.id} className="border-slate-700 hover:bg-slate-800/30">
+                  <TableCell className="text-white">
+                    {user.full_name || 'N/A'}
+                  </TableCell>
+                  <TableCell className="text-slate-300">
+                    {user.email || 'N/A'}
+                  </TableCell>
+                  <TableCell>
+                    <Badge className="bg-sky-500 hover:bg-sky-600">
+                      {user.role === 'admin' ? 'Administrador' : 
+                       user.role === 'business_manager' ? 'Gestor de Negócios' : 'Usuário'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-slate-300">
+                    {new Date(user.created_at || '').toLocaleDateString('pt-BR')}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2 justify-center">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setIsDetailModalOpen(true);
+                        }}
+                        className="text-slate-300 border-slate-600 hover:bg-slate-700"
+                        title="Visualizar detalhes"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      {currentUserRole === 'admin' && (
+                        <>
+                          <Button
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEditUser(user)}
+                            className="text-blue-400 border-blue-600 hover:bg-blue-600/20"
+                            title="Editar usuário"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setIsDeleteDialogOpen(true);
+                            }}
+                            className="text-red-400 border-red-600 hover:bg-red-600/20"
+                            title="Excluir usuário"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
