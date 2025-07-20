@@ -40,6 +40,8 @@ export const UserList: React.FC<UserListProps> = ({
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  console.log('🎯 UserList render - currentUserRole:', currentUserRole);
+
   useEffect(() => {
     fetchUsers();
   }, [refreshTrigger]);
@@ -130,7 +132,7 @@ export const UserList: React.FC<UserListProps> = ({
   };
 
   const handleEditUser = (user: UserWithPermissions) => {
-    console.log('Editando usuário:', user);
+    console.log('✏️ Editando usuário:', user);
     setSelectedUser(user);
     setIsEditModalOpen(true);
   };
@@ -142,6 +144,9 @@ export const UserList: React.FC<UserListProps> = ({
       (user.email && user.email.toLowerCase().includes(searchTermLower))
     );
   });
+
+  const isAdmin = currentUserRole === 'admin';
+  console.log('🔐 Is admin check:', isAdmin, 'Role:', currentUserRole);
 
   if (loading) {
     return (
@@ -161,7 +166,7 @@ export const UserList: React.FC<UserListProps> = ({
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-md bg-neutral-700 text-white placeholder:text-slate-400 border-neutral-600 focus-visible:ring-neutral-500"
         />
-        {currentUserRole === 'admin' && (
+        {isAdmin && (
           <Button
             onClick={() => setIsCreateModalOpen(true)}
             className="bg-sky-500 hover:bg-sky-600 text-white"
@@ -222,7 +227,7 @@ export const UserList: React.FC<UserListProps> = ({
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
-                      {currentUserRole === 'admin' && (
+                      {isAdmin && (
                         <>
                           <Button
                             variant="outline" 
