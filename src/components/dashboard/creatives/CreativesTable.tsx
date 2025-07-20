@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Download } from "lucide-react";
+import { PermissionWrapper } from "@/components/common/PermissionWrapper";
 
 interface CreativeMetrics {
   id: string;
@@ -64,15 +65,27 @@ export const CreativesTable: React.FC<CreativesTableProps> = ({
               Mostrando {Math.min(displayedCreatives.length, 50)} de {filteredCreatives.length} criativos
             </CardDescription>
           </div>
-          <Button 
-            onClick={onExportCSV}
-            variant="outline" 
-            size="sm"
-            className="bg-blue-600 hover:bg-blue-700 border-blue-600 text-white hover:text-white"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Exportar CSV
-          </Button>
+          <PermissionWrapper requirePage="exports" fallback={
+            <Button 
+              onClick={() => alert('Sem permissão para exportar dados')}
+              variant="outline" 
+              size="sm"
+              className="bg-slate-600 hover:bg-slate-700 border-slate-600 text-slate-400"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Exportar CSV
+            </Button>
+          }>
+            <Button 
+              onClick={onExportCSV}
+              variant="outline" 
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 border-blue-600 text-white hover:text-white"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Exportar CSV
+            </Button>
+          </PermissionWrapper>
         </CardHeader>
         <CardContent>
           <div className="w-full max-h-[600px] overflow-y-auto">

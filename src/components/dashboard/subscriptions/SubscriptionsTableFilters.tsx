@@ -2,6 +2,7 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ExportButton } from "@/components/ui/export-button";
+import { PermissionWrapper } from "@/components/common/PermissionWrapper";
 
 interface SubscriptionsTableFiltersProps {
   statusFilter: string;
@@ -31,7 +32,14 @@ export const SubscriptionsTableFilters: React.FC<SubscriptionsTableFiltersProps>
       </div>
       
       <div className="flex-1 flex justify-end">
-        <ExportButton onClick={onExportCSV} label="Exportar CSV" />
+        <PermissionWrapper requirePage="exports" fallback={
+          <ExportButton 
+            onClick={() => alert('Sem permissão para exportar dados')} 
+            label="Exportar CSV"
+          />
+        }>
+          <ExportButton onClick={onExportCSV} label="Exportar CSV" />
+        </PermissionWrapper>
       </div>
     </div>
   );

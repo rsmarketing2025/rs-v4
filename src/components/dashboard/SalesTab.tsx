@@ -196,8 +196,68 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
     document.body.removeChild(link);
   };
 
+  // Calculate total metrics for KPI cards
+  const totalMetrics = {
+    totalSales: filteredSales.length,
+    totalRevenue: filteredSales.reduce((sum, sale) => sum + (sale.net_value || 0), 0),
+    avgOrderValue: filteredSales.length > 0 
+      ? filteredSales.reduce((sum, sale) => sum + (sale.net_value || 0), 0) / filteredSales.length 
+      : 0
+  };
+
   return (
     <div className="space-y-6">
+      {/* KPI Cards Section */}
+      <PermissionWrapper requirePage="kpis" fallback={
+        <div className="bg-slate-800/30 rounded-lg p-4 text-center">
+          <p className="text-slate-400">Sem permissão para visualizar métricas</p>
+        </div>
+      }>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-slate-800/30 border border-slate-700 rounded-lg p-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
+                <div className="w-5 h-5 text-orange-400">📊</div>
+              </div>
+              <div>
+                <p className="text-sm text-slate-400">Total de Vendas</p>
+                <p className="text-xl font-bold text-white">
+                  {totalMetrics.totalSales.toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-slate-800/30 border border-slate-700 rounded-lg p-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                <div className="w-5 h-5 text-green-400">💰</div>
+              </div>
+              <div>
+                <p className="text-sm text-slate-400">Receita Total</p>
+                <p className="text-xl font-bold text-white">
+                  R$ {totalMetrics.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-slate-800/30 border border-slate-700 rounded-lg p-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                <div className="w-5 h-5 text-blue-400">📈</div>
+              </div>
+              <div>
+                <p className="text-sm text-slate-400">Ticket Médio</p>
+                <p className="text-xl font-bold text-white">
+                  R$ {totalMetrics.avgOrderValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </PermissionWrapper>
+
       {/* Charts Section */}
       <PermissionWrapper requirePage="charts" fallback={
         <div className="bg-slate-800/30 rounded-lg p-4 text-center">
