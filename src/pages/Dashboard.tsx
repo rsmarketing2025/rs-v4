@@ -190,18 +190,26 @@ const Dashboard = () => {
           </div>
 
           {/* Updated top cards layout - now with 4 cards including Ticket Médio */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
-            <KPICard title="Total Investido" value={kipsLoading ? "Carregando..." : `R$ ${kpis.totalSpent.toLocaleString('pt-BR', {
-            minimumFractionDigits: 2
-          })}`} change={kipsLoading ? "..." : "+12.5%"} icon={DollarSign} trend="up" variant="black" />
-            <KPICard title="Receita" value={kipsLoading ? "Carregando..." : `R$ ${kpis.totalRevenue.toLocaleString('pt-BR', {
-            minimumFractionDigits: 2
-          })}`} change={kipsLoading ? "..." : "+23.8%"} icon={TrendingUp} trend="up" variant="success" />
-            <KPICard title="Ticket Médio" value={kipsLoading ? "Carregando..." : `R$ ${kpis.avgTicket.toLocaleString('pt-BR', {
-            minimumFractionDigits: 2
-          })}`} change={kipsLoading ? "..." : "+8.3%"} icon={Target} trend="up" variant="info" />
-            <KPICard title="Total de Pedidos" value={kipsLoading ? "Carregando..." : kpis.totalOrders.toLocaleString()} change={kipsLoading ? "..." : "+15.6%"} icon={ShoppingCart} trend="up" variant="purple" />
-          </div>
+          <PermissionWrapper requirePage="kpis" fallback={
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
+              <div className="bg-slate-800/30 rounded-lg p-4 flex items-center justify-center">
+                <p className="text-slate-400 text-sm">Sem permissão para visualizar KPIs</p>
+              </div>
+            </div>
+          }>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
+              <KPICard title="Total Investido" value={kipsLoading ? "Carregando..." : `R$ ${kpis.totalSpent.toLocaleString('pt-BR', {
+              minimumFractionDigits: 2
+            })}`} change={kipsLoading ? "..." : "+12.5%"} icon={DollarSign} trend="up" variant="black" />
+              <KPICard title="Receita" value={kipsLoading ? "Carregando..." : `R$ ${kpis.totalRevenue.toLocaleString('pt-BR', {
+              minimumFractionDigits: 2
+            })}`} change={kipsLoading ? "..." : "+23.8%"} icon={TrendingUp} trend="up" variant="success" />
+              <KPICard title="Ticket Médio" value={kipsLoading ? "Carregando..." : `R$ ${kpis.avgTicket.toLocaleString('pt-BR', {
+              minimumFractionDigits: 2
+            })}`} change={kipsLoading ? "..." : "+8.3%"} icon={Target} trend="up" variant="info" />
+              <KPICard title="Total de Pedidos" value={kipsLoading ? "Carregando..." : kpis.totalOrders.toLocaleString()} change={kipsLoading ? "..." : "+15.6%"} icon={ShoppingCart} trend="up" variant="purple" />
+            </div>
+          </PermissionWrapper>
 
           <Card className="border-transparent backdrop-blur-sm bg-transparent ">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

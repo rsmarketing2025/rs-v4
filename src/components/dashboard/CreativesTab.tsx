@@ -7,6 +7,7 @@ import { CreativesSummaryCards } from "./creatives/CreativesSummaryCards";
 import { TimeSeriesChart } from "./creatives/TimeSeriesChart";
 import { CreativesMetricsCards } from "./creatives/CreativesMetricsCards";
 import { useCreativesData } from "@/hooks/useCreativesData";
+import { PermissionWrapper } from "@/components/common/PermissionWrapper";
 
 interface CreativesTabProps {
   dateRange: { from: Date; to: Date };
@@ -41,28 +42,46 @@ export const CreativesTab: React.FC<CreativesTabProps> = ({
 
   return (
     <div className="space-y-6 bg-slate-900">
-      <CreativesMetricsCards 
-        totalSpent={totalMetrics.spent}
-        avgROI={globalKPIs.avgROI}
-        loading={globalKPIsLoading}
-      />
+      <PermissionWrapper requirePage="kpis" fallback={
+        <div className="bg-slate-800/30 rounded-lg p-4 text-center">
+          <p className="text-slate-400">Sem permissão para visualizar métricas</p>
+        </div>
+      }>
+        <CreativesMetricsCards 
+          totalSpent={totalMetrics.spent}
+          avgROI={globalKPIs.avgROI}
+          loading={globalKPIsLoading}
+        />
+      </PermissionWrapper>
       
-      <ImprovedMetricsOverviewCharts 
-        creatives={creatives} 
-        dateRange={dateRange}
-      />
+      <PermissionWrapper requirePage="charts" fallback={
+        <div className="bg-slate-800/30 rounded-lg p-4 text-center">
+          <p className="text-slate-400">Sem permissão para visualizar gráficos</p>
+        </div>
+      }>
+        <ImprovedMetricsOverviewCharts 
+          creatives={creatives} 
+          dateRange={dateRange}
+        />
+        
+        <TimeSeriesChart 
+          creatives={creatives}
+          dateRange={dateRange}
+        />
+      </PermissionWrapper>
       
-      <TimeSeriesChart 
-        creatives={creatives}
-        dateRange={dateRange}
-      />
-      
-      <CreativesTable 
-        creatives={creatives}
-        loading={loading}
-        filteredCreatives={creatives}
-        onExportCSV={handleExportCSV}
-      />
+      <PermissionWrapper requirePage="tables" fallback={
+        <div className="bg-slate-800/30 rounded-lg p-4 text-center">
+          <p className="text-slate-400">Sem permissão para visualizar tabelas</p>
+        </div>
+      }>
+        <CreativesTable 
+          creatives={creatives}
+          loading={loading}
+          filteredCreatives={creatives}
+          onExportCSV={handleExportCSV}
+        />
+      </PermissionWrapper>
     </div>
   );
 };

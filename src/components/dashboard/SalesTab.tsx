@@ -7,6 +7,7 @@ import { SalesTable } from "./sales/SalesTable";
 import { SalesChart } from "./SalesChart";
 import { CountrySalesChart } from "./sales/CountrySalesChart";
 import { format, startOfDay, endOfDay } from "date-fns";
+import { PermissionWrapper } from "@/components/common/PermissionWrapper";
 
 interface Sale {
   id: string;
@@ -198,41 +199,65 @@ export const SalesTab: React.FC<SalesTabProps> = ({ dateRange }) => {
   return (
     <div className="space-y-6">
       {/* Charts Section */}
-      <div className="space-y-6">
-        {/* Revenue and Status Charts */}
-        <SalesChart sales={sales} dateRange={dateRange} />
-        
-        {/* Regional Analysis Charts */}
-        <div className="grid grid-cols-1 xl:grid-cols-1 gap-6">
-          <CountrySalesChart 
-            sales={sales} 
-            countryFilter={chartCountryFilter}
-          />
+      <PermissionWrapper requirePage="charts" fallback={
+        <div className="bg-slate-800/30 rounded-lg p-4 text-center">
+          <p className="text-slate-400">Sem permissão para visualizar gráficos</p>
         </div>
-      </div>
+      }>
+        <div className="space-y-6">
+          {/* Revenue and Status Charts */}
+          <SalesChart sales={sales} dateRange={dateRange} />
+          
+          {/* Regional Analysis Charts */}
+          <div className="grid grid-cols-1 xl:grid-cols-1 gap-6">
+            <CountrySalesChart 
+              sales={sales} 
+              countryFilter={chartCountryFilter}
+            />
+          </div>
+        </div>
+      </PermissionWrapper>
 
       {/* Filters and Table Section */}
-      <SalesFilters
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-        paymentFilter={paymentFilter}
-        setPaymentFilter={setPaymentFilter}
-        countryFilter={countryFilter}
-        setCountryFilter={setCountryFilter}
-        stateFilter={stateFilter}
-        setStateFilter={setStateFilter}
-        uniqueCountries={uniqueCountries}
-        uniqueStates={uniqueStates}
-        onClearFilters={handleClearFilters}
-      />
-      <SalesTable
-        sales={sales}
-        filteredSales={filteredSales}
-        loading={loading}
-        onExportCSV={exportToCSV}
-      />
+      <PermissionWrapper requirePage="tables" fallback={
+        <div className="bg-slate-800/30 rounded-lg p-4 text-center">
+          <p className="text-slate-400">Sem permissão para visualizar tabelas</p>
+        </div>
+      }>
+        <SalesFilters
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          paymentFilter={paymentFilter}
+          setPaymentFilter={setPaymentFilter}
+          countryFilter={countryFilter}
+          setCountryFilter={setCountryFilter}
+          stateFilter={stateFilter}
+          setStateFilter={setStateFilter}
+          uniqueCountries={uniqueCountries}
+          uniqueStates={uniqueStates}
+          onClearFilters={handleClearFilters}
+        />
+        
+        <PermissionWrapper requirePage="exports" fallback={
+          <SalesTable
+            sales={sales}
+            filteredSales={filteredSales}
+            loading={loading}
+            onExportCSV={() => {
+              alert('Sem permissão para exportar dados');
+            }}
+          />
+        }>
+          <SalesTable
+            sales={sales}
+            filteredSales={filteredSales}
+            loading={loading}
+            onExportCSV={exportToCSV}
+          />
+        </PermissionWrapper>
+      </PermissionWrapper>
     </div>
   );
 };

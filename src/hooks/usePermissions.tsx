@@ -84,6 +84,23 @@ export const usePermissions = () => {
     return canAccessPage('business-managers');
   }, [canAccessPage]);
 
+  // Novas funções para permissões granulares
+  const canViewKPIs = useCallback((): boolean => {
+    return canAccessPage('kpis');
+  }, [canAccessPage]);
+
+  const canViewCharts = useCallback((): boolean => {
+    return canAccessPage('charts');
+  }, [canAccessPage]);
+
+  const canViewTables = useCallback((): boolean => {
+    return canAccessPage('tables');
+  }, [canAccessPage]);
+
+  const canExportData = useCallback((): boolean => {
+    return canAccessPage('exports');
+  }, [canAccessPage]);
+
   const refreshPermissions = useCallback(() => {
     console.log('🔄 Refreshing permissions manually');
     setLoading(true);
@@ -97,6 +114,10 @@ export const usePermissions = () => {
     canAccessPage,
     canManageUsers,
     canManageBusinessManagers,
+    canViewKPIs,
+    canViewCharts,
+    canViewTables,
+    canExportData,
     refreshPermissions,
     isAdmin // Manter compatibilidade durante transição
   };

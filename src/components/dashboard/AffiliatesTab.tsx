@@ -9,6 +9,7 @@ import { Search, Users, DollarSign, Percent, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AffiliateChart } from "./AffiliateChart";
+import { PermissionWrapper } from "@/components/common/PermissionWrapper";
 
 interface AffiliateData {
   affiliate_id: string;
@@ -151,52 +152,64 @@ export const AffiliatesTab: React.FC<AffiliatesTabProps> = ({ dateRange }) => {
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card className="bg-slate-800/30 border-slate-700">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Users className="w-5 h-5 text-blue-400" />
-              <div>
-                <p className="text-sm text-slate-400">Total de Afiliados</p>
-                <p className="text-xl font-bold text-white">
-                  {totalMetrics.affiliates}
-                </p>
+      <PermissionWrapper requirePage="kpis" fallback={
+        <div className="bg-slate-800/30 rounded-lg p-4 text-center">
+          <p className="text-slate-400">Sem permissão para visualizar métricas</p>
+        </div>
+      }>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Card className="bg-slate-800/30 border-slate-700">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Users className="w-5 h-5 text-blue-400" />
+                <div>
+                  <p className="text-sm text-slate-400">Total de Afiliados</p>
+                  <p className="text-xl font-bold text-white">
+                    {totalMetrics.affiliates}
+                  </p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="bg-slate-800/30 border-slate-700">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <DollarSign className="w-5 h-5 text-green-400" />
-              <div>
-                <p className="text-sm text-slate-400">Receita de Afiliados</p>
-                <p className="text-xl font-bold text-white">
-                  R$ {totalMetrics.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
+          <Card className="bg-slate-800/30 border-slate-700">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <DollarSign className="w-5 h-5 text-green-400" />
+                <div>
+                  <p className="text-sm text-slate-400">Receita de Afiliados</p>
+                  <p className="text-xl font-bold text-white">
+                    R$ {totalMetrics.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="bg-slate-800/30 border-slate-700">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Percent className="w-5 h-5 text-orange-400" />
-              <div>
-                <p className="text-sm text-slate-400">Vendas de Afiliados</p>
-                <p className="text-xl font-bold text-white">
-                  {totalMetrics.sales}
-                </p>
+          <Card className="bg-slate-800/30 border-slate-700">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Percent className="w-5 h-5 text-orange-400" />
+                <div>
+                  <p className="text-sm text-slate-400">Vendas de Afiliados</p>
+                  <p className="text-xl font-bold text-white">
+                    {totalMetrics.sales}
+                  </p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      </PermissionWrapper>
 
       {/* Chart */}
-      <AffiliateChart affiliates={filteredAffiliates} />
+      <PermissionWrapper requirePage="charts" fallback={
+        <div className="bg-slate-800/30 rounded-lg p-4 text-center">
+          <p className="text-slate-400">Sem permissão para visualizar gráficos</p>
+        </div>
+      }>
+        <AffiliateChart affiliates={filteredAffiliates} />
+      </PermissionWrapper>
 
       {/* Search */}
       <Card className="bg-slate-800/30 border-slate-700">
@@ -217,103 +230,121 @@ export const AffiliatesTab: React.FC<AffiliatesTabProps> = ({ dateRange }) => {
       </Card>
 
       {/* Affiliates Table */}
-      <Card className="bg-slate-800/30 border-slate-700">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-white">Performance dos Afiliados</CardTitle>
-            <CardDescription className="text-slate-400">
-              Mostrando {Math.min(displayedAffiliates.length, 20)} de {filteredAffiliates.length} afiliados
-            </CardDescription>
-          </div>
-          <Button 
-            onClick={exportToCSV}
-            variant="outline" 
-            size="sm"
-            className="border-slate-700 text-slate-300 hover:bg-slate-800"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Exportar CSV
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-slate-700">
-                  <TableHead className="text-slate-300">Afiliado</TableHead>
-                  <TableHead className="text-slate-300">ID</TableHead>
-                  <TableHead className="text-slate-300">Total Vendas</TableHead>
-                  <TableHead className="text-slate-300">Vendas Concluídas</TableHead>
-                  <TableHead className="text-slate-300">Taxa Conversão</TableHead>
-                  <TableHead className="text-slate-300">Receita Total</TableHead>
-                  <TableHead className="text-slate-300">Comissão Total</TableHead>
-                  <TableHead className="text-slate-300">Ticket Médio</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center text-slate-400 py-8">
-                      Carregando...
-                    </TableCell>
+      <PermissionWrapper requirePage="tables" fallback={
+        <div className="bg-slate-800/30 rounded-lg p-4 text-center">
+          <p className="text-slate-400">Sem permissão para visualizar tabelas</p>
+        </div>
+      }>
+        <Card className="bg-slate-800/30 border-slate-700">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-white">Performance dos Afiliados</CardTitle>
+              <CardDescription className="text-slate-400">
+                Mostrando {Math.min(displayedAffiliates.length, 20)} de {filteredAffiliates.length} afiliados
+              </CardDescription>
+            </div>
+            <PermissionWrapper requirePage="exports" fallback={
+              <Button 
+                onClick={() => alert('Sem permissão para exportar dados')}
+                variant="outline" 
+                size="sm"
+                className="border-slate-700 text-slate-300 hover:bg-slate-800"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Exportar CSV
+              </Button>
+            }>
+              <Button 
+                onClick={exportToCSV}
+                variant="outline" 
+                size="sm"
+                className="border-slate-700 text-slate-300 hover:bg-slate-800"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Exportar CSV
+              </Button>
+            </PermissionWrapper>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-slate-700">
+                    <TableHead className="text-slate-300">Afiliado</TableHead>
+                    <TableHead className="text-slate-300">ID</TableHead>
+                    <TableHead className="text-slate-300">Total Vendas</TableHead>
+                    <TableHead className="text-slate-300">Vendas Concluídas</TableHead>
+                    <TableHead className="text-slate-300">Taxa Conversão</TableHead>
+                    <TableHead className="text-slate-300">Receita Total</TableHead>
+                    <TableHead className="text-slate-300">Comissão Total</TableHead>
+                    <TableHead className="text-slate-300">Ticket Médio</TableHead>
                   </TableRow>
-                ) : displayedAffiliates.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center text-slate-400 py-8">
-                      Nenhum afiliado encontrado
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  displayedAffiliates.map((affiliate, index) => (
-                    <TableRow key={affiliate.affiliate_id} className="border-slate-700 hover:bg-slate-800/50">
-                      <TableCell className="text-white font-medium">
-                        <div className="flex items-center space-x-2">
-                          <Badge variant="outline" className="text-xs">
-                            #{index + 1}
-                          </Badge>
-                          <span>{affiliate.affiliate_name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-slate-300 font-mono text-sm">
-                        {affiliate.affiliate_id}
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        {affiliate.total_sales}
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        {affiliate.completed_sales}
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        <Badge 
-                          variant="secondary"
-                          className={
-                            affiliate.conversion_rate >= 80 
-                              ? "bg-green-500/20 text-green-400" 
-                              : affiliate.conversion_rate >= 60
-                              ? "bg-yellow-500/20 text-yellow-400"
-                              : "bg-red-500/20 text-red-400"
-                          }
-                        >
-                          {affiliate.conversion_rate.toFixed(1)}%
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        R$ {affiliate.total_revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        R$ {affiliate.total_commission.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </TableCell>
-                      <TableCell className="text-slate-300">
-                        R$ {affiliate.avg_order_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center text-slate-400 py-8">
+                        Carregando...
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                  ) : displayedAffiliates.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center text-slate-400 py-8">
+                        Nenhum afiliado encontrado
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    displayedAffiliates.map((affiliate, index) => (
+                      <TableRow key={affiliate.affiliate_id} className="border-slate-700 hover:bg-slate-800/50">
+                        <TableCell className="text-white font-medium">
+                          <div className="flex items-center space-x-2">
+                            <Badge variant="outline" className="text-xs">
+                              #{index + 1}
+                            </Badge>
+                            <span>{affiliate.affiliate_name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-slate-300 font-mono text-sm">
+                          {affiliate.affiliate_id}
+                        </TableCell>
+                        <TableCell className="text-slate-300">
+                          {affiliate.total_sales}
+                        </TableCell>
+                        <TableCell className="text-slate-300">
+                          {affiliate.completed_sales}
+                        </TableCell>
+                        <TableCell className="text-slate-300">
+                          <Badge 
+                            variant="secondary"
+                            className={
+                              affiliate.conversion_rate >= 80 
+                                ? "bg-green-500/20 text-green-400" 
+                                : affiliate.conversion_rate >= 60
+                                ? "bg-yellow-500/20 text-yellow-400"
+                                : "bg-red-500/20 text-red-400"
+                            }
+                          >
+                            {affiliate.conversion_rate.toFixed(1)}%
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-slate-300">
+                          R$ {affiliate.total_revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </TableCell>
+                        <TableCell className="text-slate-300">
+                          R$ {affiliate.total_commission.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </TableCell>
+                        <TableCell className="text-slate-300">
+                          R$ {affiliate.avg_order_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </PermissionWrapper>
     </div>
   );
 };
