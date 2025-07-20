@@ -7,13 +7,13 @@ import { useAuth } from "@/hooks/useAuth";
 
 export const UsersTab: React.FC = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   
   const handleUserUpdated = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);
   }, []);
 
-  const currentUserRole = user?.user_metadata?.role || 'user';
+  const currentUserRole = isAdmin ? 'admin' : 'user';
 
   return (
     <PermissionWrapper requirePage="users">
