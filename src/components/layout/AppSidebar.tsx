@@ -45,12 +45,6 @@ export function AppSidebar() {
       return true;
     }
     
-    // Se é admin, sempre mostrar
-    if (isAdmin) {
-      console.log('✅ Showing item for admin:', item.title);
-      return true;
-    }
-    
     // Verificar permissão específica da página
     const hasAccess = canAccessPage(item.permissionPage);
     console.log(`🔐 Item ${item.title} (${item.permissionPage}): ${hasAccess ? 'ALLOWED' : 'BLOCKED'}`);
