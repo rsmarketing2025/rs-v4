@@ -181,18 +181,25 @@ export const UserForm: React.FC<UserFormProps> = ({
           if (permError) throw permError;
         }
 
-        // Update chart permissions
-        for (const chart of CHART_PERMISSIONS) {
-          const { error: chartPermError } = await supabase
-            .from('user_chart_permissions')
-            .upsert({
-              user_id: user.id,
-              chart_id: chart.id,
-              can_access: formData.chartPermissions[chart.id]
-            });
+        // Update chart permissions - delete existing and insert new ones
+        const { error: deleteChartPermError } = await supabase
+          .from('user_chart_permissions')
+          .delete()
+          .eq('user_id', user.id);
 
-          if (chartPermError) throw chartPermError;
-        }
+        if (deleteChartPermError) throw deleteChartPermError;
+
+        const chartPermissionUpdates = CHART_PERMISSIONS.map(chart => ({
+          user_id: user.id,
+          chart_id: chart.id,
+          can_access: formData.chartPermissions[chart.id]
+        }));
+
+        const { error: insertChartPermError } = await supabase
+          .from('user_chart_permissions')
+          .insert(chartPermissionUpdates);
+
+        if (insertChartPermError) throw insertChartPermError;
 
         toast({
           title: "Sucesso!",
