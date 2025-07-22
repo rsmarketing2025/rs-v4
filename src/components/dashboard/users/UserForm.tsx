@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// Tabs removed - no longer needed for chart permissions
 import { Switch } from "@/components/ui/switch";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
@@ -61,15 +61,7 @@ const PAGE_LABELS: Record<UserPage, string> = {
   'exports': 'Exports'
 };
 
-const CHART_PERMISSIONS = [
-  { id: 'kpi-total-investido', label: 'KPI - Total Investido' },
-  { id: 'kpi-receita', label: 'KPI - Receita' },
-  { id: 'kpi-ticket-medio', label: 'KPI - Ticket Médio' },
-  { id: 'kpi-total-pedidos', label: 'KPI - Total de Pedidos' },
-  { id: 'grafico-performance-criativa', label: 'Gráfico de Performance Criativa' },
-  { id: 'grafico-vendas-criativas', label: 'Gráfico de Vendas Criativas' },
-  { id: 'cards-resumo-vendas', label: 'Cards Resumo de Vendas' }
-];
+// Chart permissions removed - now controlled by page permissions only
 
 export const UserForm: React.FC<UserFormProps> = ({ 
   user, 
@@ -84,8 +76,7 @@ export const UserForm: React.FC<UserFormProps> = ({
     email: '',
     username: '',
     role: 'user' as AppRole,
-    permissions: {} as Record<UserPage, boolean>,
-    chartPermissions: {} as Record<string, boolean>
+    permissions: {} as Record<UserPage, boolean>
   });
 
   useEffect(() => {
@@ -98,25 +89,14 @@ export const UserForm: React.FC<UserFormProps> = ({
           return acc;
         }, {} as Record<UserPage, boolean>);
 
-        // Fetch chart permissions for existing user
-        const { data: chartPerms } = await supabase
-          .from('user_chart_permissions')
-          .select('chart_id, can_access')
-          .eq('user_id', user.id);
-
-        const userChartPermissions = CHART_PERMISSIONS.reduce((acc, chart) => {
-          const permission = chartPerms?.find(p => p.chart_id === chart.id);
-          acc[chart.id] = permission?.can_access || false;
-          return acc;
-        }, {} as Record<string, boolean>);
+        // Chart permissions removed - now controlled by page permissions
 
         setFormData({
           full_name: user.full_name || '',
           email: user.email || '',
           username: user.username || '',
           role: user.role,
-          permissions: userPermissions,
-          chartPermissions: userChartPermissions
+          permissions: userPermissions
         });
       } else {
         // Default permissions for new users - ensure all pages are included
@@ -125,18 +105,12 @@ export const UserForm: React.FC<UserFormProps> = ({
           return acc;
         }, {} as Record<UserPage, boolean>);
 
-        const defaultChartPermissions = CHART_PERMISSIONS.reduce((acc, chart) => {
-          acc[chart.id] = true;
-          return acc;
-        }, {} as Record<string, boolean>);
-
         setFormData({
           full_name: '',
           email: '',
           username: '',
           role: 'user',
-          permissions: defaultPermissions,
-          chartPermissions: defaultChartPermissions
+          permissions: defaultPermissions
         });
       }
     };
@@ -181,25 +155,7 @@ export const UserForm: React.FC<UserFormProps> = ({
           if (permError) throw permError;
         }
 
-        // Update chart permissions - delete existing and insert new ones
-        const { error: deleteChartPermError } = await supabase
-          .from('user_chart_permissions')
-          .delete()
-          .eq('user_id', user.id);
-
-        if (deleteChartPermError) throw deleteChartPermError;
-
-        const chartPermissionUpdates = CHART_PERMISSIONS.map(chart => ({
-          user_id: user.id,
-          chart_id: chart.id,
-          can_access: formData.chartPermissions[chart.id]
-        }));
-
-        const { error: insertChartPermError } = await supabase
-          .from('user_chart_permissions')
-          .insert(chartPermissionUpdates);
-
-        if (insertChartPermError) throw insertChartPermError;
+        // Chart permissions removed - now controlled by page permissions
 
         toast({
           title: "Sucesso!",
@@ -257,18 +213,7 @@ export const UserForm: React.FC<UserFormProps> = ({
 
         if (permError) throw permError;
 
-        // Set chart permissions
-        const chartPermissionInserts = CHART_PERMISSIONS.map(chart => ({
-          user_id: userId,
-          chart_id: chart.id,
-          can_access: formData.chartPermissions[chart.id]
-        }));
-
-        const { error: chartPermError } = await supabase
-          .from('user_chart_permissions')
-          .insert(chartPermissionInserts);
-
-        if (chartPermError) throw chartPermError;
+        // Chart permissions removed - now controlled by page permissions
 
         toast({
           title: "Sucesso!",
@@ -309,23 +254,7 @@ export const UserForm: React.FC<UserFormProps> = ({
     setFormData(prev => ({ ...prev, permissions: allDeselected }));
   };
 
-  const handleSelectAllCharts = () => {
-    const allSelected = CHART_PERMISSIONS.reduce((acc, chart) => {
-      acc[chart.id] = true;
-      return acc;
-    }, {} as Record<string, boolean>);
-    
-    setFormData(prev => ({ ...prev, chartPermissions: allSelected }));
-  };
-
-  const handleDeselectAllCharts = () => {
-    const allDeselected = CHART_PERMISSIONS.reduce((acc, chart) => {
-      acc[chart.id] = false;
-      return acc;
-    }, {} as Record<string, boolean>);
-    
-    setFormData(prev => ({ ...prev, chartPermissions: allDeselected }));
-  };
+  // Chart permissions functions removed - now controlled by page permissions
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -402,17 +331,8 @@ export const UserForm: React.FC<UserFormProps> = ({
             </Button>
           )}
 
-          <Tabs defaultValue="pages" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-neutral-800">
-              <TabsTrigger value="pages" className="text-white data-[state=active]:bg-neutral-700">
-                Permissões de Página
-              </TabsTrigger>
-              <TabsTrigger value="charts" className="text-white data-[state=active]:bg-neutral-700">
-                Permissões de Gráficos
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="pages" className="space-y-4">
+          <div className="space-y-4">
+            <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <Label className="text-white">Permissões de Página</Label>
                 <div className="space-x-2">
@@ -459,57 +379,8 @@ export const UserForm: React.FC<UserFormProps> = ({
                   </div>
                 ))}
               </div>
-            </TabsContent>
-            
-            <TabsContent value="charts" className="space-y-4">
-              <div className="flex justify-between items-center">
-                <Label className="text-white">Permissões de Gráficos</Label>
-                <div className="space-x-2">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm"
-                    onClick={handleSelectAllCharts}
-                    className="border-neutral-700 text-white hover:bg-neutral-800"
-                  >
-                    Marcar Tudo
-                  </Button>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm"
-                    onClick={handleDeselectAllCharts}
-                    className="border-neutral-700 text-white hover:bg-neutral-800"
-                  >
-                    Desmarcar Tudo
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                {CHART_PERMISSIONS.map((chart) => (
-                  <div key={chart.id} className="flex items-center justify-between">
-                    <Label htmlFor={chart.id} className="text-white text-sm">
-                      {chart.label}
-                    </Label>
-                    <Switch
-                      id={chart.id}
-                      checked={formData.chartPermissions[chart.id] || false}
-                      onCheckedChange={(checked) => {
-                        setFormData(prev => ({
-                          ...prev,
-                          chartPermissions: {
-                            ...prev.chartPermissions,
-                            [chart.id]: checked
-                          }
-                        }));
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
+            </div>
+          </div>
 
           <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose} className="border-neutral-700 text-white hover:bg-neutral-800">

@@ -8,21 +8,14 @@ interface PagePermission {
   can_access: boolean;
 }
 
-interface ChartPermission {
-  chart_id: string;
-  can_access: boolean;
-}
-
 interface Permissions {
   pages: PagePermission[];
-  charts: ChartPermission[];
 }
 
 export const usePermissions = () => {
   const { user, isAdmin } = useAuth();
   const [permissions, setPermissions] = useState<Permissions>({
-    pages: [],
-    charts: []
+    pages: []
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +25,7 @@ export const usePermissions = () => {
     
     if (!user) {
       console.log('❌ No user found, setting empty permissions');
-      setPermissions({ pages: [], charts: [] });
+      setPermissions({ pages: [] });
       setLoading(false);
       return;
     }
@@ -52,23 +45,10 @@ export const usePermissions = () => {
         throw pagePermError;
       }
 
-      // Fetch chart permissions
-      const { data: chartPermissions, error: chartPermError } = await supabase
-        .from('user_chart_permissions')
-        .select('chart_id, can_access')
-        .eq('user_id', user.id);
-
-      if (chartPermError) {
-        console.error('❌ Error fetching chart permissions:', chartPermError);
-        throw chartPermError;
-      }
-
       console.log('✅ Page permissions fetched:', pagePermissions);
-      console.log('✅ Chart permissions fetched:', chartPermissions);
       
       setPermissions({
-        pages: pagePermissions || [],
-        charts: chartPermissions || []
+        pages: pagePermissions || []
       });
     } catch (error) {
       console.error('❌ Error in fetchPermissions:', error);
@@ -96,18 +76,11 @@ export const usePermissions = () => {
     return hasAccess;
   }, [permissions.pages]);
 
+  // Chart permissions now use page-level permissions
   const canAccessChart = useCallback((chartId: string): boolean => {
-    console.log('🔐 Checking chart access for:', chartId);
-    console.log('📋 Current chart permissions:', permissions.charts);
-    
-    const permission = permissions.charts.find(p => p.chart_id === chartId);
-    const hasAccess = permission ? permission.can_access : false;
-    
-    console.log(`🎯 Chart permission for ${chartId}:`, permission);
-    console.log(`✅ Chart access result for ${chartId}:`, hasAccess);
-    
-    return hasAccess;
-  }, [permissions.charts]);
+    // All chart access is now controlled by page permissions
+    return canAccessPage('charts');
+  }, [canAccessPage]);
 
   const canManageUsers = useCallback((): boolean => {
     return canAccessPage('users');
@@ -189,6 +162,6 @@ export const usePermissions = () => {
     canViewSalesChart,
     canViewSalesCards,
     refreshPermissions,
-    isAdmin // Manter compatibilidade durante transição
+    isAdmin
   };
 };

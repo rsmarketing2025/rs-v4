@@ -181,32 +181,7 @@ serve(async (req) => {
       }
     }
 
-    // Set chart permissions
-    const chartPermissions = (formData.chartPermissions || [])
-      .filter((permission: any) => permission.canView)
-      .map((permission: any) => ({
-        user_id: userData.user.id,
-        chart_type: permission.chartType as 'performance_overview' | 'time_series' | 'top_creatives' | 'metrics_comparison' | 'conversion_funnel' | 'roi_analysis' | 'sales_summary' | 'affiliate_performance' | 'revenue_breakdown' | 'creatives_sales',
-        page: permission.page as 'creatives' | 'sales' | 'affiliates' | 'revenue',
-        can_view: permission.canView
-      }))
-
-    if (chartPermissions.length > 0) {
-      // Delete existing chart permissions first
-      await supabaseAdmin
-        .from('user_chart_permissions')
-        .delete()
-        .eq('user_id', userData.user.id)
-
-      const { error: chartPermError } = await supabaseAdmin
-        .from('user_chart_permissions')
-        .insert(chartPermissions)
-
-      if (chartPermError) {
-        console.error('Error setting chart permissions:', chartPermError)
-        console.warn('Chart permissions update failed but user was created')
-      }
-    }
+    // Chart permissions removed - now controlled by page permissions
 
     console.log('User setup completed successfully')
 

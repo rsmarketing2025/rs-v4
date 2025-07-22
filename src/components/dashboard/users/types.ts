@@ -18,6 +18,4 @@ export interface UserWithPermissions {
   }[];
 }
 
-export interface ChartPermissionsProps {
-  // Componente removido - não será mais usado
-}
+// Chart permissions removed - now controlled by page permissions
