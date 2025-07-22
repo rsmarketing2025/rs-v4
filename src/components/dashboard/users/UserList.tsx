@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from "@/components/ui/button";
@@ -40,7 +39,7 @@ export const UserList: React.FC<UserListProps> = ({
   const [selectedUser, setSelectedUser] = useState<UserWithPermissions | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { canManageUsers } = usePermissions();
+  const { canManageUsers, refreshPermissions } = usePermissions();
 
   console.log('🎯 UserList render - currentUserRole:', currentUserRole);
   console.log('🎯 UserList render - canManageUsers:', canManageUsers());
@@ -128,7 +127,9 @@ export const UserList: React.FC<UserListProps> = ({
   };
 
   const handleUserUpdate = () => {
+    console.log('🔄 User updated, refreshing data and permissions');
     fetchUsers();
+    refreshPermissions(); // Refresh permissions after user updates
     if (onUserUpdated) {
       onUserUpdated();
     }

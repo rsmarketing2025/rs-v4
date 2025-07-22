@@ -7,11 +7,13 @@ import { usePermissions } from "@/hooks/usePermissions";
 
 export const UsersTab: React.FC = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const { canManageUsers } = usePermissions();
+  const { canManageUsers, refreshPermissions } = usePermissions();
   
   const handleUserUpdated = useCallback(() => {
+    console.log('🔄 UsersTab: User updated, triggering refresh');
     setRefreshTrigger(prev => prev + 1);
-  }, []);
+    refreshPermissions(); // Ensure permissions are refreshed at the tab level too
+  }, [refreshPermissions]);
 
   const currentUserRole = canManageUsers() ? 'admin' : 'user';
 

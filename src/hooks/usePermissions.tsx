@@ -8,14 +8,21 @@ interface PagePermission {
   can_access: boolean;
 }
 
+interface ChartPermission {
+  chart_id: string;
+  can_access: boolean;
+}
+
 interface Permissions {
   pages: PagePermission[];
+  charts: ChartPermission[];
 }
 
 export const usePermissions = () => {
   const { user, isAdmin } = useAuth();
   const [permissions, setPermissions] = useState<Permissions>({
-    pages: []
+    pages: [],
+    charts: []
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,30 +32,43 @@ export const usePermissions = () => {
     
     if (!user) {
       console.log('❌ No user found, setting empty permissions');
-      setPermissions({ pages: [] });
+      setPermissions({ pages: [], charts: [] });
       setLoading(false);
       return;
     }
 
     try {
       setError(null);
-      console.log('📊 Querying user_page_permissions for user:', user.id);
+      console.log('📊 Querying permissions for user:', user.id);
       
-      // Buscar apenas permissões de páginas
-      const { data: pagePermissions, error: fetchError } = await supabase
+      // Fetch page permissions
+      const { data: pagePermissions, error: pagePermError } = await supabase
         .from('user_page_permissions')
         .select('page, can_access')
         .eq('user_id', user.id);
 
-      if (fetchError) {
-        console.error('❌ Error fetching permissions:', fetchError);
-        throw fetchError;
+      if (pagePermError) {
+        console.error('❌ Error fetching page permissions:', pagePermError);
+        throw pagePermError;
       }
 
-      console.log('✅ Permissions fetched successfully:', pagePermissions);
+      // Fetch chart permissions
+      const { data: chartPermissions, error: chartPermError } = await supabase
+        .from('user_chart_permissions')
+        .select('chart_id, can_access')
+        .eq('user_id', user.id);
+
+      if (chartPermError) {
+        console.error('❌ Error fetching chart permissions:', chartPermError);
+        throw chartPermError;
+      }
+
+      console.log('✅ Page permissions fetched:', pagePermissions);
+      console.log('✅ Chart permissions fetched:', chartPermissions);
       
       setPermissions({
-        pages: pagePermissions || []
+        pages: pagePermissions || [],
+        charts: chartPermissions || []
       });
     } catch (error) {
       console.error('❌ Error in fetchPermissions:', error);
@@ -64,17 +84,30 @@ export const usePermissions = () => {
   }, [fetchPermissions]);
 
   const canAccessPage = useCallback((page: string): boolean => {
-    console.log('🔐 Checking access for page:', page);
-    console.log('📋 Current permissions:', permissions.pages);
+    console.log('🔐 Checking page access for:', page);
+    console.log('📋 Current page permissions:', permissions.pages);
     
     const permission = permissions.pages.find(p => p.page === page);
     const hasAccess = permission ? permission.can_access : false;
     
-    console.log(`🎯 Permission for ${page}:`, permission);
-    console.log(`✅ Access result for ${page}:`, hasAccess);
+    console.log(`🎯 Page permission for ${page}:`, permission);
+    console.log(`✅ Page access result for ${page}:`, hasAccess);
     
     return hasAccess;
   }, [permissions.pages]);
+
+  const canAccessChart = useCallback((chartId: string): boolean => {
+    console.log('🔐 Checking chart access for:', chartId);
+    console.log('📋 Current chart permissions:', permissions.charts);
+    
+    const permission = permissions.charts.find(p => p.chart_id === chartId);
+    const hasAccess = permission ? permission.can_access : false;
+    
+    console.log(`🎯 Chart permission for ${chartId}:`, permission);
+    console.log(`✅ Chart access result for ${chartId}:`, hasAccess);
+    
+    return hasAccess;
+  }, [permissions.charts]);
 
   const canManageUsers = useCallback((): boolean => {
     return canAccessPage('users');
@@ -84,7 +117,7 @@ export const usePermissions = () => {
     return canAccessPage('business-managers');
   }, [canAccessPage]);
 
-  // Novas funções para permissões granulares
+  // Page-level permission functions
   const canViewKPIs = useCallback((): boolean => {
     return canAccessPage('kpis');
   }, [canAccessPage]);
@@ -101,6 +134,35 @@ export const usePermissions = () => {
     return canAccessPage('exports');
   }, [canAccessPage]);
 
+  // Chart-specific permission functions
+  const canViewKPITotalInvestido = useCallback((): boolean => {
+    return canAccessChart('kpi-total-investido');
+  }, [canAccessChart]);
+
+  const canViewKPIReceita = useCallback((): boolean => {
+    return canAccessChart('kpi-receita');
+  }, [canAccessChart]);
+
+  const canViewKPITicketMedio = useCallback((): boolean => {
+    return canAccessChart('kpi-ticket-medio');
+  }, [canAccessChart]);
+
+  const canViewKPITotalPedidos = useCallback((): boolean => {
+    return canAccessChart('kpi-total-pedidos');
+  }, [canAccessChart]);
+
+  const canViewPerformanceChart = useCallback((): boolean => {
+    return canAccessChart('grafico-performance-criativa');
+  }, [canAccessChart]);
+
+  const canViewSalesChart = useCallback((): boolean => {
+    return canAccessChart('grafico-vendas-criativas');
+  }, [canAccessChart]);
+
+  const canViewSalesCards = useCallback((): boolean => {
+    return canAccessChart('cards-resumo-vendas');
+  }, [canAccessChart]);
+
   const refreshPermissions = useCallback(() => {
     console.log('🔄 Refreshing permissions manually');
     setLoading(true);
@@ -112,12 +174,20 @@ export const usePermissions = () => {
     loading,
     error,
     canAccessPage,
+    canAccessChart,
     canManageUsers,
     canManageBusinessManagers,
     canViewKPIs,
     canViewCharts,
     canViewTables,
     canExportData,
+    canViewKPITotalInvestido,
+    canViewKPIReceita,
+    canViewKPITicketMedio,
+    canViewKPITotalPedidos,
+    canViewPerformanceChart,
+    canViewSalesChart,
+    canViewSalesCards,
     refreshPermissions,
     isAdmin // Manter compatibilidade durante transição
   };
