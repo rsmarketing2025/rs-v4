@@ -53,7 +53,7 @@ export const UserList: React.FC<UserListProps> = ({
     try {
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, full_name, email, username, avatar_url, created_at, updated_at');
+        .select('id, full_name, email, username, avatar_url, created_at, updated_at, is_active');
 
       if (profilesError) {
         console.error("Error fetching profiles:", profilesError);
@@ -93,11 +93,28 @@ export const UserList: React.FC<UserListProps> = ({
         return;
       }
 
+      const { data: chartPermissions, error: chartPermissionsError } = await supabase
+        .from('user_chart_permissions')
+        .select('user_id, chart_type, can_access');
+
+      if (chartPermissionsError) {
+        console.error("Error fetching chart permissions:", chartPermissionsError);
+        toast({
+          title: "Erro ao buscar permissões de gráficos",
+          description: "Ocorreu um erro ao carregar as permissões de gráficos.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const usersWithRoles = profiles.map(profile => {
         const role = roles.find(r => r.user_id === profile.id)?.role || 'user';
         const userPermissions = permissions
           .filter(p => p.user_id === profile.id)
           .map(p => ({ page: p.page, can_access: p.can_access }));
+        const userChartPermissions = chartPermissions
+          .filter(p => p.user_id === profile.id)
+          .map(p => ({ chart_type: p.chart_type, can_access: p.can_access }));
 
         return {
           id: profile.id,
@@ -107,9 +124,11 @@ export const UserList: React.FC<UserListProps> = ({
           avatar_url: profile.avatar_url,
           created_at: profile.created_at,
           updated_at: profile.updated_at,
+          is_active: profile.is_active,
           role: role,
           permissions: userPermissions,
-          user_page_permissions: userPermissions
+          user_page_permissions: userPermissions,
+          user_chart_permissions: userChartPermissions
         };
       });
 

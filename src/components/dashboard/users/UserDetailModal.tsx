@@ -81,8 +81,9 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
         </div>
 
         <div className="space-y-4">
+          <div>
             <Label>Permissões de Página</Label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 mt-2">
               {user.user_page_permissions?.map((permission) => (
                 <div key={permission.page} className="flex items-center justify-between p-2 border rounded">
                   <span className="capitalize">{permission.page.replace('-', ' ')}</span>
@@ -92,6 +93,21 @@ export const UserDetailModal: React.FC<UserDetailModalProps> = ({
                 </div>
               ))}
             </div>
+          </div>
+
+          <div>
+            <Label>Permissões de Gráficos</Label>
+            <div className="grid grid-cols-1 gap-2 mt-2 max-h-40 overflow-y-auto">
+              {user.user_chart_permissions?.map((permission) => (
+                <div key={permission.chart_type} className="flex items-center justify-between p-2 border rounded">
+                  <span className="text-sm">{permission.chart_type.replace('_', ' ')}</span>
+                  <Badge variant={permission.can_access ? "default" : "destructive"}>
+                    {permission.can_access ? 'Permitido' : 'Negado'}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

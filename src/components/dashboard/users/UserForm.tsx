@@ -21,6 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
 import { UserWithPermissions } from './types';
+import { ChartType } from '@/hooks/useChartPermissions';
 import type { Database } from '@/integrations/supabase/types';
 
 type UserPage = Database['public']['Enums']['user_page'];
@@ -58,7 +59,43 @@ const PAGE_LABELS: Record<UserPage, string> = {
   'kpis': 'AI Agents',
   'charts': 'Performance',
   'tables': 'Tables',
-  'exports': 'Exports'
+  'exports': 'Exports',
+  'ai-agents': 'AI Agents',
+  'performance': 'Performance'
+};
+
+const CHARTS: ChartType[] = [
+  'kpi_total_investido',
+  'kpi_receita',
+  'kpi_ticket_medio',
+  'kpi_total_pedidos',
+  'creative_performance_chart',
+  'creative_sales_chart',
+  'sales_summary_cards',
+  'sales_chart',
+  'country_sales_chart',
+  'state_sales_chart',
+  'affiliate_chart',
+  'subscription_renewals_chart',
+  'subscription_status_chart',
+  'new_subscribers_chart'
+];
+
+const CHART_LABELS: Record<ChartType, string> = {
+  'kpi_total_investido': 'KPI - Total Investido',
+  'kpi_receita': 'KPI - Receita',
+  'kpi_ticket_medio': 'KPI - Ticket Médio',
+  'kpi_total_pedidos': 'KPI - Total de Pedidos',
+  'creative_performance_chart': 'Gráfico - Performance Criativa',
+  'creative_sales_chart': 'Gráfico - Vendas Criativas',
+  'sales_summary_cards': 'Cards - Resumo de Vendas',
+  'sales_chart': 'Gráfico - Vendas',
+  'country_sales_chart': 'Gráfico - Vendas por País',
+  'state_sales_chart': 'Gráfico - Vendas por Estado',
+  'affiliate_chart': 'Gráfico - Afiliados',
+  'subscription_renewals_chart': 'Gráfico - Renovações',
+  'subscription_status_chart': 'Gráfico - Status de Assinaturas',
+  'new_subscribers_chart': 'Gráfico - Novos Assinantes'
 };
 
 // Chart permissions removed - now controlled by page permissions only
@@ -76,7 +113,8 @@ export const UserForm: React.FC<UserFormProps> = ({
     email: '',
     username: '',
     role: 'user' as AppRole,
-    permissions: {} as Record<UserPage, boolean>
+    permissions: {} as Record<UserPage, boolean>,
+    chartPermissions: {} as Record<ChartType, boolean>
   });
 
   useEffect(() => {
@@ -89,14 +127,20 @@ export const UserForm: React.FC<UserFormProps> = ({
           return acc;
         }, {} as Record<UserPage, boolean>);
 
-        // Chart permissions removed - now controlled by page permissions
+        // Create a complete chart permissions object
+        const userChartPermissions = CHARTS.reduce((acc, chart) => {
+          const permission = user.user_chart_permissions?.find(p => p.chart_type === chart);
+          acc[chart] = permission?.can_access || false;
+          return acc;
+        }, {} as Record<ChartType, boolean>);
 
         setFormData({
           full_name: user.full_name || '',
           email: user.email || '',
           username: user.username || '',
           role: user.role,
-          permissions: userPermissions
+          permissions: userPermissions,
+          chartPermissions: userChartPermissions
         });
       } else {
         // Default permissions for new users - ensure all pages are included
@@ -105,12 +149,19 @@ export const UserForm: React.FC<UserFormProps> = ({
           return acc;
         }, {} as Record<UserPage, boolean>);
 
+        // Default chart permissions for new users - all false
+        const defaultChartPermissions = CHARTS.reduce((acc, chart) => {
+          acc[chart] = false;
+          return acc;
+        }, {} as Record<ChartType, boolean>);
+
         setFormData({
           full_name: '',
           email: '',
           username: '',
           role: 'user',
-          permissions: defaultPermissions
+          permissions: defaultPermissions,
+          chartPermissions: defaultChartPermissions
         });
       }
     };
@@ -155,7 +206,16 @@ export const UserForm: React.FC<UserFormProps> = ({
           if (permError) throw permError;
         }
 
-        // Chart permissions removed - now controlled by page permissions
+        // Update chart permissions
+        for (const chart of CHARTS) {
+          const { error: chartPermError } = await supabase
+            .from('user_chart_permissions')
+            .update({ can_access: formData.chartPermissions[chart] })
+            .eq('user_id', user.id)
+            .eq('chart_type', chart);
+
+          if (chartPermError) throw chartPermError;
+        }
 
         toast({
           title: "Sucesso!",
@@ -213,7 +273,18 @@ export const UserForm: React.FC<UserFormProps> = ({
 
         if (permError) throw permError;
 
-        // Chart permissions removed - now controlled by page permissions
+        // Set chart permissions
+        const chartPermissionInserts = CHARTS.map(chart => ({
+          user_id: userId,
+          chart_type: chart as ChartType,
+          can_access: formData.chartPermissions[chart as ChartType]
+        }));
+
+        const { error: chartPermError } = await supabase
+          .from('user_chart_permissions')
+          .insert(chartPermissionInserts);
+
+        if (chartPermError) throw chartPermError;
 
         toast({
           title: "Sucesso!",
@@ -252,6 +323,24 @@ export const UserForm: React.FC<UserFormProps> = ({
     }, {} as Record<UserPage, boolean>);
     
     setFormData(prev => ({ ...prev, permissions: allDeselected }));
+  };
+
+  const handleSelectAllCharts = () => {
+    const allSelected = CHARTS.reduce((acc, chart) => {
+      acc[chart] = true;
+      return acc;
+    }, {} as Record<ChartType, boolean>);
+    
+    setFormData(prev => ({ ...prev, chartPermissions: allSelected }));
+  };
+
+  const handleDeselectAllCharts = () => {
+    const allDeselected = CHARTS.reduce((acc, chart) => {
+      acc[chart] = false;
+      return acc;
+    }, {} as Record<ChartType, boolean>);
+    
+    setFormData(prev => ({ ...prev, chartPermissions: allDeselected }));
   };
 
   // Chart permissions functions removed - now controlled by page permissions
@@ -379,6 +468,55 @@ export const UserForm: React.FC<UserFormProps> = ({
                   </div>
                 ))}
               </div>
+            </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <Label className="text-white">Permissões de Gráficos</Label>
+                  <div className="space-x-2">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleSelectAllCharts}
+                      className="border-neutral-700 text-white hover:bg-neutral-800"
+                    >
+                      Marcar Tudo
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleDeselectAllCharts}
+                      className="border-neutral-700 text-white hover:bg-neutral-800"
+                    >
+                      Desmarcar Tudo
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="space-y-3 max-h-60 overflow-y-auto">
+                  {CHARTS.map((chart) => (
+                    <div key={chart} className="flex items-center justify-between">
+                      <Label htmlFor={chart} className="text-white text-sm">
+                        {CHART_LABELS[chart]}
+                      </Label>
+                      <Switch
+                        id={chart}
+                        checked={formData.chartPermissions[chart] || false}
+                        onCheckedChange={(checked) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            chartPermissions: {
+                              ...prev.chartPermissions,
+                              [chart]: checked
+                            }
+                          }));
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
             </div>
           </div>
 

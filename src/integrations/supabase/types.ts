@@ -416,6 +416,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          is_active: boolean
           updated_at: string | null
           username: string | null
         }
@@ -425,6 +426,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          is_active?: boolean
           updated_at?: string | null
           username?: string | null
         }
@@ -434,6 +436,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          is_active?: boolean
           updated_at?: string | null
           username?: string | null
         }
@@ -601,6 +604,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_chart_permissions: {
+        Row: {
+          can_access: boolean
+          chart_type: Database["public"]["Enums"]["chart_type"]
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          can_access?: boolean
+          chart_type: Database["public"]["Enums"]["chart_type"]
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          can_access?: boolean
+          chart_type?: Database["public"]["Enums"]["chart_type"]
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_page_permissions: {
         Row: {
           can_access: boolean | null
@@ -668,6 +695,10 @@ export type Database = {
         Args: { user_email: string }
         Returns: undefined
       }
+      assign_default_chart_permissions: {
+        Args: { user_id_param: string }
+        Returns: undefined
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
@@ -709,6 +740,21 @@ export type Database = {
       agent_conversation_status: "active" | "archived"
       agent_message_role: "user" | "assistant"
       app_role: "admin" | "user" | "business_manager"
+      chart_type:
+        | "kpi_total_investido"
+        | "kpi_receita"
+        | "kpi_ticket_medio"
+        | "kpi_total_pedidos"
+        | "creative_performance_chart"
+        | "creative_sales_chart"
+        | "sales_summary_cards"
+        | "sales_chart"
+        | "country_sales_chart"
+        | "state_sales_chart"
+        | "affiliate_chart"
+        | "subscription_renewals_chart"
+        | "subscription_status_chart"
+        | "new_subscribers_chart"
       subscription_event_type:
         | "subscription"
         | "cancellation"
@@ -728,6 +774,8 @@ export type Database = {
         | "charts"
         | "tables"
         | "exports"
+        | "ai-agents"
+        | "performance"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -858,6 +906,22 @@ export const Constants = {
       agent_conversation_status: ["active", "archived"],
       agent_message_role: ["user", "assistant"],
       app_role: ["admin", "user", "business_manager"],
+      chart_type: [
+        "kpi_total_investido",
+        "kpi_receita",
+        "kpi_ticket_medio",
+        "kpi_total_pedidos",
+        "creative_performance_chart",
+        "creative_sales_chart",
+        "sales_summary_cards",
+        "sales_chart",
+        "country_sales_chart",
+        "state_sales_chart",
+        "affiliate_chart",
+        "subscription_renewals_chart",
+        "subscription_status_chart",
+        "new_subscribers_chart",
+      ],
       subscription_event_type: [
         "subscription",
         "cancellation",
@@ -878,6 +942,8 @@ export const Constants = {
         "charts",
         "tables",
         "exports",
+        "ai-agents",
+        "performance",
       ],
     },
   },
