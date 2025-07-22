@@ -89,48 +89,59 @@ export const UserForm: React.FC<UserFormProps> = ({
   });
 
   useEffect(() => {
-    if (user) {
-      // Create a complete permissions object with all pages
-      const userPermissions = PAGES.reduce((acc, page) => {
-        const permission = user.user_page_permissions?.find(p => p.page === page);
-        acc[page] = permission?.can_access || false;
-        return acc;
-      }, {} as Record<UserPage, boolean>);
+    const loadUserData = async () => {
+      if (user) {
+        // Create a complete permissions object with all pages
+        const userPermissions = PAGES.reduce((acc, page) => {
+          const permission = user.user_page_permissions?.find(p => p.page === page);
+          acc[page] = permission?.can_access || false;
+          return acc;
+        }, {} as Record<UserPage, boolean>);
 
-      const defaultChartPermissions = CHART_PERMISSIONS.reduce((acc, chart) => {
-        acc[chart.id] = true;
-        return acc;
-      }, {} as Record<string, boolean>);
+        // Fetch chart permissions for existing user
+        const { data: chartPerms } = await supabase
+          .from('user_chart_permissions')
+          .select('chart_id, can_access')
+          .eq('user_id', user.id);
 
-      setFormData({
-        full_name: user.full_name || '',
-        email: user.email || '',
-        username: user.username || '',
-        role: user.role,
-        permissions: userPermissions,
-        chartPermissions: defaultChartPermissions
-      });
-    } else {
-      // Default permissions for new users - ensure all pages are included
-      const defaultPermissions = PAGES.reduce((acc, page) => {
-        acc[page] = page !== 'users'; // All pages except users
-        return acc;
-      }, {} as Record<UserPage, boolean>);
+        const userChartPermissions = CHART_PERMISSIONS.reduce((acc, chart) => {
+          const permission = chartPerms?.find(p => p.chart_id === chart.id);
+          acc[chart.id] = permission?.can_access || false;
+          return acc;
+        }, {} as Record<string, boolean>);
 
-      const defaultChartPermissions = CHART_PERMISSIONS.reduce((acc, chart) => {
-        acc[chart.id] = true;
-        return acc;
-      }, {} as Record<string, boolean>);
+        setFormData({
+          full_name: user.full_name || '',
+          email: user.email || '',
+          username: user.username || '',
+          role: user.role,
+          permissions: userPermissions,
+          chartPermissions: userChartPermissions
+        });
+      } else {
+        // Default permissions for new users - ensure all pages are included
+        const defaultPermissions = PAGES.reduce((acc, page) => {
+          acc[page] = page !== 'users'; // All pages except users
+          return acc;
+        }, {} as Record<UserPage, boolean>);
 
-      setFormData({
-        full_name: '',
-        email: '',
-        username: '',
-        role: 'user',
-        permissions: defaultPermissions,
-        chartPermissions: defaultChartPermissions
-      });
-    }
+        const defaultChartPermissions = CHART_PERMISSIONS.reduce((acc, chart) => {
+          acc[chart.id] = true;
+          return acc;
+        }, {} as Record<string, boolean>);
+
+        setFormData({
+          full_name: '',
+          email: '',
+          username: '',
+          role: 'user',
+          permissions: defaultPermissions,
+          chartPermissions: defaultChartPermissions
+        });
+      }
+    };
+
+    loadUserData();
   }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -168,6 +179,19 @@ export const UserForm: React.FC<UserFormProps> = ({
             .eq('page', pageTyped);
 
           if (permError) throw permError;
+        }
+
+        // Update chart permissions
+        for (const chart of CHART_PERMISSIONS) {
+          const { error: chartPermError } = await supabase
+            .from('user_chart_permissions')
+            .upsert({
+              user_id: user.id,
+              chart_id: chart.id,
+              can_access: formData.chartPermissions[chart.id]
+            });
+
+          if (chartPermError) throw chartPermError;
         }
 
         toast({
@@ -225,6 +249,19 @@ export const UserForm: React.FC<UserFormProps> = ({
           .insert(permissionInserts);
 
         if (permError) throw permError;
+
+        // Set chart permissions
+        const chartPermissionInserts = CHART_PERMISSIONS.map(chart => ({
+          user_id: userId,
+          chart_id: chart.id,
+          can_access: formData.chartPermissions[chart.id]
+        }));
+
+        const { error: chartPermError } = await supabase
+          .from('user_chart_permissions')
+          .insert(chartPermissionInserts);
+
+        if (chartPermError) throw chartPermError;
 
         toast({
           title: "Sucesso!",
