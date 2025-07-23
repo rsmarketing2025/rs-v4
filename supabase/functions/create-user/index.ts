@@ -137,6 +137,9 @@ serve(async (req) => {
 
     console.log('User created successfully:', userData.user.id)
 
+    // Wait a bit for trigger to complete
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     // Update profile with additional information
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
@@ -151,7 +154,7 @@ serve(async (req) => {
       console.warn('Profile update failed but user was created')
     }
 
-    // Set user role
+    // Set user role (update the default 'user' role created by trigger)
     const { error: roleUpdateError } = await supabaseAdmin
       .from('user_roles')
       .update({ role: formData.role })
@@ -161,6 +164,17 @@ serve(async (req) => {
       console.error('Error updating role:', roleUpdateError)
       console.warn('Role update failed but user was created')
     }
+
+    // Delete any existing permissions to avoid conflicts before inserting new ones
+    await supabaseAdmin
+      .from('user_page_permissions')
+      .delete()
+      .eq('user_id', userData.user.id);
+
+    await supabaseAdmin
+      .from('user_chart_permissions')
+      .delete()
+      .eq('user_id', userData.user.id);
 
     // Set page permissions - insert all pages with their respective access values
     const pagePermissions = Object.entries(formData.pagePermissions || {})
