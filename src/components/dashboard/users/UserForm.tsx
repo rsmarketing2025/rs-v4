@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { UserWithPermissions } from './types';
 import { ChartType, useChartPermissions } from '@/hooks/useChartPermissions';
 import type { Database } from '@/integrations/supabase/types';
+import { PasswordResetDialog } from './PasswordResetDialog';
 
 type UserPage = Database['public']['Enums']['user_page'];
 type AppRole = Database['public']['Enums']['app_role'];
@@ -109,6 +110,7 @@ export const UserForm: React.FC<UserFormProps> = ({
   const { toast } = useToast();
   const { refreshChartPermissions } = useChartPermissions();
   const [loading, setLoading] = useState(false);
+  const [isPasswordResetOpen, setIsPasswordResetOpen] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
@@ -515,6 +517,7 @@ export const UserForm: React.FC<UserFormProps> = ({
             <Button 
               type="button" 
               variant="outline" 
+              onClick={() => setIsPasswordResetOpen(true)}
               className="w-full border-neutral-700 text-white hover:bg-neutral-800"
             >
               🔒 Redefinir Senha
@@ -631,6 +634,16 @@ export const UserForm: React.FC<UserFormProps> = ({
           </div>
         </form>
       </DialogContent>
+      
+      {/* Password Reset Dialog */}
+      {user && (
+        <PasswordResetDialog
+          isOpen={isPasswordResetOpen}
+          onClose={() => setIsPasswordResetOpen(false)}
+          userId={user.id}
+          userName={user.full_name || user.email || 'Usuario'}
+        />
+      )}
     </Dialog>
   );
 };
