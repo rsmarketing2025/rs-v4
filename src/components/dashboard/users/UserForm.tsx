@@ -21,7 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from "@/hooks/use-toast";
 import { UserWithPermissions } from './types';
-import { ChartType } from '@/hooks/useChartPermissions';
+import { ChartType, useChartPermissions } from '@/hooks/useChartPermissions';
 import type { Database } from '@/integrations/supabase/types';
 
 type UserPage = Database['public']['Enums']['user_page'];
@@ -107,6 +107,7 @@ export const UserForm: React.FC<UserFormProps> = ({
   onUserUpdate 
 }) => {
   const { toast } = useToast();
+  const { refreshChartPermissions } = useChartPermissions();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
@@ -175,7 +176,10 @@ export const UserForm: React.FC<UserFormProps> = ({
 
     try {
       if (user) {
-        // Update existing user
+        console.log('🔄 Starting user update for:', user.id);
+        console.log('📊 Chart permissions to update:', formData.chartPermissions);
+
+        // Use a transaction-like approach to ensure all updates succeed
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
@@ -184,7 +188,11 @@ export const UserForm: React.FC<UserFormProps> = ({
           })
           .eq('id', user.id);
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error('❌ Profile update error:', profileError);
+          throw profileError;
+        }
+        console.log('✅ Profile updated successfully');
 
         // Update role
         const { error: roleError } = await supabase
@@ -192,30 +200,116 @@ export const UserForm: React.FC<UserFormProps> = ({
           .update({ role: formData.role })
           .eq('user_id', user.id);
 
-        if (roleError) throw roleError;
+        if (roleError) {
+          console.error('❌ Role update error:', roleError);
+          throw roleError;
+        }
+        console.log('✅ Role updated successfully');
 
-        // Update permissions
+        // Update page permissions
+        console.log('🔄 Updating page permissions...');
         for (const page of PAGES) {
           const pageTyped = page as UserPage;
-          const { error: permError } = await supabase
+          console.log(`📄 Updating page permission for ${page}:`, formData.permissions[pageTyped]);
+          
+          const { error: permError, data: permData } = await supabase
             .from('user_page_permissions')
             .update({ can_access: formData.permissions[pageTyped] })
             .eq('user_id', user.id)
-            .eq('page', pageTyped);
+            .eq('page', pageTyped)
+            .select();
 
-          if (permError) throw permError;
+          if (permError) {
+            console.error(`❌ Page permission update error for ${page}:`, permError);
+            throw permError;
+          }
+          
+          console.log(`✅ Page permission updated for ${page}:`, permData);
         }
 
-        // Update chart permissions
+        // Update chart permissions with detailed logging and validation
+        console.log('🔄 Updating chart permissions...');
+        const chartUpdateResults = [];
+        
         for (const chart of CHARTS) {
-          const { error: chartPermError } = await supabase
+          const newValue = formData.chartPermissions[chart];
+          console.log(`📊 Updating chart permission for ${chart}:`, newValue);
+          
+          // First, verify current value in database
+          const { data: currentData, error: selectError } = await supabase
             .from('user_chart_permissions')
-            .update({ can_access: formData.chartPermissions[chart] })
+            .select('can_access')
             .eq('user_id', user.id)
-            .eq('chart_type', chart);
+            .eq('chart_type', chart)
+            .single();
 
-          if (chartPermError) throw chartPermError;
+          if (selectError) {
+            console.error(`❌ Failed to fetch current chart permission for ${chart}:`, selectError);
+            throw selectError;
+          }
+
+          console.log(`📊 Current value for ${chart}:`, currentData?.can_access, '→ New value:', newValue);
+
+          // Only update if value actually changed
+          if (currentData?.can_access !== newValue) {
+            const { error: chartPermError, data: chartPermData } = await supabase
+              .from('user_chart_permissions')
+              .update({ can_access: newValue })
+              .eq('user_id', user.id)
+              .eq('chart_type', chart)
+              .select();
+
+            if (chartPermError) {
+              console.error(`❌ Chart permission update error for ${chart}:`, chartPermError);
+              throw chartPermError;
+            }
+
+            console.log(`✅ Chart permission updated for ${chart}:`, chartPermData);
+            chartUpdateResults.push({ chart, oldValue: currentData?.can_access, newValue, success: true });
+          } else {
+            console.log(`⏭️ No change needed for ${chart}`);
+            chartUpdateResults.push({ chart, oldValue: currentData?.can_access, newValue, success: true, skipped: true });
+          }
         }
+
+        // Verify all chart permissions were actually updated
+        console.log('🔍 Verifying chart permissions were saved...');
+        const { data: verificationData, error: verificationError } = await supabase
+          .from('user_chart_permissions')
+          .select('chart_type, can_access')
+          .eq('user_id', user.id);
+
+        if (verificationError) {
+          console.error('❌ Verification error:', verificationError);
+          throw verificationError;
+        }
+
+        console.log('📊 Final chart permissions in database:', verificationData);
+        
+        // Check if any updates failed to persist
+        const failedUpdates = [];
+        for (const chart of CHARTS) {
+          const expectedValue = formData.chartPermissions[chart];
+          const actualValue = verificationData?.find(p => p.chart_type === chart)?.can_access;
+          
+          if (expectedValue !== actualValue) {
+            failedUpdates.push({ chart, expected: expectedValue, actual: actualValue });
+          }
+        }
+
+        if (failedUpdates.length > 0) {
+          console.error('❌ Chart permission verification failed:', failedUpdates);
+          throw new Error(`Failed to update chart permissions: ${failedUpdates.map(f => f.chart).join(', ')}`);
+        }
+
+        console.log('✅ All chart permissions verified successfully');
+        console.log('📊 Chart update results:', chartUpdateResults);
+
+        // Trigger chart permissions refresh in the global hook
+        setTimeout(() => {
+          console.log('🔄 Triggering chart permissions refresh after update');
+          refreshChartPermissions();
+        }, 1000);
 
         toast({
           title: "Sucesso!",

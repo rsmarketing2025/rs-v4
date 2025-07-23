@@ -137,6 +137,18 @@ export const useChartPermissions = () => {
     fetchChartPermissions();
   }, [fetchChartPermissions]);
 
+  // Auto-refresh permissions every 30 seconds to catch updates from other sources
+  useEffect(() => {
+    if (!user) return;
+    
+    const interval = setInterval(() => {
+      console.log('🔄 Auto-refreshing chart permissions');
+      fetchChartPermissions();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [user, fetchChartPermissions]);
+
   return {
     chartPermissions,
     loading,
