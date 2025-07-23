@@ -13,6 +13,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<{ user: User; session: Session; } | { user: null; session: null; }>;
+  checkUserActiveStatus: (userId: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   signUp: async () => ({ error: null }),
   signOut: async () => {},
   refreshSession: async () => ({ user: null, session: null }),
+  checkUserActiveStatus: async () => false,
 });
 
 export const useAuth = () => {
@@ -61,6 +63,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const checkUserActiveStatus = async (userId: string): Promise<boolean> => {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('is_active')
+        .eq('id', userId)
+        .single();
+      
+      return data?.is_active || false;
+    } catch (error) {
+      console.log('Error checking user active status:', error);
+      return false;
+    }
+  };
+
   const refreshSession = async () => {
     try {
       const { data, error } = await supabase.auth.refreshSession();
@@ -90,9 +107,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Check admin status after setting session
-          setTimeout(() => {
+          // Check both admin status and active status
+          setTimeout(async () => {
             checkAdminStatus(session.user.id);
+            
+            // Check if user is active
+            const isActive = await checkUserActiveStatus(session.user.id);
+            if (!isActive) {
+              toast({
+                title: "Conta Inativa",
+                description: "Sua conta foi desativada. Entre em contato com o administrador.",
+                variant: "destructive",
+              });
+              await signOut();
+              return;
+            }
           }, 0);
 
           // Set up token refresh timer (refresh 5 minutes before expiry)
@@ -163,10 +192,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, [toast]);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    
+    // Check user active status after successful login
+    if (!error && data.user) {
+      const isActive = await checkUserActiveStatus(data.user.id);
+      if (!isActive) {
+        await supabase.auth.signOut();
+        return { 
+          error: { 
+            message: "Sua conta foi desativada. Entre em contato com o administrador." 
+          } 
+        };
+      }
+    }
     
     // Show welcome message only on successful login from auth page
     if (!error && window.location.pathname === '/auth') {
@@ -213,6 +255,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signUp,
     signOut,
     refreshSession,
+    checkUserActiveStatus,
   };
 
   return (

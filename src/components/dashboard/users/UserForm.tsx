@@ -115,6 +115,7 @@ export const UserForm: React.FC<UserFormProps> = ({
     username: '',
     password: '',
     role: 'user' as AppRole,
+    is_active: true,
     permissions: {} as Record<UserPage, boolean>,
     chartPermissions: {} as Record<ChartType, boolean>
   });
@@ -142,6 +143,7 @@ export const UserForm: React.FC<UserFormProps> = ({
           username: user.username || '',
           password: '', // Not used for existing users
           role: user.role,
+          is_active: user.is_active || false,
           permissions: userPermissions,
           chartPermissions: userChartPermissions
         });
@@ -164,6 +166,7 @@ export const UserForm: React.FC<UserFormProps> = ({
           username: '',
           password: '',
           role: 'user',
+          is_active: true,
           permissions: defaultPermissions,
           chartPermissions: defaultChartPermissions
         });
@@ -188,6 +191,7 @@ export const UserForm: React.FC<UserFormProps> = ({
           .update({
             full_name: formData.full_name,
             username: formData.username,
+            is_active: formData.is_active,
           })
           .eq('id', user.id);
 
@@ -329,6 +333,7 @@ export const UserForm: React.FC<UserFormProps> = ({
           fullName: formData.full_name, // Edge function expects fullName
           username: formData.username,
           role: formData.role,
+          isActive: formData.is_active,
           pagePermissions: formData.permissions,
           chartPermissions: formData.chartPermissions
         };
@@ -483,12 +488,28 @@ export const UserForm: React.FC<UserFormProps> = ({
             </Select>
           </div>
 
-          {user && (
-            <div className="flex items-center space-x-2 p-3 bg-neutral-800 rounded-lg">
-              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-              <span className="text-white text-sm">Status: Usuário Ativo</span>
+          <div className="space-y-3">
+            <Label className="text-white">Status da Conta</Label>
+            <div className="flex items-center justify-between p-3 bg-neutral-800 rounded-lg">
+              <div className="flex items-center space-x-3">
+                <div className={`w-3 h-3 rounded-full ${formData.is_active ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="text-white text-sm">
+                  {formData.is_active ? 'Usuário Ativo' : 'Usuário Inativo'}
+                </span>
+              </div>
+              <Switch
+                checked={formData.is_active}
+                onCheckedChange={(checked) => {
+                  setFormData(prev => ({ ...prev, is_active: checked }));
+                }}
+              />
             </div>
-          )}
+            {!formData.is_active && (
+              <p className="text-red-400 text-xs">
+                Usuários inativos não conseguirão fazer login no sistema
+              </p>
+            )}
+          </div>
 
           {user && (
             <Button 

@@ -11,7 +11,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit, Trash2, Eye } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye, Power } from "lucide-react";
 import { UserForm } from "./UserForm";
 import { DeleteUserDialog } from "./DeleteUserDialog";
 import { UserDetailModal } from "./UserDetailModal";
@@ -154,6 +154,39 @@ export const UserList: React.FC<UserListProps> = ({
     }
   };
 
+  const toggleUserActiveStatus = async (user: UserWithPermissions) => {
+    const newStatus = !user.is_active;
+    
+    // Show confirmation for deactivation
+    if (!newStatus && !confirm(`Tem certeza que deseja ${newStatus ? 'ativar' : 'desativar'} o usuário ${user.full_name}?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_active: newStatus })
+        .eq('id', user.id);
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Sucesso!",
+        description: `Usuário ${newStatus ? 'ativado' : 'desativado'} com sucesso.`,
+      });
+
+      handleUserUpdate();
+    } catch (error: any) {
+      toast({
+        title: "Erro!",
+        description: `Falha ao ${newStatus ? 'ativar' : 'desativar'} usuário: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleEditUser = (user: UserWithPermissions) => {
     console.log('✏️ Editando usuário:', user);
     setSelectedUser(user);
@@ -207,6 +240,7 @@ export const UserList: React.FC<UserListProps> = ({
               <TableHead className="text-slate-300">Nome</TableHead>
               <TableHead className="text-slate-300">Email</TableHead>
               <TableHead className="text-slate-300">Função</TableHead>
+              <TableHead className="text-slate-300">Status</TableHead>
               <TableHead className="text-slate-300">Criado em</TableHead>
               <TableHead className="text-slate-300 text-center">Ações</TableHead>
             </TableRow>
@@ -214,7 +248,7 @@ export const UserList: React.FC<UserListProps> = ({
           <TableBody>
             {filteredUsers.length === 0 ? (
               <TableRow className="border-slate-700">
-                <TableCell colSpan={5} className="text-center text-slate-400 py-8">
+                <TableCell colSpan={6} className="text-center text-slate-400 py-8">
                   {searchTerm ? 'Nenhum usuário encontrado com esse critério' : 'Nenhum usuário encontrado'}
                 </TableCell>
               </TableRow>
@@ -232,6 +266,14 @@ export const UserList: React.FC<UserListProps> = ({
                       {user.role === 'admin' ? 'Administrador' : 
                        user.role === 'business_manager' ? 'Gestor de Negócios' : 'Usuário'}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-2 h-2 rounded-full ${user.is_active ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                      <span className={`text-sm ${user.is_active ? 'text-green-400' : 'text-red-400'}`}>
+                        {user.is_active ? 'Ativo' : 'Inativo'}
+                      </span>
+                    </div>
                   </TableCell>
                   <TableCell className="text-slate-300">
                     {new Date(user.created_at || '').toLocaleDateString('pt-BR')}
@@ -252,6 +294,15 @@ export const UserList: React.FC<UserListProps> = ({
                       </Button>
                       {hasManagePermission && (
                         <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toggleUserActiveStatus(user)}
+                            className={`${user.is_active ? 'text-orange-400 border-orange-600 hover:bg-orange-600/20' : 'text-green-400 border-green-600 hover:bg-green-600/20'}`}
+                            title={user.is_active ? 'Desativar usuário' : 'Ativar usuário'}
+                          >
+                            <Power className="w-4 h-4" />
+                          </Button>
                           <Button
                             variant="outline" 
                             size="sm"
