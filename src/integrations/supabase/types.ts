@@ -373,6 +373,63 @@ export type Database = {
         }
         Relationships: []
       }
+      estrutura_invisivel: {
+        Row: {
+          ativo: boolean | null
+          categoria: string | null
+          conteudo: string
+          created_at: string | null
+          embedding: string | null
+          fonte: string | null
+          id: string
+          nicho: string | null
+          nivel_persuasao: number | null
+          publico_alvo: string | null
+          tags: string[] | null
+          taxa_conversao: number | null
+          tipo_estrutura: string | null
+          titulo: string
+          tom: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          categoria?: string | null
+          conteudo: string
+          created_at?: string | null
+          embedding?: string | null
+          fonte?: string | null
+          id?: string
+          nicho?: string | null
+          nivel_persuasao?: number | null
+          publico_alvo?: string | null
+          tags?: string[] | null
+          taxa_conversao?: number | null
+          tipo_estrutura?: string | null
+          titulo: string
+          tom?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          categoria?: string | null
+          conteudo?: string
+          created_at?: string | null
+          embedding?: string | null
+          fonte?: string | null
+          id?: string
+          nicho?: string | null
+          nivel_persuasao?: number | null
+          publico_alvo?: string | null
+          tags?: string[] | null
+          taxa_conversao?: number | null
+          tipo_estrutura?: string | null
+          titulo?: string
+          tom?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       product_sales: {
         Row: {
           created_at: string
@@ -699,6 +756,10 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: undefined
       }
+      binary_quantize: {
+        Args: { "": string } | { "": unknown }
+        Returns: unknown
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
@@ -720,6 +781,58 @@ export type Database = {
           delta_retention: number
         }[]
       }
+      halfvec_avg: {
+        Args: { "": number[] }
+        Returns: unknown
+      }
+      halfvec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      halfvec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      halfvec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
+      hnsw_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_sparsevec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnswhandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflat_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflat_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflathandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      l2_norm: {
+        Args: { "": unknown } | { "": unknown }
+        Returns: number
+      }
+      l2_normalize: {
+        Args: { "": string } | { "": unknown } | { "": unknown }
+        Returns: unknown
+      }
       rpc_get_revenue: {
         Args: { start_ts: string; end_ts: string }
         Returns: number
@@ -731,9 +844,45 @@ export type Database = {
           revenue: number
         }[]
       }
+      sparsevec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      sparsevec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      sparsevec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
       user_has_page_access: {
         Args: { page_name: Database["public"]["Enums"]["user_page"] }
         Returns: boolean
+      }
+      vector_avg: {
+        Args: { "": number[] }
+        Returns: string
+      }
+      vector_dims: {
+        Args: { "": string } | { "": unknown }
+        Returns: number
+      }
+      vector_norm: {
+        Args: { "": string }
+        Returns: number
+      }
+      vector_out: {
+        Args: { "": string }
+        Returns: unknown
+      }
+      vector_send: {
+        Args: { "": string }
+        Returns: string
+      }
+      vector_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
       }
     }
     Enums: {
