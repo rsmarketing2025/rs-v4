@@ -113,6 +113,7 @@ export const UserForm: React.FC<UserFormProps> = ({
     full_name: '',
     email: '',
     username: '',
+    password: '',
     role: 'user' as AppRole,
     permissions: {} as Record<UserPage, boolean>,
     chartPermissions: {} as Record<ChartType, boolean>
@@ -139,6 +140,7 @@ export const UserForm: React.FC<UserFormProps> = ({
           full_name: user.full_name || '',
           email: user.email || '',
           username: user.username || '',
+          password: '', // Not used for existing users
           role: user.role,
           permissions: userPermissions,
           chartPermissions: userChartPermissions
@@ -160,6 +162,7 @@ export const UserForm: React.FC<UserFormProps> = ({
           full_name: '',
           email: '',
           username: '',
+          password: '',
           role: 'user',
           permissions: defaultPermissions,
           chartPermissions: defaultChartPermissions
@@ -316,69 +319,37 @@ export const UserForm: React.FC<UserFormProps> = ({
           description: "Usuário atualizado com sucesso.",
         });
       } else {
-        // Create new user via Supabase Auth
-        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        // Create new user via edge function
+        console.log('🔄 Creating new user via edge function');
+        
+        // Prepare data for edge function
+        const createUserData = {
           email: formData.email,
-          email_confirm: true,
-          user_metadata: {
-            full_name: formData.full_name,
-            username: formData.username,
-            role: formData.role
-          }
+          password: formData.password,
+          fullName: formData.full_name, // Edge function expects fullName
+          username: formData.username,
+          role: formData.role,
+          pagePermissions: formData.permissions,
+          chartPermissions: formData.chartPermissions
+        };
+
+        console.log('📊 Sending user creation data:', createUserData);
+
+        const { data: response, error: createError } = await supabase.functions.invoke('create-user', {
+          body: { formData: createUserData }
         });
 
-        if (authError) throw authError;
+        if (createError) {
+          console.error('❌ Edge function error:', createError);
+          throw new Error(`Falha ao criar usuário: ${createError.message}`);
+        }
 
-        const userId = authData.user?.id;
-        if (!userId) throw new Error('Failed to create user');
+        if (!response?.success) {
+          console.error('❌ User creation failed:', response);
+          throw new Error(response?.error || 'Falha ao criar usuário');
+        }
 
-        // Create profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: userId,
-            full_name: formData.full_name,
-            email: formData.email,
-            username: formData.username,
-          });
-
-        if (profileError) throw profileError;
-
-        // Set role
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: userId,
-            role: formData.role,
-          });
-
-        if (roleError) throw roleError;
-
-        // Set permissions
-        const permissionInserts = PAGES.map(page => ({
-          user_id: userId,
-          page: page as UserPage,
-          can_access: formData.permissions[page as UserPage]
-        }));
-
-        const { error: permError } = await supabase
-          .from('user_page_permissions')
-          .insert(permissionInserts);
-
-        if (permError) throw permError;
-
-        // Set chart permissions
-        const chartPermissionInserts = CHARTS.map(chart => ({
-          user_id: userId,
-          chart_type: chart as ChartType,
-          can_access: formData.chartPermissions[chart as ChartType]
-        }));
-
-        const { error: chartPermError } = await supabase
-          .from('user_chart_permissions')
-          .insert(chartPermissionInserts);
-
-        if (chartPermError) throw chartPermError;
+        console.log('✅ User created successfully via edge function');
 
         toast({
           title: "Sucesso!",
@@ -482,6 +453,21 @@ export const UserForm: React.FC<UserFormProps> = ({
               className="bg-neutral-800 border-neutral-700 text-white disabled:text-gray-400"
             />
           </div>
+
+          {!user && (
+            <div>
+              <Label htmlFor="password" className="text-white">Senha</Label>
+              <Input
+                id="password"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                required
+                className="bg-neutral-800 border-neutral-700 text-white"
+                placeholder="Digite uma senha para o usuário"
+              />
+            </div>
+          )}
 
           <div>
             <Label htmlFor="role" className="text-white">Role</Label>

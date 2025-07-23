@@ -155,29 +155,41 @@ serve(async (req) => {
       console.warn('Role update failed but user was created')
     }
 
-    // Set page permissions
+    // Set page permissions - insert all pages with their respective access values
     const pagePermissions = Object.entries(formData.pagePermissions || {})
-      .filter(([_, canAccess]) => canAccess)
       .map(([page, canAccess]) => ({
         user_id: userData.user.id,
-        page: page as 'creatives' | 'sales' | 'affiliates' | 'revenue' | 'users',
-        can_access: canAccess
-      }))
+        page: page as 'creatives' | 'sales' | 'affiliates' | 'revenue' | 'users' | 'business-managers' | 'subscriptions' | 'kpis' | 'charts' | 'tables' | 'exports',
+        can_access: Boolean(canAccess)
+      }));
 
     if (pagePermissions.length > 0) {
-      // Delete existing permissions first
-      await supabaseAdmin
-        .from('user_page_permissions')
-        .delete()
-        .eq('user_id', userData.user.id)
-
       const { error: pagePermError } = await supabaseAdmin
         .from('user_page_permissions')
-        .insert(pagePermissions)
+        .insert(pagePermissions);
 
       if (pagePermError) {
-        console.error('Error setting page permissions:', pagePermError)
-        console.warn('Page permissions update failed but user was created')
+        console.error('Error setting page permissions:', pagePermError);
+        console.warn('Page permissions update failed but user was created');
+      }
+    }
+
+    // Set chart permissions - insert all charts with their respective access values  
+    const chartPermissions = Object.entries(formData.chartPermissions || {})
+      .map(([chart, canAccess]) => ({
+        user_id: userData.user.id,
+        chart_type: chart,
+        can_access: Boolean(canAccess)
+      }));
+
+    if (chartPermissions.length > 0) {
+      const { error: chartPermError } = await supabaseAdmin
+        .from('user_chart_permissions')
+        .insert(chartPermissions);
+
+      if (chartPermError) {
+        console.error('Error setting chart permissions:', chartPermError);
+        console.warn('Chart permissions update failed but user was created');
       }
     }
 
