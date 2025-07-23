@@ -121,7 +121,14 @@ serve(async (req) => {
 
     if (createError) {
       console.error('Error creating user:', createError)
-      throw new Error(`User creation failed: ${createError.message}`)
+      console.error('Full error details:', JSON.stringify(createError, null, 2))
+      
+      // If it's a user already exists error, provide more specific message
+      if (createError.message?.includes('already been registered') || createError.message?.includes('already exists')) {
+        throw new Error(`Usuário com este email já existe`)
+      }
+      
+      throw new Error(`Falha ao criar usuário: ${createError.message}`)
     }
 
     if (!userData.user) {
