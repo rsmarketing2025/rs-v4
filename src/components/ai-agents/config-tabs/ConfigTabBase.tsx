@@ -331,12 +331,14 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
         .eq('tab_name', tabName)
         .eq('status', 'active');
 
-      // Prepare data for webhook using reloaded data from database
+      // Prepare data for webhook with only IDs
       const webhookData = {
-        manual_prompt: trainingData?.find(item => item.data_type === 'manual_prompt')?.manual_prompt || '',
-        files: trainingData?.filter(item => item.data_type === 'file') || [],
-        links: trainingData?.filter(item => item.data_type === 'link') || [],
-        user_id: user.id
+        agent_id: AGENT_ID,
+        file_ids: trainingData?.filter(item => item.data_type === 'file').map(file => file.id) || [],
+        link_ids: trainingData?.filter(item => item.data_type === 'link').map(link => link.id) || [],
+        manual_prompt_id: trainingData?.find(item => item.data_type === 'manual_prompt')?.id || null,
+        user_id: user.id,
+        tab_name: tabName
       };
 
       console.log('Webhook data prepared:', webhookData);

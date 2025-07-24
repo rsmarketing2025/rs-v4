@@ -118,23 +118,24 @@ export const TrainingTab: React.FC = () => {
       // Collect all training data
       const trainingData = await collectTrainingData();
       
-      // Prepare data for webhook
+      // Get the saved manual prompt ID by re-querying the database
+      const { data: manualPromptData } = await supabase
+        .from('agent_training_data')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('tab_name', tabName)
+        .eq('data_type', 'manual_prompt')
+        .eq('status', 'active')
+        .maybeSingle();
+
+      // Prepare data for webhook with only IDs
       const webhookData = {
         agent_id: AGENT_ID,
-        files: trainingData.files.map(file => ({
-          id: file.id,
-          name: file.file_name,
-          type: file.file_type,
-          url: file.file_url,
-          content: file.file_content
-        })),
-        links: trainingData.links.map(link => ({
-          id: link.id,
-          title: link.link_title,
-          url: link.link_url,
-          description: link.link_description
-        })),
-        manual_text: trainingData.manualText
+        file_ids: trainingData.files.map(file => file.id),
+        link_ids: trainingData.links.map(link => link.id),
+        manual_prompt_id: manualPromptData?.id || null,
+        user_id: user.id,
+        tab_name: tabName
       };
 
       console.log('Enviando dados para o webhook:', webhookData);
