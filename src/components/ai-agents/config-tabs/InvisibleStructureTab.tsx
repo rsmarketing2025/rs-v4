@@ -99,14 +99,17 @@ export const InvisibleStructureTab: React.FC = () => {
 
       // Create unique file path with user ID and timestamp
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}-${file.name}`;
+      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
 
       // Upload file to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('agent-training-files')
         .upload(fileName, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw new Error(`Erro no upload: ${uploadError.message}`);
+      }
 
       // Get public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
@@ -395,16 +398,31 @@ export const InvisibleStructureTab: React.FC = () => {
               <div className="space-y-2">
                 <p className="text-sm text-neutral-400">Arquivos anexados:</p>
                 {files.map((file) => (
-                  <div key={file.id} className="flex items-center justify-between bg-neutral-800 p-2 rounded">
-                    <div className="flex items-center gap-2">
-                      <File className="w-4 h-4 text-blue-400" />
-                      <span className="text-sm text-white">{file.file_name}</span>
+                  <div key={file.id} className="flex items-center justify-between bg-neutral-800 p-3 rounded">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <File className="w-4 h-4 text-blue-400" />
+                        <span className="text-sm text-white">{file.file_name}</span>
+                      </div>
+                      {file.file_url && (
+                        <div className="mt-2">
+                          <p className="text-xs text-neutral-400">Link do arquivo:</p>
+                          <a 
+                            href={file.file_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-400 hover:text-blue-300 break-all"
+                          >
+                            {file.file_url}
+                          </a>
+                        </div>
+                      )}
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteFile(file.id)}
-                      className="text-red-400 hover:text-red-300"
+                      className="text-red-400 hover:text-red-300 ml-2"
                     >
                       <X className="w-4 h-4" />
                     </Button>
