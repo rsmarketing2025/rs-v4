@@ -97,6 +97,23 @@ export const InvisibleStructureTab: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Create unique file path with user ID and timestamp
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}-${file.name}`;
+
+      // Upload file to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('agent-training-files')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from('agent-training-files')
+        .getPublicUrl(fileName);
+
+      // Store file metadata in database
       const { data, error } = await supabase
         .from('agent_training_data')
         .insert({
@@ -106,6 +123,7 @@ export const InvisibleStructureTab: React.FC = () => {
           file_name: file.name,
           file_type: file.type,
           file_size: file.size,
+          file_url: publicUrl,
           status: 'active'
         })
         .select()
@@ -118,13 +136,13 @@ export const InvisibleStructureTab: React.FC = () => {
 
       toast({
         title: "Sucesso",
-        description: "Arquivo adicionado com sucesso!",
+        description: "Arquivo enviado e adicionado com sucesso!",
       });
     } catch (error) {
       console.error('Error uploading file:', error);
       toast({
         title: "Erro",
-        description: "Erro ao adicionar arquivo.",
+        description: "Erro ao enviar arquivo.",
         variant: "destructive",
       });
     }
@@ -180,12 +198,32 @@ export const InvisibleStructureTab: React.FC = () => {
 
   const handleDeleteFile = async (fileId: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Find the file to get its URL for storage deletion
+      const fileToDelete = files.find(f => f.id === fileId);
+      
+      // Update database record
       const { error } = await supabase
         .from('agent_training_data')
         .update({ status: 'deleted' })
         .eq('id', fileId);
 
       if (error) throw error;
+
+      // If file has a URL, extract the path and delete from storage
+      if (fileToDelete?.file_url) {
+        const url = new URL(fileToDelete.file_url);
+        const pathParts = url.pathname.split('/');
+        const fileName = pathParts[pathParts.length - 1];
+        const filePath = `${user.id}/${fileName}`;
+        
+        // Delete from storage (don't throw error if file doesn't exist)
+        await supabase.storage
+          .from('agent-training-files')
+          .remove([filePath]);
+      }
 
       setFiles(prev => prev.filter(f => f.id !== fileId));
 
