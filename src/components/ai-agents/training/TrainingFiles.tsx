@@ -80,20 +80,27 @@ export const TrainingFiles: React.FC = () => {
       return;
     }
 
-    // Validate file type
+    // Validate file type - support more file types including images
     const allowedTypes = [
       'text/plain',
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'text/csv',
-      'application/json'
+      'application/json',
+      'image/png',
+      'image/jpeg',
+      'image/jpg',
+      'image/gif',
+      'image/webp',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     ];
 
     if (!allowedTypes.includes(file.type)) {
       toast({
         title: "Erro",
-        description: "Tipo de arquivo não suportado. Use: TXT, PDF, DOC, DOCX, CSV, JSON.",
+        description: "Tipo de arquivo não suportado. Use: TXT, PDF, DOC, DOCX, CSV, JSON, PNG, JPG, JPEG, GIF, WEBP, XLS, XLSX.",
         variant: "destructive"
       });
       return;
@@ -119,28 +126,39 @@ export const TrainingFiles: React.FC = () => {
             .from('agent-training-files')
             .upload(fileName, file);
           
-          if (uploadError) throw uploadError;
+          if (uploadError) {
+            console.error('Storage upload error:', uploadError);
+            throw new Error(`Upload failed: ${uploadError.message}`);
+          }
           
           const { data: { publicUrl } } = supabase.storage
             .from('agent-training-files')
             .getPublicUrl(fileName);
           
           fileUrl = publicUrl;
+          console.log('Generated file URL for large text file:', fileUrl);
         }
       } else {
-        // For binary files (PDF, DOC, etc.), always upload to storage
+        // For binary files (PDF, DOC, images, etc.), always upload to storage
         const fileName = `${user.id}/${Date.now()}_${file.name}`;
+        console.log('Uploading file to storage:', fileName);
+        
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('agent-training-files')
           .upload(fileName, file);
         
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('Storage upload error:', uploadError);
+          throw new Error(`Upload failed: ${uploadError.message}`);
+        }
         
+        console.log('Upload successful, getting public URL...');
         const { data: { publicUrl } } = supabase.storage
           .from('agent-training-files')
           .getPublicUrl(fileName);
         
         fileUrl = publicUrl;
+        console.log('Generated file URL:', fileUrl);
       }
 
       const { data, error } = await supabase
@@ -228,7 +246,8 @@ export const TrainingFiles: React.FC = () => {
     if (fileType.includes('word') || fileType.includes('document')) return '📝';
     if (fileType.includes('text')) return '📃';
     if (fileType.includes('json')) return '🔧';
-    if (fileType.includes('csv')) return '📊';
+    if (fileType.includes('csv') || fileType.includes('excel') || fileType.includes('spreadsheet')) return '📊';
+    if (fileType.includes('image')) return '🖼️';
     return '📁';
   };
 
@@ -257,7 +276,7 @@ export const TrainingFiles: React.FC = () => {
                   onChange={handleFileUpload}
                   disabled={uploading}
                   className="bg-neutral-700 border-neutral-600 text-white file:mr-2 file:px-2 file:py-1 file:rounded file:border-0 file:bg-blue-600 file:text-white"
-                  accept=".txt,.pdf,.doc,.docx,.csv,.json"
+                  accept=".txt,.pdf,.doc,.docx,.csv,.json,.png,.jpg,.jpeg,.gif,.webp,.xls,.xlsx"
                 />
                 {uploading && (
                   <div className="flex items-center gap-2 text-blue-400">
@@ -267,7 +286,7 @@ export const TrainingFiles: React.FC = () => {
                 )}
               </div>
               <p className="text-xs text-neutral-500">
-                Formatos suportados: TXT, PDF, DOC, DOCX, CSV, JSON (máx. 10MB)
+                Formatos suportados: TXT, PDF, DOC, DOCX, CSV, JSON, PNG, JPG, JPEG, GIF, WEBP, XLS, XLSX (máx. 10MB)
               </p>
             </div>
           </CardContent>
