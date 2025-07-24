@@ -37,7 +37,7 @@ export const TrainingFiles: React.FC = () => {
         .from('agent_training_data')
         .select('*')
         .eq('user_id', user.id)
-        .eq('tab_name', 'training_files')
+        .eq('tab_name', 'training')
         .eq('data_type', 'file')
         .order('created_at', { ascending: false });
 
@@ -104,23 +104,57 @@ export const TrainingFiles: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Read file content for text files
       let fileContent = null;
+      let fileUrl = null;
+
+      // Handle file storage based on type and size
       if (file.type === 'text/plain' || file.type === 'application/json' || file.type === 'text/csv') {
-        fileContent = await file.text();
+        // For text files under 1MB, store content directly
+        if (file.size < 1024 * 1024) {
+          fileContent = await file.text();
+        } else {
+          // For larger text files, upload to storage
+          const fileName = `${user.id}/${Date.now()}_${file.name}`;
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('agent-training-files')
+            .upload(fileName, file);
+          
+          if (uploadError) throw uploadError;
+          
+          const { data: { publicUrl } } = supabase.storage
+            .from('agent-training-files')
+            .getPublicUrl(fileName);
+          
+          fileUrl = publicUrl;
+        }
+      } else {
+        // For binary files (PDF, DOC, etc.), always upload to storage
+        const fileName = `${user.id}/${Date.now()}_${file.name}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('agent-training-files')
+          .upload(fileName, file);
+        
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('agent-training-files')
+          .getPublicUrl(fileName);
+        
+        fileUrl = publicUrl;
       }
 
       const { data, error } = await supabase
         .from('agent_training_data')
         .insert({
           user_id: user.id,
-          tab_name: 'training_files',
+          tab_name: 'training',
           data_type: 'file',
           title: file.name,
           file_name: file.name,
           file_type: file.type,
           file_size: file.size,
           file_content: fileContent,
+          file_url: fileUrl,
           status: 'active'
         })
         .select()
@@ -134,6 +168,7 @@ export const TrainingFiles: React.FC = () => {
         file_type: data.file_type,
         file_size: data.file_size,
         file_content: data.file_content,
+        file_url: data.file_url,
         created_at: data.created_at
       };
 
