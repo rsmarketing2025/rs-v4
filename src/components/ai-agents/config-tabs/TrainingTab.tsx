@@ -75,14 +75,37 @@ export const TrainingTab: React.FC = () => {
 
       if (error) throw error;
 
-      // Separate by type
-      const files = trainingData?.filter(item => item.data_type === 'file') || [];
-      const links = trainingData?.filter(item => item.data_type === 'link') || [];
+      // Separate by type and format complete data
+      const files = trainingData?.filter(item => item.data_type === 'file').map(file => ({
+        id: file.id,
+        file_name: file.file_name,
+        file_type: file.file_type,
+        file_url: file.file_url,
+        file_content: file.file_content,
+        file_size: file.file_size,
+        created_at: file.created_at
+      })) || [];
+
+      const links = trainingData?.filter(item => item.data_type === 'link').map(link => ({
+        id: link.id,
+        link_title: link.link_title,
+        link_url: link.link_url,
+        link_description: link.link_description,
+        created_at: link.created_at
+      })) || [];
+
       const promptData = trainingData?.find(item => item.data_type === 'manual_prompt');
+      const manualPrompt = promptData ? {
+        id: promptData.id,
+        content: promptData.manual_prompt,
+        created_at: promptData.created_at
+      } : null;
 
       return {
         files,
         links,
+        manualPrompt,
+        // Keep legacy format for backward compatibility
         manualText: promptData?.manual_prompt || ''
       };
     } catch (error) {
@@ -128,14 +151,19 @@ export const TrainingTab: React.FC = () => {
         .eq('status', 'active')
         .maybeSingle();
 
-      // Prepare data for webhook with only IDs
+      // Prepare data for webhook with complete data
       const webhookData = {
         agent_id: AGENT_ID,
+        user_id: user.id,
+        tab_name: tabName,
+        // Complete data objects
+        files: trainingData.files,
+        links: trainingData.links,
+        manual_prompt: trainingData.manualPrompt,
+        // Legacy IDs for backward compatibility
         file_ids: trainingData.files.map(file => file.id),
         link_ids: trainingData.links.map(link => link.id),
-        manual_prompt_id: manualPromptData?.id || null,
-        user_id: user.id,
-        tab_name: tabName
+        manual_prompt_id: manualPromptData?.id || null
       };
 
       console.log('Enviando dados para o webhook:', webhookData);
