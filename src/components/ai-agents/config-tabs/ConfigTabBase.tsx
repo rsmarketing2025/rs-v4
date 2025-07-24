@@ -106,6 +106,32 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Create unique file path with user ID and timestamp
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+
+      console.log('Uploading file to storage:', fileName);
+
+      // Upload file to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('agent-training-files')
+        .upload(fileName, file);
+
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw new Error(`Erro no upload: ${uploadError.message}`);
+      }
+
+      console.log('File uploaded successfully:', uploadData);
+
+      // Get public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from('agent-training-files')
+        .getPublicUrl(fileName);
+
+      console.log('Generated public URL:', publicUrl);
+
+      // Save file metadata to database with URL
       const { data, error } = await supabase
         .from('agent_training_data')
         .insert({
@@ -115,13 +141,21 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
           file_name: file.name,
           file_type: file.type,
           file_size: file.size,
+          file_url: publicUrl,
           status: 'active'
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database insert error:', error);
+        // Clean up uploaded file if database insert fails
+        await supabase.storage.from('agent-training-files').remove([fileName]);
+        throw error;
+      }
+
       if (data) {
+        console.log('File data saved to database:', data);
         setFiles(prev => [...prev, data as TrainingDataItem]);
       }
 
@@ -133,7 +167,7 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
       console.error('Error uploading file:', error);
       toast({
         title: "Erro",
-        description: "Erro ao adicionar arquivo.",
+        description: error instanceof Error ? error.message : "Erro ao adicionar arquivo.",
         variant: "destructive",
       });
     }
@@ -237,6 +271,36 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
     }
   };
 
+  const triggerWebhook = async (data: any) => {
+    try {
+      const webhookUrl = `https://webhook-automatios-rsmtk.abbadigital.com.br/webhook/rag-rs-copy-${tabName}`;
+      
+      console.log(`Sending data to webhook: ${webhookUrl}`, data);
+      
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          agent_id: AGENT_ID,
+          tab_name: tabName,
+          data: data,
+          timestamp: new Date().toISOString()
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Webhook failed with status: ${response.status}`);
+      }
+
+      console.log('Webhook triggered successfully');
+    } catch (error) {
+      console.error('Error triggering webhook:', error);
+      // Don't throw here - webhook failure shouldn't block the save operation
+    }
+  };
+
   const handleSave = async () => {
     setIsLoading(true);
     
@@ -258,6 +322,27 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
         });
 
       if (error) throw error;
+
+      // Reload all data from database to ensure consistency
+      const { data: trainingData } = await supabase
+        .from('agent_training_data')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('tab_name', tabName)
+        .eq('status', 'active');
+
+      // Prepare data for webhook using reloaded data from database
+      const webhookData = {
+        manual_prompt: trainingData?.find(item => item.data_type === 'manual_prompt')?.manual_prompt || '',
+        files: trainingData?.filter(item => item.data_type === 'file') || [],
+        links: trainingData?.filter(item => item.data_type === 'link') || [],
+        user_id: user.id
+      };
+
+      console.log('Webhook data prepared:', webhookData);
+
+      // Trigger webhook with database-consistent data
+      await triggerWebhook(webhookData);
 
       toast({
         title: "Sucesso",
@@ -320,16 +405,31 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
               <div className="space-y-2">
                 <p className="text-sm text-neutral-400">Arquivos anexados:</p>
                 {files.map((file) => (
-                  <div key={file.id} className="flex items-center justify-between bg-neutral-800 p-2 rounded">
-                    <div className="flex items-center gap-2">
-                      <File className="w-4 h-4 text-blue-400" />
-                      <span className="text-sm text-white">{file.file_name}</span>
+                  <div key={file.id} className="flex items-center justify-between bg-neutral-800 p-3 rounded">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <File className="w-4 h-4 text-blue-400" />
+                        <span className="text-sm text-white">{file.file_name}</span>
+                      </div>
+                      {file.file_url && (
+                        <div className="mt-2">
+                          <p className="text-xs text-neutral-400">Link do arquivo:</p>
+                          <a 
+                            href={file.file_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-400 hover:text-blue-300 break-all"
+                          >
+                            {file.file_url}
+                          </a>
+                        </div>
+                      )}
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteFile(file.id)}
-                      className="text-red-400 hover:text-red-300"
+                      className="text-red-400 hover:text-red-300 ml-2"
                     >
                       <X className="w-4 h-4" />
                     </Button>
