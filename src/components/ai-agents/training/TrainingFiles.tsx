@@ -37,7 +37,7 @@ export const TrainingFiles: React.FC = () => {
         .from('agent_training_data')
         .select('*')
         .eq('user_id', user.id)
-        .eq('tab_name', 'training')
+        .eq('tab_name', 'training_files')
         .eq('data_type', 'file')
         .order('created_at', { ascending: false });
 
@@ -80,27 +80,20 @@ export const TrainingFiles: React.FC = () => {
       return;
     }
 
-    // Validate file type - support more file types including images
+    // Validate file type
     const allowedTypes = [
       'text/plain',
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'text/csv',
-      'application/json',
-      'image/png',
-      'image/jpeg',
-      'image/jpg',
-      'image/gif',
-      'image/webp',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      'application/json'
     ];
 
     if (!allowedTypes.includes(file.type)) {
       toast({
         title: "Erro",
-        description: "Tipo de arquivo não suportado. Use: TXT, PDF, DOC, DOCX, CSV, JSON, PNG, JPG, JPEG, GIF, WEBP, XLS, XLSX.",
+        description: "Tipo de arquivo não suportado. Use: TXT, PDF, DOC, DOCX, CSV, JSON.",
         variant: "destructive"
       });
       return;
@@ -111,68 +104,23 @@ export const TrainingFiles: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Read file content for text files
       let fileContent = null;
-      let fileUrl = null;
-
-      // Handle file storage based on type and size
       if (file.type === 'text/plain' || file.type === 'application/json' || file.type === 'text/csv') {
-        // For text files under 1MB, store content directly
-        if (file.size < 1024 * 1024) {
-          fileContent = await file.text();
-        } else {
-          // For larger text files, upload to storage
-          const fileName = `${user.id}/${Date.now()}_${file.name}`;
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('agent-training-files')
-            .upload(fileName, file);
-          
-          if (uploadError) {
-            console.error('Storage upload error:', uploadError);
-            throw new Error(`Upload failed: ${uploadError.message}`);
-          }
-          
-          const { data: { publicUrl } } = supabase.storage
-            .from('agent-training-files')
-            .getPublicUrl(fileName);
-          
-          fileUrl = publicUrl;
-          console.log('Generated file URL for large text file:', fileUrl);
-        }
-      } else {
-        // For binary files (PDF, DOC, images, etc.), always upload to storage
-        const fileName = `${user.id}/${Date.now()}_${file.name}`;
-        console.log('Uploading file to storage:', fileName);
-        
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('agent-training-files')
-          .upload(fileName, file);
-        
-        if (uploadError) {
-          console.error('Storage upload error:', uploadError);
-          throw new Error(`Upload failed: ${uploadError.message}`);
-        }
-        
-        console.log('Upload successful, getting public URL...');
-        const { data: { publicUrl } } = supabase.storage
-          .from('agent-training-files')
-          .getPublicUrl(fileName);
-        
-        fileUrl = publicUrl;
-        console.log('Generated file URL:', fileUrl);
+        fileContent = await file.text();
       }
 
       const { data, error } = await supabase
         .from('agent_training_data')
         .insert({
           user_id: user.id,
-          tab_name: 'training',
+          tab_name: 'training_files',
           data_type: 'file',
           title: file.name,
           file_name: file.name,
           file_type: file.type,
           file_size: file.size,
           file_content: fileContent,
-          file_url: fileUrl,
           status: 'active'
         })
         .select()
@@ -186,7 +134,6 @@ export const TrainingFiles: React.FC = () => {
         file_type: data.file_type,
         file_size: data.file_size,
         file_content: data.file_content,
-        file_url: data.file_url,
         created_at: data.created_at
       };
 
@@ -246,8 +193,7 @@ export const TrainingFiles: React.FC = () => {
     if (fileType.includes('word') || fileType.includes('document')) return '📝';
     if (fileType.includes('text')) return '📃';
     if (fileType.includes('json')) return '🔧';
-    if (fileType.includes('csv') || fileType.includes('excel') || fileType.includes('spreadsheet')) return '📊';
-    if (fileType.includes('image')) return '🖼️';
+    if (fileType.includes('csv')) return '📊';
     return '📁';
   };
 
@@ -276,7 +222,7 @@ export const TrainingFiles: React.FC = () => {
                   onChange={handleFileUpload}
                   disabled={uploading}
                   className="bg-neutral-700 border-neutral-600 text-white file:mr-2 file:px-2 file:py-1 file:rounded file:border-0 file:bg-blue-600 file:text-white"
-                  accept=".txt,.pdf,.doc,.docx,.csv,.json,.png,.jpg,.jpeg,.gif,.webp,.xls,.xlsx"
+                  accept=".txt,.pdf,.doc,.docx,.csv,.json"
                 />
                 {uploading && (
                   <div className="flex items-center gap-2 text-blue-400">
@@ -286,7 +232,7 @@ export const TrainingFiles: React.FC = () => {
                 )}
               </div>
               <p className="text-xs text-neutral-500">
-                Formatos suportados: TXT, PDF, DOC, DOCX, CSV, JSON, PNG, JPG, JPEG, GIF, WEBP, XLS, XLSX (máx. 10MB)
+                Formatos suportados: TXT, PDF, DOC, DOCX, CSV, JSON (máx. 10MB)
               </p>
             </div>
           </CardContent>

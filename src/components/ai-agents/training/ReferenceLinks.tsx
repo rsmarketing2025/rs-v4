@@ -45,7 +45,7 @@ export const ReferenceLinks: React.FC = () => {
         .from('agent_training_data')
         .select('*')
         .eq('user_id', user.id)
-        .eq('tab_name', 'training')
+        .eq('tab_name', 'reference_links')
         .eq('data_type', 'link')
         .order('created_at', { ascending: false });
 
@@ -92,7 +92,7 @@ export const ReferenceLinks: React.FC = () => {
         .from('agent_training_data')
         .insert({
           user_id: user.id,
-          tab_name: 'training',
+          tab_name: 'reference_links',
           data_type: 'link',
           title: newLink.title.trim(),
           link_title: newLink.title.trim(),
