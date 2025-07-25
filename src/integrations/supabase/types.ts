@@ -21,6 +21,7 @@ export type Database = {
           created_at: string
           default_language: string
           id: string | null
+          training_data_payload: Json | null
           updated_at: string
           user_id: string | null
           voice_tone: string
@@ -31,6 +32,7 @@ export type Database = {
           created_at?: string
           default_language?: string
           id?: string | null
+          training_data_payload?: Json | null
           updated_at?: string
           user_id?: string | null
           voice_tone?: string
@@ -41,6 +43,7 @@ export type Database = {
           created_at?: string
           default_language?: string
           id?: string | null
+          training_data_payload?: Json | null
           updated_at?: string
           user_id?: string | null
           voice_tone?: string
@@ -172,6 +175,42 @@ export type Database = {
           title?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      audit_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          performed_at: string | null
+          performed_by: string | null
+          table_name: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          performed_at?: string | null
+          performed_by?: string | null
+          table_name: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          performed_at?: string | null
+          performed_by?: string | null
+          table_name?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -759,6 +798,18 @@ export type Database = {
       binary_quantize: {
         Args: { "": string } | { "": unknown }
         Returns: unknown
+      }
+      can_access_sales_data: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      diagnose_invisible_structure_data: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          issue_type: string
+          count_affected: number
+          details: string
+        }[]
       }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
