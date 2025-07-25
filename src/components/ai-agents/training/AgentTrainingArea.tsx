@@ -44,32 +44,32 @@ export const AgentTrainingArea: React.FC = () => {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      // Collect training files
+      // Collect training files from invisible_structure tab
       const { data: filesData } = await supabase
         .from('agent_training_data')
         .select('*')
         .eq('user_id', user.id)
-        .eq('tab_name', 'training')
+        .eq('tab_name', 'invisible_structure')
         .eq('data_type', 'file')
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
-      // Collect reference links
+      // Collect reference links from invisible_structure tab
       const { data: linksData } = await supabase
         .from('agent_training_data')
         .select('*')
         .eq('user_id', user.id)
-        .eq('tab_name', 'training')
+        .eq('tab_name', 'invisible_structure')
         .eq('data_type', 'link')
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
-      // Collect manual contexts
+      // Collect manual contexts from invisible_structure tab
       const { data: contextsData } = await supabase
         .from('agent_training_data')
         .select('*')
         .eq('user_id', user.id)
-        .eq('tab_name', 'manual_contexts')
+        .eq('tab_name', 'invisible_structure')
         .eq('data_type', 'manual_prompt')
         .eq('status', 'active')
         .maybeSingle();
@@ -91,9 +91,13 @@ export const AgentTrainingArea: React.FC = () => {
       }));
 
       let contexts = [];
-      if (contextsData && contextsData.metadata) {
-        const metadata = contextsData.metadata as any;
-        contexts = Array.isArray(metadata.contexts) ? metadata.contexts : [];
+      if (contextsData && contextsData.manual_prompt) {
+        contexts = [{
+          id: contextsData.id,
+          context_title: "Prompt Manual",
+          context_content: contextsData.manual_prompt,
+          tags: []
+        }];
       }
 
       const payload = {
