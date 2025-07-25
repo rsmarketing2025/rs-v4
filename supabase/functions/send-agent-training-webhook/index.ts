@@ -195,12 +195,9 @@ serve(async (req) => {
       .eq('status', 'active')
       .maybeSingle();
 
-    // Get ONLY IDs from estrutura_invisivel table (this is what the webhook expects)
-    const { data: estruturaInvisivelData } = await supabaseClient
-      .from('estrutura_invisivel')
-      .select('id')
-      .eq('ativo', true)
-      .order('created_at', { ascending: false });
+    console.log('📊 Files loaded:', filesData?.length || 0);
+    console.log('📊 Links loaded:', linksData?.length || 0);
+    console.log('📊 Context loaded:', contextsData ? 'Yes' : 'No');
 
     // Enrich files data with public URLs
     const enrichedFiles = (filesData || []).map(file => {
@@ -246,37 +243,30 @@ serve(async (req) => {
       }];
     }
 
-    // Extract only IDs from estrutura_invisivel data
-    const estruturaInvisivelIds = (estruturaInvisivelData || []).map(item => item.id);
+    console.log(`📊 Files found: ${enrichedFiles.length}`);
+    console.log(`📊 Links found: ${enrichedLinks.length}`);
+    console.log(`📊 Contexts found: ${enrichedContexts.length}`);
 
-    // Create payload with ONLY IDs for estrutura_invisivel (as requested)
+    // Create webhook payload with training data
     const webhookPayload = {
-      ids: estruturaInvisivelIds
-    };
-
-    console.log('Webhook payload (IDs only):', JSON.stringify(webhookPayload, null, 2));
-    console.log(`Found ${estruturaInvisivelIds.length} IDs from estrutura_invisivel table`);
-
-    // Create enriched payload for saving configuration (full data)
-    const enrichedPayload = {
       agent_id: agentConfig?.id || 'default',
       agent_name: agentConfig?.agent_name || payload.agent_name || 'Copy Chief',
-      agent_description: agentConfig?.agent_description || payload.agent_description || '',
-      default_language: agentConfig?.default_language || payload.default_language || 'pt-BR',
-      voice_tone: agentConfig?.voice_tone || payload.voice_tone || 'formal',
       user_id: user.id,
       timestamp: new Date().toISOString(),
       training_data: {
         files: enrichedFiles,
         links: enrichedLinks,
         contexts: enrichedContexts,
-        estrutura_invisivel_ids: estruturaInvisivelIds,
         total_files: enrichedFiles.length,
         total_links: enrichedLinks.length,
-        total_contexts: enrichedContexts.length,
-        total_estrutura_invisivel: estruturaInvisivelIds.length
+        total_contexts: enrichedContexts.length
       }
     };
+
+    console.log('Webhook payload created:', JSON.stringify(webhookPayload, null, 2));
+
+    // Create enriched payload for saving configuration (same as webhook payload)
+    const enrichedPayload = webhookPayload;
 
     console.log('Enriched payload created for saving:', JSON.stringify(enrichedPayload, null, 2));
 
@@ -284,9 +274,9 @@ serve(async (req) => {
     const configData = {
       user_id: user.id,
       agent_name: enrichedPayload.agent_name,
-      agent_description: enrichedPayload.agent_description,
-      default_language: enrichedPayload.default_language,
-      voice_tone: enrichedPayload.voice_tone,
+      agent_description: agentConfig?.agent_description || '',
+      default_language: agentConfig?.default_language || 'pt-BR',
+      voice_tone: agentConfig?.voice_tone || 'formal',
       training_data_payload: enrichedPayload.training_data
     };
 
