@@ -154,15 +154,12 @@ export const AgentTrainingArea: React.FC = () => {
   const handleSaveAll = async () => {
     setSaving(true);
     try {
-      console.log('Starting centralized save...');
+      console.log('Starting webhook with IDs only...');
       
-      const payload = await collectAllTrainingData();
-      console.log('Collected payload:', payload);
-
-      // Call the edge function
+      // Call the edge function with minimal payload - it will fetch IDs from database
       const { data, error } = await supabase.functions.invoke('send-agent-training-webhook', {
         body: {
-          payload,
+          payload: {}, // Empty payload - edge function will fetch IDs
           webhookUrl
         }
       });
@@ -177,17 +174,17 @@ export const AgentTrainingArea: React.FC = () => {
       if (data.success) {
         toast({
           title: "Sucesso",
-          description: "Configurações salvas e webhook enviado com sucesso!"
+          description: `Webhook enviado com sucesso! ${data.webhook?.ids_count || 0} IDs enviados.`
         });
       } else {
         throw new Error(data.error || 'Unknown error');
       }
 
     } catch (error) {
-      console.error('Error saving all data:', error);
+      console.error('Error sending webhook:', error);
       toast({
         title: "Erro",
-        description: `Erro ao salvar: ${error.message}`,
+        description: `Erro ao enviar webhook: ${error.message}`,
         variant: "destructive"
       });
     } finally {

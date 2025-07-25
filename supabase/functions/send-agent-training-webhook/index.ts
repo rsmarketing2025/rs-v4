@@ -67,30 +67,7 @@ async function testConnectivity(url: string): Promise<boolean> {
   }
 }
 
-// Optimize payload to reduce size
-function optimizePayload(payload: any): any {
-  const optimized = { ...payload };
-  
-  // Limit estrutura_invisivel to essential fields and max 50 items
-  if (optimized.training_data?.estrutura_invisivel) {
-    optimized.training_data.estrutura_invisivel = optimized.training_data.estrutura_invisivel
-      .slice(0, 50)
-      .map((item: any) => ({
-        id: item.id,
-        titulo: item.titulo,
-        categoria: item.categoria,
-        tipo_estrutura: item.tipo_estrutura,
-        nicho: item.nicho,
-        tom: item.tom,
-        // Include content but truncate if too long
-        conteudo: item.conteudo?.length > 1000 ? 
-          item.conteudo.substring(0, 1000) + '...' : 
-          item.conteudo
-      }));
-  }
-  
-  return optimized;
-}
+// This function is no longer needed as we only send IDs
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -155,161 +132,26 @@ serve(async (req) => {
 
     console.log('Authenticated user:', user.id);
 
-    // Enrich the payload with complete data from database
-    console.log('Enriching payload with complete data...');
+    // Get only IDs from agent_training_data for invisible_structure tab
+    console.log('Fetching only IDs from agent_training_data for invisible_structure...');
     
-    // Get agent configuration
-    const { data: agentConfig } = await supabaseClient
-      .from('agent_configurations')
-      .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    // Get training files with complete details from invisible_structure tab
-    const { data: filesData } = await supabaseClient
+    const { data: trainingDataIds } = await supabaseClient
       .from('agent_training_data')
-      .select('*')
+      .select('id')
       .eq('user_id', user.id)
       .eq('tab_name', 'invisible_structure')
-      .eq('data_type', 'file')
-      .eq('status', 'active')
-      .order('created_at', { ascending: false });
+      .eq('status', 'active');
 
-    // Get reference links with complete details from invisible_structure tab
-    const { data: linksData } = await supabaseClient
-      .from('agent_training_data')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('tab_name', 'invisible_structure')
-      .eq('data_type', 'link')
-      .eq('status', 'active')
-      .order('created_at', { ascending: false });
+    console.log('📊 Training data IDs found:', trainingDataIds?.length || 0);
 
-    // Get manual contexts with complete details
-    const { data: contextsData } = await supabaseClient
-      .from('agent_training_data')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('tab_name', 'invisible_structure')
-      .eq('data_type', 'manual_prompt')
-      .eq('status', 'active')
-      .maybeSingle();
-
-    console.log('📊 Files loaded:', filesData?.length || 0);
-    console.log('📊 Links loaded:', linksData?.length || 0);
-    console.log('📊 Context loaded:', contextsData ? 'Yes' : 'No');
-
-    // Enrich files data with public URLs
-    const enrichedFiles = (filesData || []).map(file => {
-      let publicUrl = file.file_url;
-      
-      // If file_url doesn't exist or is a storage path, generate public URL
-      if (!publicUrl || publicUrl.startsWith('agent-training-files/')) {
-        const filePath = publicUrl || file.file_name;
-        const { data: urlData } = supabaseClient.storage
-          .from('agent-training-files')
-          .getPublicUrl(filePath);
-        publicUrl = urlData.publicUrl;
-      }
-
-      return {
-        id: file.id,
-        file_name: file.file_name,
-        file_type: file.file_type,
-        file_url: publicUrl,
-        file_size: file.file_size,
-        description: file.description,
-        created_at: file.created_at
-      };
-    });
-
-    // Enrich links data
-    const enrichedLinks = (linksData || []).map(link => ({
-      id: link.id,
-      link_title: link.link_title || link.title,
-      link_url: link.link_url,
-      link_description: link.link_description || link.description,
-      created_at: link.created_at
-    }));
-
-    // Enrich contexts data
-    let enrichedContexts = [];
-    if (contextsData && contextsData.manual_prompt) {
-      enrichedContexts = [{
-        id: contextsData.id,
-        context_title: "Prompt Manual",
-        context_content: contextsData.manual_prompt,
-        tags: []
-      }];
-    }
-
-    console.log(`📊 Files found: ${enrichedFiles.length}`);
-    console.log(`📊 Links found: ${enrichedLinks.length}`);
-    console.log(`📊 Contexts found: ${enrichedContexts.length}`);
-
-    // Create webhook payload with training data
+    // Create simple webhook payload with only IDs
     const webhookPayload = {
-      agent_id: agentConfig?.id || 'default',
-      agent_name: agentConfig?.agent_name || payload.agent_name || 'Copy Chief',
       user_id: user.id,
       timestamp: new Date().toISOString(),
-      training_data: {
-        files: enrichedFiles,
-        links: enrichedLinks,
-        contexts: enrichedContexts,
-        total_files: enrichedFiles.length,
-        total_links: enrichedLinks.length,
-        total_contexts: enrichedContexts.length
-      }
+      agent_training_data_ids: (trainingDataIds || []).map(item => item.id)
     };
 
     console.log('Webhook payload created:', JSON.stringify(webhookPayload, null, 2));
-
-    // Create enriched payload for saving configuration (same as webhook payload)
-    const enrichedPayload = webhookPayload;
-
-    console.log('Enriched payload created for saving:', JSON.stringify(enrichedPayload, null, 2));
-
-    // Save or update agent configuration with the consolidated payload
-    const configData = {
-      user_id: user.id,
-      agent_name: enrichedPayload.agent_name,
-      agent_description: agentConfig?.agent_description || '',
-      default_language: agentConfig?.default_language || 'pt-BR',
-      voice_tone: agentConfig?.voice_tone || 'formal',
-      training_data_payload: enrichedPayload.training_data
-    };
-
-    // First, try to get existing configuration
-    const { data: existingConfig } = await supabaseClient
-      .from('agent_configurations')
-      .select('id')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    let saveResult;
-    if (existingConfig) {
-      // Update existing configuration
-      saveResult = await supabaseClient
-        .from('agent_configurations')
-        .update(configData)
-        .eq('user_id', user.id);
-    } else {
-      // Insert new configuration
-      saveResult = await supabaseClient
-        .from('agent_configurations')
-        .insert(configData);
-    }
-
-    if (saveResult.error) {
-      console.error('Error saving configuration:', saveResult.error);
-      return new Response(
-        JSON.stringify({ error: 'Failed to save configuration' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('Configuration saved successfully');
 
     // Use the webhook payload with only IDs 
     const payloadSize = JSON.stringify(webhookPayload).length;
@@ -381,11 +223,12 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: 'Configuration saved and webhook sent successfully',
+          message: 'Webhook sent successfully',
           webhook: {
             status: webhookResult.status,
             payloadSize: payloadSize,
-            url: webhookUrl
+            url: webhookUrl,
+            ids_count: webhookPayload.agent_training_data_ids.length
           }
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -397,15 +240,16 @@ serve(async (req) => {
       // Try fallback webhook if available (could be implemented later)
       const fallbackError = await tryFallbackWebhook(webhookPayload, webhookUrl);
       
-      // Configuration was saved but webhook failed
+      // Webhook failed after all retries
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Configuration saved but webhook failed after all retries',
+          error: 'Webhook failed after all retries',
           details: webhookError.message,
           fallback: fallbackError ? `Fallback also failed: ${fallbackError}` : 'No fallback attempted',
           attempts: MAX_RETRY_ATTEMPTS,
-          payloadSize: payloadSize
+          payloadSize: payloadSize,
+          ids_count: webhookPayload.agent_training_data_ids.length
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -427,14 +271,9 @@ async function tryFallbackWebhook(payload: any, originalUrl: string): Promise<st
     // database logging, or alternative webhook URLs here
     console.log('Fallback webhook mechanism triggered for URL:', originalUrl);
     console.log('Payload summary:', {
-      agent_name: payload.agent_name,
       user_id: payload.user_id,
-      training_data_summary: {
-        files: payload.training_data?.files?.length || 0,
-        links: payload.training_data?.links?.length || 0,
-        contexts: payload.training_data?.contexts?.length || 0,
-        estrutura_invisivel: payload.training_data?.estrutura_invisivel?.length || 0
-      }
+      timestamp: payload.timestamp,
+      ids_count: payload.agent_training_data_ids?.length || 0
     });
     
     // Could implement fallback logic here:
