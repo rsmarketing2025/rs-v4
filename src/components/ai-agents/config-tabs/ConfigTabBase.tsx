@@ -88,15 +88,18 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const selectedFiles = event.target.files;
+    if (!selectedFiles || selectedFiles.length === 0) return;
 
-    // Validate file type
+    // Validate file types
     const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/csv'];
-    if (!allowedTypes.includes(file.type)) {
+    
+    // Check if all files are valid
+    const invalidFiles = Array.from(selectedFiles).filter(file => !allowedTypes.includes(file.type));
+    if (invalidFiles.length > 0) {
       toast({
         title: "Erro",
-        description: "Tipo de arquivo não permitido. Use PDF, Imagem, Doc ou CSV.",
+        description: `Tipos de arquivo não permitidos: ${invalidFiles.map(f => f.name).join(', ')}. Use PDF, Imagem, Doc ou CSV.`,
         variant: "destructive",
       });
       return;
@@ -106,68 +109,82 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Create unique file path with user ID and timestamp
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+      const uploadedFiles: TrainingDataItem[] = [];
+      const totalFiles = selectedFiles.length;
 
-      console.log('Uploading file to storage:', fileName);
+      // Process files one by one
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        
+        // Create unique file path with user ID and timestamp
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
 
-      // Upload file to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('agent-training-files')
-        .upload(fileName, file);
+        console.log(`Uploading file ${i + 1}/${totalFiles} to storage:`, fileName);
 
-      if (uploadError) {
-        console.error('Storage upload error:', uploadError);
-        throw new Error(`Erro no upload: ${uploadError.message}`);
+        // Upload file to Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('agent-training-files')
+          .upload(fileName, file);
+
+        if (uploadError) {
+          console.error('Storage upload error:', uploadError);
+          throw new Error(`Erro no upload do arquivo ${file.name}: ${uploadError.message}`);
+        }
+
+        console.log('File uploaded successfully:', uploadData);
+
+        // Get public URL for the uploaded file
+        const { data: { publicUrl } } = supabase.storage
+          .from('agent-training-files')
+          .getPublicUrl(fileName);
+
+        console.log('Generated public URL:', publicUrl);
+
+        // Save file metadata to database with URL (remove unique constraint conflict)
+        const { data, error } = await supabase
+          .from('agent_training_data')
+          .insert({
+            user_id: user.id,
+            tab_name: tabName,
+            data_type: 'file',
+            file_name: file.name,
+            file_type: file.type,
+            file_size: file.size,
+            file_url: publicUrl,
+            status: 'active'
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Database insert error:', error);
+          // Clean up uploaded file if database insert fails
+          await supabase.storage.from('agent-training-files').remove([fileName]);
+          throw new Error(`Erro ao salvar dados do arquivo ${file.name}: ${error.message}`);
+        }
+
+        if (data) {
+          console.log('File data saved to database:', data);
+          uploadedFiles.push(data as TrainingDataItem);
+        }
       }
 
-      console.log('File uploaded successfully:', uploadData);
-
-      // Get public URL for the uploaded file
-      const { data: { publicUrl } } = supabase.storage
-        .from('agent-training-files')
-        .getPublicUrl(fileName);
-
-      console.log('Generated public URL:', publicUrl);
-
-      // Save file metadata to database with URL
-      const { data, error } = await supabase
-        .from('agent_training_data')
-        .insert({
-          user_id: user.id,
-          tab_name: tabName,
-          data_type: 'file',
-          file_name: file.name,
-          file_type: file.type,
-          file_size: file.size,
-          file_url: publicUrl,
-          status: 'active'
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Database insert error:', error);
-        // Clean up uploaded file if database insert fails
-        await supabase.storage.from('agent-training-files').remove([fileName]);
-        throw error;
-      }
-
-      if (data) {
-        console.log('File data saved to database:', data);
-        setFiles(prev => [...prev, data as TrainingDataItem]);
-      }
+      // Update state with all uploaded files
+      setFiles(prev => [...prev, ...uploadedFiles]);
 
       toast({
         title: "Sucesso",
-        description: "Arquivo adicionado com sucesso!",
+        description: `${totalFiles} arquivo(s) adicionado(s) com sucesso!`,
       });
+
+      // Clear the input
+      event.target.value = '';
     } catch (error) {
-      console.error('Error uploading file:', error);
+      console.error('Error uploading files:', error);
       toast({
         title: "Erro",
-        description: error instanceof Error ? error.message : "Erro ao adicionar arquivo.",
+        description: error instanceof Error ? error.message : "Erro ao adicionar arquivo(s).",
         variant: "destructive",
       });
     }
@@ -390,14 +407,18 @@ export const ConfigTabBase: React.FC<ConfigTabBaseProps> = ({
           <div className="space-y-4">
             <div>
               <Label htmlFor={`file-upload-${tabName}`} className="text-white">
-                Anexar Arquivo (PDF, Imagem, Doc, CSV)
+                Anexar Arquivo(s) (PDF, Imagem, Doc, CSV)
               </Label>
+              <p className="text-xs text-neutral-400 mt-1">
+                Você pode selecionar múltiplos arquivos segurando Ctrl (ou Cmd no Mac)
+              </p>
               <Input
                 id={`file-upload-${tabName}`}
                 type="file"
                 accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.csv"
                 onChange={handleFileUpload}
                 className="bg-neutral-800 border-neutral-700 text-white mt-2"
+                multiple
               />
             </div>
             
