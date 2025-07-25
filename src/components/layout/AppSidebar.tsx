@@ -1,7 +1,7 @@
 
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Users, LogOut, Settings, Bot } from "lucide-react";
+import { BarChart3, Users, LogOut, Settings, Bot, Eye } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -15,6 +15,10 @@ const menuItems = [{
   title: "Agente de IA - Copy",
   url: "/ai-agents",
   icon: Bot
+}, {
+  title: "Estrutura Invisível",
+  url: "/ai-agents/invisible-structure",
+  icon: Eye
 }, {
   title: "Business Managers",
   url: "/business-managers",

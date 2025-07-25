@@ -12,6 +12,7 @@ import { AppSidebar } from "@/components/layout/AppSidebar";
 import Dashboard from "./pages/Dashboard";
 import AIAgents from "./pages/AIAgents";
 import AIAgentTraining from "./pages/AIAgentTraining";
+import AIAgentInvisibleStructure from "./pages/AIAgentInvisibleStructure";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -39,6 +40,7 @@ const App = () => (
                           <Route path="/dashboard" element={<Dashboard />} />
                           <Route path="/ai-agents" element={<AIAgents />} />
                           <Route path="/ai-agents/training" element={<AIAgentTraining />} />
+                          <Route path="/ai-agents/invisible-structure" element={<AIAgentInvisibleStructure />} />
                           <Route 
                             path="/users" 
                             element={

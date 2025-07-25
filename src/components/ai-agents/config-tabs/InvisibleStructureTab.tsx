@@ -234,6 +234,85 @@ export const InvisibleStructureTab: React.FC = () => {
           if (insertError) throw insertError;
           console.log('✅ Manual prompt created');
         }
+
+        // ALSO SAVE TO ESTRUTURA_INVISIVEL TABLE
+        console.log('📝 Also saving to estrutura_invisivel table...');
+        const { error: estruturaError } = await supabase
+          .from('estrutura_invisivel')
+          .insert({
+            titulo: 'Prompt Manual - Estrutura Invisível',
+            conteudo: manualPrompt,
+            categoria: 'prompt_manual',
+            tipo_estrutura: 'instrucoes',
+            nicho: 'geral',
+            tom: 'formal',
+            publico_alvo: 'geral',
+            tags: ['prompt_manual', 'estrutura_invisivel'],
+            fonte: 'configuracao_usuario',
+            ativo: true
+          });
+
+        if (estruturaError) {
+          console.error('❌ Error saving to estrutura_invisivel:', estruturaError);
+        } else {
+          console.log('✅ Manual prompt also saved to estrutura_invisivel');
+        }
+      }
+
+      // Save files to estrutura_invisivel as well
+      if (files.length > 0) {
+        console.log('📁 Saving files to estrutura_invisivel...');
+        for (const file of files) {
+          if (file.file_content) {
+            const { error: fileError } = await supabase
+              .from('estrutura_invisivel')
+              .insert({
+                titulo: file.file_name || 'Arquivo sem nome',
+                conteudo: file.file_content,
+                categoria: 'arquivo',
+                tipo_estrutura: 'documento',
+                nicho: 'geral',
+                tom: 'neutro',
+                publico_alvo: 'geral',
+                tags: ['arquivo', file.file_type || 'documento'],
+                fonte: 'upload_usuario',
+                ativo: true
+              });
+
+            if (fileError) {
+              console.error('❌ Error saving file to estrutura_invisivel:', fileError);
+            } else {
+              console.log(`✅ File ${file.file_name} saved to estrutura_invisivel`);
+            }
+          }
+        }
+      }
+
+      // Save links content to estrutura_invisivel as well
+      if (links.length > 0) {
+        console.log('🔗 Saving links to estrutura_invisivel...');
+        for (const link of links) {
+          const { error: linkError } = await supabase
+            .from('estrutura_invisivel')
+            .insert({
+              titulo: link.link_title || 'Link sem título',
+              conteudo: `${link.link_description || 'Sem descrição'}\n\nURL: ${link.link_url}`,
+              categoria: 'link_referencia',
+              tipo_estrutura: 'referencia',
+              nicho: 'geral',
+              tom: 'informativo',
+              publico_alvo: 'geral',
+              tags: ['link', 'referencia'],
+              fonte: link.link_url,
+              ativo: true
+            });
+
+          if (linkError) {
+            console.error('❌ Error saving link to estrutura_invisivel:', linkError);
+          } else {
+            console.log(`✅ Link ${link.link_title} saved to estrutura_invisivel`);
+          }
+        }
       }
 
       // Reload data to ensure consistency
@@ -241,7 +320,7 @@ export const InvisibleStructureTab: React.FC = () => {
 
       toast({
         title: "Sucesso",
-        description: "Dados salvos com sucesso!",
+        description: "Dados salvos em ambas as tabelas com sucesso!",
       });
 
     } catch (error) {

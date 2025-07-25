@@ -195,10 +195,10 @@ serve(async (req) => {
       .eq('status', 'active')
       .maybeSingle();
 
-    // Get data from estrutura_invisivel table
+    // Get ONLY IDs from estrutura_invisivel table (this is what the webhook expects)
     const { data: estruturaInvisivelData } = await supabaseClient
       .from('estrutura_invisivel')
-      .select('*')
+      .select('id')
       .eq('ativo', true)
       .order('created_at', { ascending: false });
 
@@ -246,24 +246,18 @@ serve(async (req) => {
       }];
     }
 
-    // Format estrutura invisivel data
-    const enrichedEstruturaInvisivel = (estruturaInvisivelData || []).map(item => ({
-      id: item.id,
-      titulo: item.titulo,
-      conteudo: item.conteudo,
-      categoria: item.categoria,
-      tipo_estrutura: item.tipo_estrutura,
-      nicho: item.nicho,
-      tom: item.tom,
-      publico_alvo: item.publico_alvo,
-      tags: item.tags || [],
-      fonte: item.fonte,
-      taxa_conversao: item.taxa_conversao,
-      nivel_persuasao: item.nivel_persuasao,
-      created_at: item.created_at
-    }));
+    // Extract only IDs from estrutura_invisivel data
+    const estruturaInvisivelIds = (estruturaInvisivelData || []).map(item => item.id);
 
-    // Create enriched payload for webhook
+    // Create payload with ONLY IDs for estrutura_invisivel (as requested)
+    const webhookPayload = {
+      ids: estruturaInvisivelIds
+    };
+
+    console.log('Webhook payload (IDs only):', JSON.stringify(webhookPayload, null, 2));
+    console.log(`Found ${estruturaInvisivelIds.length} IDs from estrutura_invisivel table`);
+
+    // Create enriched payload for saving configuration (full data)
     const enrichedPayload = {
       agent_id: agentConfig?.id || 'default',
       agent_name: agentConfig?.agent_name || payload.agent_name || 'Copy Chief',
@@ -272,19 +266,19 @@ serve(async (req) => {
       voice_tone: agentConfig?.voice_tone || payload.voice_tone || 'formal',
       user_id: user.id,
       timestamp: new Date().toISOString(),
-        training_data: {
-          files: enrichedFiles,
-          links: enrichedLinks,
-          contexts: enrichedContexts,
-          estrutura_invisivel: enrichedEstruturaInvisivel,
-          total_files: enrichedFiles.length,
-          total_links: enrichedLinks.length,
-          total_contexts: enrichedContexts.length,
-          total_estrutura_invisivel: enrichedEstruturaInvisivel.length
-        }
+      training_data: {
+        files: enrichedFiles,
+        links: enrichedLinks,
+        contexts: enrichedContexts,
+        estrutura_invisivel_ids: estruturaInvisivelIds,
+        total_files: enrichedFiles.length,
+        total_links: enrichedLinks.length,
+        total_contexts: enrichedContexts.length,
+        total_estrutura_invisivel: estruturaInvisivelIds.length
+      }
     };
 
-    console.log('Enriched payload created:', JSON.stringify(enrichedPayload, null, 2));
+    console.log('Enriched payload created for saving:', JSON.stringify(enrichedPayload, null, 2));
 
     // Save or update agent configuration with the consolidated payload
     const configData = {
@@ -327,10 +321,9 @@ serve(async (req) => {
 
     console.log('Configuration saved successfully');
 
-    // Optimize payload to reduce size before sending
-    const optimizedPayload = optimizePayload(enrichedPayload);
-    const payloadSize = JSON.stringify(optimizedPayload).length;
-    console.log(`Optimized payload size: ${payloadSize} bytes`);
+    // Use the webhook payload with only IDs 
+    const payloadSize = JSON.stringify(webhookPayload).length;
+    console.log(`Webhook payload size: ${payloadSize} bytes`);
 
     // Send webhook to external system with retry logic
     try {
@@ -350,7 +343,7 @@ serve(async (req) => {
               'X-Webhook-Source': 'agent-training-system',
               'X-Timestamp': new Date().toISOString(),
             },
-            body: JSON.stringify(optimizedPayload),
+            body: JSON.stringify(webhookPayload),
             signal: controller.signal,
           });
 
@@ -412,7 +405,7 @@ serve(async (req) => {
       console.error('Webhook error after all retries:', webhookError);
       
       // Try fallback webhook if available (could be implemented later)
-      const fallbackError = await tryFallbackWebhook(optimizedPayload, webhookUrl);
+      const fallbackError = await tryFallbackWebhook(webhookPayload, webhookUrl);
       
       // Configuration was saved but webhook failed
       return new Response(
