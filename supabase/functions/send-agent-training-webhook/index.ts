@@ -76,30 +76,20 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    );
+    const { agent_id, tab_name } = await req.json();
 
-    const { payload, webhookUrl } = await req.json();
-
-    if (!payload || !webhookUrl) {
+    if (!agent_id || !tab_name) {
       return new Response(
-        JSON.stringify({ error: 'Missing payload or webhookUrl' }),
+        JSON.stringify({ error: 'Missing agent_id or tab_name' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Validate webhook URL format
-    if (!isValidUrl(webhookUrl)) {
-      console.error('Invalid webhook URL format:', webhookUrl);
-      return new Response(
-        JSON.stringify({ error: 'Invalid webhook URL format' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Fixed webhook URL
+    const webhookUrl = 'https://webhook-automatios-rsmtk.abbadigital.com.br/webhook/rag-rs-copy-estrutura-invisivel';
 
-    console.log('Received payload:', JSON.stringify(payload, null, 2));
+    console.log('Received agent_id:', agent_id);
+    console.log('Received tab_name:', tab_name);
     console.log('Webhook URL:', webhookUrl);
 
     // Test connectivity to webhook URL
@@ -109,51 +99,14 @@ serve(async (req) => {
       console.warn('Webhook URL appears unreachable, but proceeding anyway');
     }
 
-    // Get authenticated user from the JWT token automatically handled by Supabase
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
-
-    if (userError || !user) {
-      console.error('User authentication error:', userError);
-      return new Response(
-        JSON.stringify({ error: 'Invalid user token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('Authenticated user:', user.id);
-
-    // Get only IDs from agent_training_data for invisible_structure tab
-    console.log('Fetching only IDs from agent_training_data for invisible_structure...');
-    
-    const { data: trainingDataIds } = await supabaseClient
-      .from('agent_training_data')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('tab_name', 'invisible_structure')
-      .eq('status', 'active');
-
-    console.log('📊 Training data IDs found:', trainingDataIds?.length || 0);
-
-    // Create simple webhook payload with only IDs
+    // Create simple webhook payload with only agent_id and tab_name
     const webhookPayload = {
-      user_id: user.id,
-      timestamp: new Date().toISOString(),
-      agent_training_data_ids: (trainingDataIds || []).map(item => item.id)
+      agent_id,
+      tab_name
     };
 
     console.log('Webhook payload created:', JSON.stringify(webhookPayload, null, 2));
 
-    // Use the webhook payload with only IDs 
     const payloadSize = JSON.stringify(webhookPayload).length;
     console.log(`Webhook payload size: ${payloadSize} bytes`);
 
@@ -228,7 +181,8 @@ serve(async (req) => {
             status: webhookResult.status,
             payloadSize: payloadSize,
             url: webhookUrl,
-            ids_count: webhookPayload.agent_training_data_ids.length
+            agent_id: webhookPayload.agent_id,
+            tab_name: webhookPayload.tab_name
           }
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -249,7 +203,8 @@ serve(async (req) => {
           fallback: fallbackError ? `Fallback also failed: ${fallbackError}` : 'No fallback attempted',
           attempts: MAX_RETRY_ATTEMPTS,
           payloadSize: payloadSize,
-          ids_count: webhookPayload.agent_training_data_ids.length
+          agent_id: webhookPayload.agent_id,
+          tab_name: webhookPayload.tab_name
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -271,9 +226,8 @@ async function tryFallbackWebhook(payload: any, originalUrl: string): Promise<st
     // database logging, or alternative webhook URLs here
     console.log('Fallback webhook mechanism triggered for URL:', originalUrl);
     console.log('Payload summary:', {
-      user_id: payload.user_id,
-      timestamp: payload.timestamp,
-      ids_count: payload.agent_training_data_ids?.length || 0
+      agent_id: payload.agent_id,
+      tab_name: payload.tab_name
     });
     
     // Could implement fallback logic here:

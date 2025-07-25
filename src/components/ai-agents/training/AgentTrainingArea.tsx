@@ -154,13 +154,13 @@ export const AgentTrainingArea: React.FC = () => {
   const handleSaveAll = async () => {
     setSaving(true);
     try {
-      console.log('Starting webhook with IDs only...');
+      console.log('Starting simplified webhook...');
       
-      // Call the edge function with minimal payload - it will fetch IDs from database
+      // Call the edge function with simplified payload
       const { data, error } = await supabase.functions.invoke('send-agent-training-webhook', {
         body: {
-          payload: {}, // Empty payload - edge function will fetch IDs
-          webhookUrl
+          agent_id: "AGENT_ID_CONSTANT",
+          tab_name: "invisible_structure"
         }
       });
 
@@ -174,7 +174,7 @@ export const AgentTrainingArea: React.FC = () => {
       if (data.success) {
         toast({
           title: "Sucesso",
-          description: `Webhook enviado com sucesso! ${data.webhook?.ids_count || 0} IDs enviados.`
+          description: `Webhook enviado com sucesso! Agent ID: ${data.webhook?.agent_id}, Tab: ${data.webhook?.tab_name}`
         });
       } else {
         throw new Error(data.error || 'Unknown error');
@@ -267,28 +267,27 @@ export const AgentTrainingArea: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="webhook-url" className="text-white">URL do Webhook (n8n)</Label>
-                <Input
-                  id="webhook-url"
-                  value={webhookUrl}
-                  onChange={(e) => setWebhookUrl(e.target.value)}
-                  className="bg-neutral-800 border-neutral-600 text-white"
-                  placeholder="https://seu-webhook.com/endpoint"
-                />
-                <p className="text-xs text-neutral-500">
-                  Configurações de todas as abas serão enviadas para este endpoint
+                <Label className="text-white">Webhook Configuration</Label>
+                <p className="text-sm text-neutral-400">
+                  Agent ID: <span className="text-white font-mono">AGENT_ID_CONSTANT</span>
+                </p>
+                <p className="text-sm text-neutral-400">
+                  Tab Name: <span className="text-white font-mono">invisible_structure</span>
+                </p>
+                <p className="text-sm text-neutral-400">
+                  URL: <span className="text-white font-mono text-xs">https://webhook-automatios-rsmtk.abbadigital.com.br/webhook/rag-rs-copy-estrutura-invisivel</span>
                 </p>
               </div>
               
               <div className="flex justify-end">
                 <Button
                   onClick={handleSaveAll}
-                  disabled={saving || !webhookUrl.trim()}
+                  disabled={saving}
                   className="bg-green-600 hover:bg-green-700 text-white"
                   size="lg"
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  {saving ? 'Salvando e Enviando...' : 'Salvar Tudo e Enviar Webhook'}
+                  {saving ? 'Enviando Webhook...' : 'Enviar Webhook'}
                 </Button>
               </div>
             </CardContent>
