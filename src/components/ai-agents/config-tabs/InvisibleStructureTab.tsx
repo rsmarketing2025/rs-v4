@@ -334,17 +334,40 @@ export const InvisibleStructureTab: React.FC = () => {
       if (!user) return;
 
       // Save or update manual prompt
-      const { error } = await supabase
+      // First, try to find existing manual_prompt entry
+      const { data: existingPrompt } = await supabase
         .from('agent_training_data')
-        .upsert({
-          user_id: user.id,
-          tab_name: tabName,
-          data_type: 'manual_prompt',
-          manual_prompt: manualPrompt,
-          status: 'active'
-        }, {
-          onConflict: 'user_id,tab_name,data_type'
-        });
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('tab_name', tabName)
+        .eq('data_type', 'manual_prompt')
+        .maybeSingle();
+
+      let error;
+      if (existingPrompt) {
+        // Update existing entry
+        const { error: updateError } = await supabase
+          .from('agent_training_data')
+          .update({
+            manual_prompt: manualPrompt,
+            status: 'active',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingPrompt.id);
+        error = updateError;
+      } else {
+        // Insert new entry
+        const { error: insertError } = await supabase
+          .from('agent_training_data')
+          .insert({
+            user_id: user.id,
+            tab_name: tabName,
+            data_type: 'manual_prompt',
+            manual_prompt: manualPrompt,
+            status: 'active'
+          });
+        error = insertError;
+      }
 
       if (error) throw error;
 
