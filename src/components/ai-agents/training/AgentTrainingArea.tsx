@@ -28,7 +28,7 @@ import {
 export const AgentTrainingArea: React.FC = () => {
   const [activeTab, setActiveTab] = useState("general");
   const [saving, setSaving] = useState(false);
-  const [webhookUrl, setWebhookUrl] = useState("https://webhook-automatios-rsmtk.abbadigital.com.br/webhook/rag-midia-rs-copy");
+  const [webhookUrl, setWebhookUrl] = useState("https://webhook-automatios-rsmtk.abbadigital.com.br/webhook/rag-rs-copy-estrutura-invisivel");
   const { toast } = useToast();
 
   // Function to collect all training data
