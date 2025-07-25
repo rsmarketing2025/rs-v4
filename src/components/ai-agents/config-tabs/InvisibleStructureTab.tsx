@@ -6,10 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Save, Upload, Link, FileText, Plus, X, File, Eye } from "lucide-react";
+import { Save, Link, Plus, X, Eye, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AGENT_ID } from "./GeneralTab";
+import { FixedTrainingFiles } from "../training/FixedTrainingFiles";
 
 interface TrainingDataItem {
   id: string;
@@ -39,6 +40,7 @@ export const InvisibleStructureTab: React.FC = () => {
   const [links, setLinks] = useState<TrainingDataItem[]>([]);
   const [newLink, setNewLink] = useState({ title: '', url: '', description: '' });
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   const tabName = "invisible_structure";
@@ -49,16 +51,29 @@ export const InvisibleStructureTab: React.FC = () => {
 
   const loadData = async () => {
     try {
+      console.log('🔄 Loading invisible structure data...');
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.log('❌ User not authenticated');
+        return;
+      }
+
+      console.log(`👤 Loading data for user: ${user.id}, tab: ${tabName}`);
 
       // Load all training data for this tab
-      const { data: trainingData } = await supabase
+      const { data: trainingData, error } = await supabase
         .from('agent_training_data')
         .select('*')
         .eq('user_id', user.id)
         .eq('tab_name', tabName)
         .eq('status', 'active');
+
+      if (error) {
+        console.error('❌ Database error loading data:', error);
+        throw error;
+      }
+
+      console.log(`✅ Loaded ${trainingData?.length || 0} training data items`);
 
       if (trainingData) {
         // Type assertion for database results
@@ -69,12 +84,21 @@ export const InvisibleStructureTab: React.FC = () => {
         const filesData = typedData.filter(item => item.data_type === 'file'); 
         const linksData = typedData.filter(item => item.data_type === 'link');
 
+        console.log(`📝 Manual prompt: ${promptData ? 'Found' : 'Not found'}`);
+        console.log(`📁 Files: ${filesData.length}`);
+        console.log(`🔗 Links: ${linksData.length}`);
+
         setManualPrompt(promptData?.manual_prompt || '');
         setFiles(filesData);
         setLinks(linksData);
       }
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('❌ Error loading invisible structure data:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os dados.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -297,47 +321,65 @@ export const InvisibleStructureTab: React.FC = () => {
   };
 
   const handleSave = async () => {
-    setIsLoading(true);
+    if (isSaving) return; // Prevent double saves
+    
+    setIsSaving(true);
     
     try {
+      console.log('💾 Starting save operation...');
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.log('❌ User not authenticated');
+        return;
+      }
 
-      // Save or update manual prompt
-      const { error } = await supabase
-        .from('agent_training_data')
-        .upsert({
-          user_id: user.id,
-          tab_name: tabName,
-          data_type: 'manual_prompt',
-          manual_prompt: manualPrompt,
-          status: 'active'
-        }, {
-          onConflict: 'user_id,tab_name,data_type'
-        });
+      console.log(`👤 Saving for user: ${user.id}, tab: ${tabName}`);
 
-      if (error) throw error;
+      // Save or update manual prompt if not empty
+      if (manualPrompt.trim()) {
+        console.log('📝 Saving manual prompt...');
+        
+        // First check if a manual prompt already exists
+        const { data: existingPrompt } = await supabase
+          .from('agent_training_data')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('tab_name', tabName)
+          .eq('data_type', 'manual_prompt')
+          .eq('status', 'active')
+          .single();
 
-      // Reload all data from database to ensure consistency
-      const { data: trainingData } = await supabase
-        .from('agent_training_data')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('tab_name', tabName)
-        .eq('status', 'active');
+        if (existingPrompt) {
+          // Update existing
+          const { error: updateError } = await supabase
+            .from('agent_training_data')
+            .update({
+              manual_prompt: manualPrompt,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingPrompt.id);
 
-      // Prepare data for webhook with only IDs
-      const webhookData = {
-        agent_id: AGENT_ID,
-        file_ids: trainingData?.filter(item => item.data_type === 'file').map(file => file.id) || [],
-        link_ids: trainingData?.filter(item => item.data_type === 'link').map(link => link.id) || [],
-        manual_prompt_id: trainingData?.find(item => item.data_type === 'manual_prompt')?.id || null,
-        user_id: user.id,
-        tab_name: tabName
-      };
+          if (updateError) throw updateError;
+          console.log('✅ Manual prompt updated');
+        } else {
+          // Create new
+          const { error: insertError } = await supabase
+            .from('agent_training_data')
+            .insert({
+              user_id: user.id,
+              tab_name: tabName,
+              data_type: 'manual_prompt',
+              manual_prompt: manualPrompt,
+              status: 'active'
+            });
 
-      // Trigger webhook with database-consistent data
-      await triggerWebhook(webhookData);
+          if (insertError) throw insertError;
+          console.log('✅ Manual prompt created');
+        }
+      }
+
+      // Reload data to ensure consistency
+      await loadData();
 
       toast({
         title: "Sucesso",
@@ -345,14 +387,14 @@ export const InvisibleStructureTab: React.FC = () => {
       });
 
     } catch (error) {
-      console.error('Error saving data:', error);
+      console.error('❌ Error saving data:', error);
       toast({
         title: "Erro",
         description: "Erro ao salvar dados. Tente novamente.",
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -374,70 +416,30 @@ export const InvisibleStructureTab: React.FC = () => {
       </div>
 
       {/* Upload de Arquivos */}
-      <Card className="bg-neutral-900 border-neutral-800">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-white flex items-center gap-2">
-            <Upload className="w-4 h-4" />
-            Arquivos de Treinamento
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor={`file-upload-${tabName}`} className="text-white">
-                Anexar Arquivo (PDF, Imagem, Doc, CSV)
-              </Label>
-              <Input
-                id={`file-upload-${tabName}`}
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.csv"
-                onChange={handleFileUpload}
-                className="bg-neutral-800 border-neutral-700 text-white mt-2"
-              />
-            </div>
-            
-            {files.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm text-neutral-400">Arquivos anexados:</p>
-                {files.map((file) => (
-                  <div key={file.id} className="flex items-center justify-between bg-neutral-800 p-3 rounded">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <File className="w-4 h-4 text-blue-400" />
-                        <span className="text-sm text-white">{file.file_name}</span>
-                      </div>
-                      {file.file_url && (
-                        <div className="mt-2">
-                          <p className="text-xs text-neutral-400">Link do arquivo:</p>
-                          <a 
-                            href={file.file_url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-400 hover:text-blue-300 break-all"
-                          >
-                            {file.file_url}
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteFile(file.id)}
-                      className="text-red-400 hover:text-red-300 ml-2"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <FixedTrainingFiles 
+          tabName={tabName} 
+          onFilesChange={(newFiles) => {
+            console.log(`📁 Files updated: ${newFiles.length} files`);
+            setFiles(newFiles.map(f => ({
+              ...f,
+              data_type: 'file' as const,
+              user_id: '', // Will be set by the component
+              tab_name: tabName,
+              title: f.file_name,
+              link_title: null,
+              link_url: null,
+              link_description: null,
+              manual_prompt: null,
+              description: null,
+              metadata: null,
+              updated_at: f.created_at
+            })));
+          }} 
+        />
 
-      {/* Links de Referência */}
-      <Card className="bg-neutral-900 border-neutral-800">
+        {/* Links de Referência */}
+        <Card className="bg-neutral-900 border-neutral-800">
         <CardHeader className="pb-3">
           <CardTitle className="text-white flex items-center gap-2">
             <Link className="w-4 h-4" />
@@ -524,7 +526,8 @@ export const InvisibleStructureTab: React.FC = () => {
             )}
           </div>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
 
       {/* Prompt Manual */}
       <Card className="bg-neutral-900 border-neutral-800">
@@ -558,11 +561,11 @@ export const InvisibleStructureTab: React.FC = () => {
       <div className="flex justify-end pt-4 border-t border-neutral-800">
         <Button 
           onClick={handleSave} 
-          disabled={isLoading}
+          disabled={isSaving}
           className="bg-slate-50 text-black hover:bg-slate-200"
         >
           <Save className="w-4 h-4 mr-2" />
-          {isLoading ? 'Salvando...' : 'Salvar Configurações'}
+          {isSaving ? 'Salvando...' : 'Salvar Configurações'}
         </Button>
       </div>
     </div>
