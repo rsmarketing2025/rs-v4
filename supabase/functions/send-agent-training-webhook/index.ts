@@ -70,17 +70,51 @@ async function testConnectivity(url: string): Promise<boolean> {
 // This function is no longer needed as we only send IDs
 
 serve(async (req) => {
+  console.log('=== WEBHOOK FUNCTION STARTED ===');
+  console.log('Request method:', req.method);
+  console.log('Request URL:', req.url);
+  console.log('Request headers:', Object.fromEntries(req.headers.entries()));
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('Handling CORS preflight request');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { agent_id, tab_name } = await req.json();
-
-    if (!agent_id || !tab_name) {
+    console.log('Attempting to parse request body...');
+    const requestBody = await req.text();
+    console.log('Raw request body:', requestBody);
+    
+    let parsedBody;
+    try {
+      parsedBody = JSON.parse(requestBody);
+      console.log('Parsed request body:', parsedBody);
+    } catch (parseError) {
+      console.error('Failed to parse JSON:', parseError);
       return new Response(
-        JSON.stringify({ error: 'Missing agent_id or tab_name' }),
+        JSON.stringify({ error: 'Invalid JSON in request body', details: parseError.message }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { agent_id, tab_name } = parsedBody;
+
+    console.log('Validating required parameters...');
+    console.log('agent_id:', agent_id, 'type:', typeof agent_id);
+    console.log('tab_name:', tab_name, 'type:', typeof tab_name);
+    
+    if (!agent_id || !tab_name) {
+      console.error('Missing required parameters:', { agent_id, tab_name });
+      return new Response(
+        JSON.stringify({ 
+          error: 'Missing agent_id or tab_name',
+          received: { agent_id, tab_name },
+          validation: {
+            agent_id_valid: !!agent_id,
+            tab_name_valid: !!tab_name
+          }
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -88,36 +122,58 @@ serve(async (req) => {
     // Fixed webhook URL
     const webhookUrl = 'https://webhook-automatios-rsmtk.abbadigital.com.br/webhook/rag-rs-copy-estrutura-invisivel';
 
+    console.log('=== WEBHOOK PREPARATION ===');
     console.log('Received agent_id:', agent_id);
     console.log('Received tab_name:', tab_name);
     console.log('Webhook URL:', webhookUrl);
+    console.log('Webhook URL valid:', isValidUrl(webhookUrl));
 
     // Test connectivity to webhook URL
+    console.log('=== CONNECTIVITY TEST ===');
     console.log('Testing connectivity to webhook URL...');
+    const connectivityStart = Date.now();
     const isConnectable = await testConnectivity(webhookUrl);
+    const connectivityDuration = Date.now() - connectivityStart;
+    console.log(`Connectivity test completed in ${connectivityDuration}ms, result:`, isConnectable);
+    
     if (!isConnectable) {
-      console.warn('Webhook URL appears unreachable, but proceeding anyway');
+      console.warn('⚠️ Webhook URL appears unreachable, but proceeding anyway');
+      console.warn('This might indicate network issues or the target server is down');
+    } else {
+      console.log('✅ Webhook URL is reachable');
     }
 
     // Create simple webhook payload with only agent_id and tab_name
     const webhookPayload = {
       agent_id,
-      tab_name
+      tab_name,
+      timestamp: new Date().toISOString(),
+      source: 'supabase-edge-function'
     };
 
+    console.log('=== PAYLOAD CREATION ===');
     console.log('Webhook payload created:', JSON.stringify(webhookPayload, null, 2));
 
     const payloadSize = JSON.stringify(webhookPayload).length;
     console.log(`Webhook payload size: ${payloadSize} bytes`);
+    
+    if (payloadSize > 100000) { // 100KB limit
+      console.warn('⚠️ Payload is quite large:', payloadSize, 'bytes');
+    }
 
     // Send webhook to external system with retry logic
+    console.log('=== WEBHOOK SENDING ===');
+    const webhookStartTime = Date.now();
+    
     try {
       const webhookResult = await retryWithBackoff(async () => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), WEBHOOK_TIMEOUT);
 
         try {
-          console.log(`Sending webhook to: ${webhookUrl}`);
+          const requestStartTime = Date.now();
+          console.log(`🚀 Sending webhook request to: ${webhookUrl}`);
+          console.log('Request payload:', JSON.stringify(webhookPayload));
           
           const webhookResponse = await fetch(webhookUrl, {
             method: 'POST',
@@ -133,12 +189,17 @@ serve(async (req) => {
           });
 
           clearTimeout(timeoutId);
+          const requestDuration = Date.now() - requestStartTime;
 
-          console.log('Webhook response status:', webhookResponse.status);
-          console.log('Webhook response headers:', Object.fromEntries(webhookResponse.headers.entries()));
+          console.log('=== WEBHOOK RESPONSE ===');
+          console.log(`📥 Response received in ${requestDuration}ms`);
+          console.log('Response status:', webhookResponse.status);
+          console.log('Response status text:', webhookResponse.statusText);
+          console.log('Response headers:', Object.fromEntries(webhookResponse.headers.entries()));
           
           const webhookResponseText = await webhookResponse.text();
-          console.log('Webhook response body:', webhookResponseText);
+          console.log('Response body length:', webhookResponseText.length);
+          console.log('Response body:', webhookResponseText);
 
           // Validate response
           if (!webhookResponse.ok) {
@@ -171,25 +232,35 @@ serve(async (req) => {
         }
       });
 
-      console.log('Webhook sent successfully:', webhookResult);
+      const totalDuration = Date.now() - webhookStartTime;
+      console.log('=== SUCCESS ===');
+      console.log(`✅ Webhook sent successfully in ${totalDuration}ms:`, webhookResult);
 
       return new Response(
         JSON.stringify({ 
           success: true, 
           message: 'Webhook sent successfully',
+          duration: totalDuration,
           webhook: {
             status: webhookResult.status,
             payloadSize: payloadSize,
             url: webhookUrl,
             agent_id: webhookPayload.agent_id,
-            tab_name: webhookPayload.tab_name
-          }
+            tab_name: webhookPayload.tab_name,
+            timestamp: webhookPayload.timestamp
+          },
+          response_data: webhookResult.data
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
 
     } catch (webhookError) {
-      console.error('Webhook error after all retries:', webhookError);
+      const totalDuration = Date.now() - webhookStartTime;
+      console.log('=== FAILURE ===');
+      console.error(`❌ Webhook error after all retries (${totalDuration}ms):`, webhookError);
+      console.error('Error name:', webhookError.name);
+      console.error('Error message:', webhookError.message);
+      console.error('Error stack:', webhookError.stack);
       
       // Try fallback webhook if available (could be implemented later)
       const fallbackError = await tryFallbackWebhook(webhookPayload, webhookUrl);
@@ -200,23 +271,43 @@ serve(async (req) => {
           success: false, 
           error: 'Webhook failed after all retries',
           details: webhookError.message,
+          error_type: webhookError.name,
+          duration: totalDuration,
           fallback: fallbackError ? `Fallback also failed: ${fallbackError}` : 'No fallback attempted',
           attempts: MAX_RETRY_ATTEMPTS,
           payloadSize: payloadSize,
           agent_id: webhookPayload.agent_id,
-          tab_name: webhookPayload.tab_name
+          tab_name: webhookPayload.tab_name,
+          debug_info: {
+            webhook_url: webhookUrl,
+            connectivity_test: isConnectable,
+            timestamp: new Date().toISOString()
+          }
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
   } catch (error) {
-    console.error('Function error:', error);
+    console.log('=== CRITICAL ERROR ===');
+    console.error('💥 Critical function error:', error);
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        error_type: error.name,
+        critical: true,
+        timestamp: new Date().toISOString(),
+        stack: error.stack
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
+  
+  console.log('=== WEBHOOK FUNCTION COMPLETED ===');
 });
 
 // Fallback webhook function (placeholder for future implementation)

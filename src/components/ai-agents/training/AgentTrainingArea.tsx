@@ -153,41 +153,78 @@ export const AgentTrainingArea: React.FC = () => {
   // Handle centralized save and webhook
   const handleSaveAll = async () => {
     setSaving(true);
+    const startTime = Date.now();
+    
     try {
+      console.log('=== FRONTEND WEBHOOK SENDING ===');
       console.log('Starting simplified webhook...');
+      console.log('Timestamp:', new Date().toISOString());
+      
+      const payload = {
+        agent_id: "AGENT_ID_CONSTANT",
+        tab_name: "invisible_structure"
+      };
+      
+      console.log('Payload to send:', payload);
+      console.log('Calling edge function: send-agent-training-webhook');
       
       // Call the edge function with simplified payload
+      const invokeStartTime = Date.now();
       const { data, error } = await supabase.functions.invoke('send-agent-training-webhook', {
-        body: {
-          agent_id: "AGENT_ID_CONSTANT",
-          tab_name: "invisible_structure"
-        }
+        body: payload
       });
+      const invokeDuration = Date.now() - invokeStartTime;
+
+      console.log(`Edge function call completed in ${invokeDuration}ms`);
+      console.log('Raw edge function response:', { data, error });
 
       if (error) {
-        console.error('Edge function error:', error);
-        throw error;
+        console.error('=== EDGE FUNCTION ERROR ===');
+        console.error('Error object:', error);
+        console.error('Error message:', error.message);
+        console.error('Error details:', error.details);
+        console.error('Error hint:', error.hint);
+        console.error('Error code:', error.code);
+        throw new Error(`Edge function failed: ${error.message || JSON.stringify(error)}`);
       }
 
-      console.log('Edge function response:', data);
+      console.log('=== EDGE FUNCTION SUCCESS ===');
+      console.log('Response data:', data);
 
-      if (data.success) {
+      if (data && data.success) {
+        const totalDuration = Date.now() - startTime;
+        console.log(`✅ Total operation completed in ${totalDuration}ms`);
+        
         toast({
           title: "Sucesso",
-          description: `Webhook enviado com sucesso! Agent ID: ${data.webhook?.agent_id}, Tab: ${data.webhook?.tab_name}`
+          description: `Webhook enviado com sucesso! Agent ID: ${data.webhook?.agent_id}, Tab: ${data.webhook?.tab_name}, Duration: ${totalDuration}ms`
         });
+      } else if (data && !data.success) {
+        console.error('=== WEBHOOK FAILURE ===');
+        console.error('Failure details:', data);
+        throw new Error(data.error || data.details || 'Webhook failed without specific error');
       } else {
-        throw new Error(data.error || 'Unknown error');
+        console.error('=== UNEXPECTED RESPONSE FORMAT ===');
+        console.error('Unexpected response:', data);
+        throw new Error('Unexpected response format from edge function');
       }
 
     } catch (error) {
-      console.error('Error sending webhook:', error);
+      const totalDuration = Date.now() - startTime;
+      console.error('=== FRONTEND ERROR ===');
+      console.error(`❌ Error after ${totalDuration}ms:`, error);
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      
       toast({
         title: "Erro",
         description: `Erro ao enviar webhook: ${error.message}`,
         variant: "destructive"
       });
     } finally {
+      const totalDuration = Date.now() - startTime;
+      console.log(`=== FRONTEND OPERATION COMPLETED (${totalDuration}ms) ===`);
       setSaving(false);
     }
   };
