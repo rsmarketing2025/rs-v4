@@ -31,7 +31,7 @@ serve(async (req) => {
     console.log('Received payload:', JSON.stringify(payload, null, 2));
     console.log('Webhook URL:', webhookUrl);
 
-    // Get authenticated user
+    // Get authenticated user from the JWT token automatically handled by Supabase
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
       return new Response(
@@ -45,11 +45,14 @@ serve(async (req) => {
     );
 
     if (userError || !user) {
+      console.error('User authentication error:', userError);
       return new Response(
         JSON.stringify({ error: 'Invalid user token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log('Authenticated user:', user.id);
 
     // Save or update agent configuration with the consolidated payload
     const configData = {

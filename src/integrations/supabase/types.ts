@@ -21,6 +21,7 @@ export type Database = {
           created_at: string
           default_language: string
           id: string | null
+          training_data_payload: Json | null
           updated_at: string
           user_id: string | null
           voice_tone: string
@@ -31,6 +32,7 @@ export type Database = {
           created_at?: string
           default_language?: string
           id?: string | null
+          training_data_payload?: Json | null
           updated_at?: string
           user_id?: string | null
           voice_tone?: string
@@ -41,6 +43,7 @@ export type Database = {
           created_at?: string
           default_language?: string
           id?: string | null
+          training_data_payload?: Json | null
           updated_at?: string
           user_id?: string | null
           voice_tone?: string
