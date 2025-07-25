@@ -102,78 +102,6 @@ export const InvisibleStructureTab: React.FC = () => {
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/csv'];
-    if (!allowedTypes.includes(file.type)) {
-      toast({
-        title: "Erro",
-        description: "Tipo de arquivo não permitido. Use PDF, Imagem, Doc ou CSV.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Create unique file path with user ID and timestamp
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-
-      // Upload file to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('agent-training-files')
-        .upload(fileName, file);
-
-      if (uploadError) {
-        console.error('Storage upload error:', uploadError);
-        throw new Error(`Erro no upload: ${uploadError.message}`);
-      }
-
-      // Get public URL for the uploaded file
-      const { data: { publicUrl } } = supabase.storage
-        .from('agent-training-files')
-        .getPublicUrl(fileName);
-
-      // Store file metadata in database
-      const { data, error } = await supabase
-        .from('agent_training_data')
-        .insert({
-          user_id: user.id,
-          tab_name: tabName,
-          data_type: 'file',
-          file_name: file.name,
-          file_type: file.type,
-          file_size: file.size,
-          file_url: publicUrl,
-          status: 'active'
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      if (data) {
-        setFiles(prev => [...prev, data as TrainingDataItem]);
-      }
-
-      toast({
-        title: "Sucesso",
-        description: "Arquivo enviado e adicionado com sucesso!",
-      });
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao enviar arquivo.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleAddLink = async () => {
     if (!newLink.title || !newLink.url) {
@@ -223,50 +151,6 @@ export const InvisibleStructureTab: React.FC = () => {
     }
   };
 
-  const handleDeleteFile = async (fileId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Find the file to get its URL for storage deletion
-      const fileToDelete = files.find(f => f.id === fileId);
-      
-      // Update database record
-      const { error } = await supabase
-        .from('agent_training_data')
-        .update({ status: 'deleted' })
-        .eq('id', fileId);
-
-      if (error) throw error;
-
-      // If file has a URL, extract the path and delete from storage
-      if (fileToDelete?.file_url) {
-        const url = new URL(fileToDelete.file_url);
-        const pathParts = url.pathname.split('/');
-        const fileName = pathParts[pathParts.length - 1];
-        const filePath = `${user.id}/${fileName}`;
-        
-        // Delete from storage (don't throw error if file doesn't exist)
-        await supabase.storage
-          .from('agent-training-files')
-          .remove([filePath]);
-      }
-
-      setFiles(prev => prev.filter(f => f.id !== fileId));
-
-      toast({
-        title: "Sucesso",
-        description: "Arquivo removido com sucesso!",
-      });
-    } catch (error) {
-      console.error('Error deleting file:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao remover arquivo.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleDeleteLink = async (linkId: string) => {
     try {
@@ -293,32 +177,6 @@ export const InvisibleStructureTab: React.FC = () => {
     }
   };
 
-  const triggerWebhook = async (data: any) => {
-    try {
-      const webhookUrl = 'https://webhook-automatios-rsmtk.abbadigital.com.br/webhook/rag-rs-copy-estrutura-invisivel';
-      
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          agent_id: AGENT_ID,
-          tab_name: 'invisible_structure',
-          data: data,
-          timestamp: new Date().toISOString()
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Webhook failed with status: ${response.status}`);
-      }
-
-      console.log('Webhook triggered successfully');
-    } catch (error) {
-      console.error('Error triggering webhook:', error);
-    }
-  };
 
   const handleSave = async () => {
     if (isSaving) return; // Prevent double saves

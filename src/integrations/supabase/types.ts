@@ -803,6 +803,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      diagnose_invisible_structure_data: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          issue_type: string
+          count_affected: number
+          details: string
+        }[]
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
