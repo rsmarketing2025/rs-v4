@@ -54,14 +54,120 @@ serve(async (req) => {
 
     console.log('Authenticated user:', user.id);
 
+    // Enrich the payload with complete data from database
+    console.log('Enriching payload with complete data...');
+    
+    // Get agent configuration
+    const { data: agentConfig } = await supabaseClient
+      .from('agent_configurations')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    // Get training files with complete details
+    const { data: filesData } = await supabaseClient
+      .from('agent_training_data')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('tab_name', 'training')
+      .eq('data_type', 'file')
+      .eq('status', 'active')
+      .order('created_at', { ascending: false });
+
+    // Get reference links with complete details
+    const { data: linksData } = await supabaseClient
+      .from('agent_training_data')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('tab_name', 'training')
+      .eq('data_type', 'link')
+      .eq('status', 'active')
+      .order('created_at', { ascending: false });
+
+    // Get manual contexts with complete details
+    const { data: contextsData } = await supabaseClient
+      .from('agent_training_data')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('tab_name', 'manual_contexts')
+      .eq('data_type', 'manual_prompt')
+      .eq('status', 'active')
+      .maybeSingle();
+
+    // Enrich files data with public URLs
+    const enrichedFiles = (filesData || []).map(file => {
+      let publicUrl = file.file_url;
+      
+      // If file_url doesn't exist or is a storage path, generate public URL
+      if (!publicUrl || publicUrl.startsWith('agent-training-files/')) {
+        const filePath = publicUrl || file.file_name;
+        const { data: urlData } = supabaseClient.storage
+          .from('agent-training-files')
+          .getPublicUrl(filePath);
+        publicUrl = urlData.publicUrl;
+      }
+
+      return {
+        id: file.id,
+        file_name: file.file_name,
+        file_type: file.file_type,
+        file_url: publicUrl,
+        file_size: file.file_size,
+        description: file.description,
+        created_at: file.created_at
+      };
+    });
+
+    // Enrich links data
+    const enrichedLinks = (linksData || []).map(link => ({
+      id: link.id,
+      link_title: link.link_title || link.title,
+      link_url: link.link_url,
+      link_description: link.link_description || link.description,
+      created_at: link.created_at
+    }));
+
+    // Enrich contexts data
+    let enrichedContexts = [];
+    if (contextsData && contextsData.metadata) {
+      const metadata = contextsData.metadata as any;
+      enrichedContexts = Array.isArray(metadata.contexts) ? metadata.contexts.map(context => ({
+        id: context.id,
+        context_title: context.context_title,
+        context_content: context.context_content,
+        tags: context.tags || []
+      })) : [];
+    }
+
+    // Create enriched payload for webhook
+    const enrichedPayload = {
+      agent_id: agentConfig?.id || 'default',
+      agent_name: agentConfig?.agent_name || payload.agent_name || 'Copy Chief',
+      agent_description: agentConfig?.agent_description || payload.agent_description || '',
+      default_language: agentConfig?.default_language || payload.default_language || 'pt-BR',
+      voice_tone: agentConfig?.voice_tone || payload.voice_tone || 'formal',
+      user_id: user.id,
+      timestamp: new Date().toISOString(),
+      training_data: {
+        files: enrichedFiles,
+        links: enrichedLinks,
+        contexts: enrichedContexts,
+        total_files: enrichedFiles.length,
+        total_links: enrichedLinks.length,
+        total_contexts: enrichedContexts.length
+      }
+    };
+
+    console.log('Enriched payload created:', JSON.stringify(enrichedPayload, null, 2));
+
     // Save or update agent configuration with the consolidated payload
     const configData = {
       user_id: user.id,
-      agent_name: payload.agent_name || 'Copy Chief',
-      agent_description: payload.agent_description || '',
-      default_language: payload.default_language || 'pt-BR',
-      voice_tone: payload.voice_tone || 'formal',
-      training_data_payload: payload.training_data || {}
+      agent_name: enrichedPayload.agent_name,
+      agent_description: enrichedPayload.agent_description,
+      default_language: enrichedPayload.default_language,
+      voice_tone: enrichedPayload.voice_tone,
+      training_data_payload: enrichedPayload.training_data
     };
 
     // First, try to get existing configuration
@@ -102,7 +208,7 @@ serve(async (req) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(enrichedPayload),
       });
 
       console.log('Webhook response status:', webhookResponse.status);
