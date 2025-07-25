@@ -64,22 +64,22 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .maybeSingle();
 
-    // Get training files with complete details
+    // Get training files with complete details from invisible_structure tab
     const { data: filesData } = await supabaseClient
       .from('agent_training_data')
       .select('*')
       .eq('user_id', user.id)
-      .eq('tab_name', 'training')
+      .eq('tab_name', 'invisible_structure')
       .eq('data_type', 'file')
       .eq('status', 'active')
       .order('created_at', { ascending: false });
 
-    // Get reference links with complete details
+    // Get reference links with complete details from invisible_structure tab
     const { data: linksData } = await supabaseClient
       .from('agent_training_data')
       .select('*')
       .eq('user_id', user.id)
-      .eq('tab_name', 'training')
+      .eq('tab_name', 'invisible_structure')
       .eq('data_type', 'link')
       .eq('status', 'active')
       .order('created_at', { ascending: false });
@@ -89,10 +89,17 @@ serve(async (req) => {
       .from('agent_training_data')
       .select('*')
       .eq('user_id', user.id)
-      .eq('tab_name', 'manual_contexts')
+      .eq('tab_name', 'invisible_structure')
       .eq('data_type', 'manual_prompt')
       .eq('status', 'active')
       .maybeSingle();
+
+    // Get data from estrutura_invisivel table
+    const { data: estruturaInvisivelData } = await supabaseClient
+      .from('estrutura_invisivel')
+      .select('*')
+      .eq('ativo', true)
+      .order('created_at', { ascending: false });
 
     // Enrich files data with public URLs
     const enrichedFiles = (filesData || []).map(file => {
@@ -129,15 +136,31 @@ serve(async (req) => {
 
     // Enrich contexts data
     let enrichedContexts = [];
-    if (contextsData && contextsData.metadata) {
-      const metadata = contextsData.metadata as any;
-      enrichedContexts = Array.isArray(metadata.contexts) ? metadata.contexts.map(context => ({
-        id: context.id,
-        context_title: context.context_title,
-        context_content: context.context_content,
-        tags: context.tags || []
-      })) : [];
+    if (contextsData && contextsData.manual_prompt) {
+      enrichedContexts = [{
+        id: contextsData.id,
+        context_title: "Prompt Manual",
+        context_content: contextsData.manual_prompt,
+        tags: []
+      }];
     }
+
+    // Format estrutura invisivel data
+    const enrichedEstruturaInvisivel = (estruturaInvisivelData || []).map(item => ({
+      id: item.id,
+      titulo: item.titulo,
+      conteudo: item.conteudo,
+      categoria: item.categoria,
+      tipo_estrutura: item.tipo_estrutura,
+      nicho: item.nicho,
+      tom: item.tom,
+      publico_alvo: item.publico_alvo,
+      tags: item.tags || [],
+      fonte: item.fonte,
+      taxa_conversao: item.taxa_conversao,
+      nivel_persuasao: item.nivel_persuasao,
+      created_at: item.created_at
+    }));
 
     // Create enriched payload for webhook
     const enrichedPayload = {
@@ -148,14 +171,16 @@ serve(async (req) => {
       voice_tone: agentConfig?.voice_tone || payload.voice_tone || 'formal',
       user_id: user.id,
       timestamp: new Date().toISOString(),
-      training_data: {
-        files: enrichedFiles,
-        links: enrichedLinks,
-        contexts: enrichedContexts,
-        total_files: enrichedFiles.length,
-        total_links: enrichedLinks.length,
-        total_contexts: enrichedContexts.length
-      }
+        training_data: {
+          files: enrichedFiles,
+          links: enrichedLinks,
+          contexts: enrichedContexts,
+          estrutura_invisivel: enrichedEstruturaInvisivel,
+          total_files: enrichedFiles.length,
+          total_links: enrichedLinks.length,
+          total_contexts: enrichedContexts.length,
+          total_estrutura_invisivel: enrichedEstruturaInvisivel.length
+        }
     };
 
     console.log('Enriched payload created:', JSON.stringify(enrichedPayload, null, 2));

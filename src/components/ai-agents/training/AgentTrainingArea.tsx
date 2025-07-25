@@ -74,6 +74,13 @@ export const AgentTrainingArea: React.FC = () => {
         .eq('status', 'active')
         .maybeSingle();
 
+      // Collect data from estrutura_invisivel table
+      const { data: estruturaInvisivelData } = await supabase
+        .from('estrutura_invisivel')
+        .select('*')
+        .eq('ativo', true)
+        .order('created_at', { ascending: false });
+
       // Format the payload
       const files = (filesData || []).map(file => ({
         id: file.id,
@@ -100,6 +107,23 @@ export const AgentTrainingArea: React.FC = () => {
         }];
       }
 
+      // Format estrutura invisivel data
+      const estruturaInvisivel = (estruturaInvisivelData || []).map(item => ({
+        id: item.id,
+        titulo: item.titulo,
+        conteudo: item.conteudo,
+        categoria: item.categoria,
+        tipo_estrutura: item.tipo_estrutura,
+        nicho: item.nicho,
+        tom: item.tom,
+        publico_alvo: item.publico_alvo,
+        tags: item.tags || [],
+        fonte: item.fonte,
+        taxa_conversao: item.taxa_conversao,
+        nivel_persuasao: item.nivel_persuasao,
+        created_at: item.created_at
+      }));
+
       const payload = {
         agent_id: agentConfig?.id || 'default',
         agent_name: agentConfig?.agent_name || 'Copy Chief',
@@ -114,7 +138,8 @@ export const AgentTrainingArea: React.FC = () => {
             context_title: context.context_title,
             context_content: context.context_content,
             tags: context.tags || []
-          }))
+          })),
+          estrutura_invisivel: estruturaInvisivel
         }
       };
 
