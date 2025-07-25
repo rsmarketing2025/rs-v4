@@ -1,1 +1,4 @@
 project_id = "ecarlgloyhvqputbmomy"
+
+[functions.send-agent-training-webhook]
+verify_jwt = false
