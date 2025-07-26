@@ -237,10 +237,10 @@ export const InvisibleStructureTab: React.FC = () => {
       // Find the file to get its URL for storage deletion
       const fileToDelete = files.find(f => f.id === fileId);
       
-      // Update database record
+      // Delete from database
       const { error } = await supabase
         .from('agent_training_data')
-        .update({ status: 'deleted' })
+        .delete()
         .eq('id', fileId);
 
       if (error) throw error;
@@ -278,7 +278,7 @@ export const InvisibleStructureTab: React.FC = () => {
     try {
       const { error } = await supabase
         .from('agent_training_data')
-        .update({ status: 'deleted' })
+        .delete()
         .eq('id', linkId);
 
       if (error) throw error;
