@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Save, Upload, Link, FileText, Plus, X, File, Eye } from "lucide-react";
+import { Save, Upload, Link, FileText, Plus, X, File, Eye, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AGENT_ID } from "./GeneralTab";
@@ -52,13 +52,22 @@ export const InvisibleStructureTab: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      console.log('Loading data for user:', user.id);
+
       // Load all training data for this tab
-      const { data: trainingData } = await supabase
+      const { data: trainingData, error } = await supabase
         .from('agent_training_data')
         .select('*')
         .eq('user_id', user.id)
         .eq('tab_name', tabName)
         .eq('status', 'active');
+
+      if (error) {
+        console.error('Database load error:', error);
+        throw error;
+      }
+
+      console.log('Loaded training data:', trainingData);
 
       if (trainingData) {
         // Type assertion for database results
@@ -69,12 +78,19 @@ export const InvisibleStructureTab: React.FC = () => {
         const filesData = typedData.filter(item => item.data_type === 'file'); 
         const linksData = typedData.filter(item => item.data_type === 'link');
 
+        console.log('Parsed data:', { promptData, filesData, linksData });
+
         setManualPrompt(promptData?.manual_prompt || '');
         setFiles(filesData);
         setLinks(linksData);
       }
     } catch (error) {
       console.error('Error loading data:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar dados do servidor.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -82,23 +98,45 @@ export const InvisibleStructureTab: React.FC = () => {
     const selectedFiles = event.target.files;
     if (!selectedFiles || selectedFiles.length === 0) return;
 
-    // Validate file types
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/csv'];
+    console.log('Starting file upload:', { 
+      fileCount: selectedFiles.length, 
+      files: Array.from(selectedFiles).map(f => ({ name: f.name, size: f.size, type: f.type }))
+    });
+
+    // Validate file types with more comprehensive list
+    const allowedTypes = [
+      'application/pdf', 
+      'image/jpeg', 
+      'image/png', 
+      'image/gif',
+      'image/webp',
+      'application/msword', 
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 
+      'text/csv',
+      'text/plain',
+      'application/json'
+    ];
     
     // Check if all files are valid
     const invalidFiles = Array.from(selectedFiles).filter(file => !allowedTypes.includes(file.type));
     if (invalidFiles.length > 0) {
       toast({
         title: "Erro",
-        description: `Tipos de arquivo não permitidos: ${invalidFiles.map(f => f.name).join(', ')}. Use PDF, Imagem, Doc ou CSV.`,
+        description: `Tipos de arquivo não permitidos: ${invalidFiles.map(f => f.name).join(', ')}. Use PDF, Imagem, Doc, CSV, TXT ou JSON.`,
         variant: "destructive",
       });
       return;
     }
 
+    setIsLoading(true);
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      console.log('User authenticated:', user.id);
 
       const uploadedFiles: TrainingDataItem[] = [];
       const totalFiles = selectedFiles.length;
@@ -109,9 +147,9 @@ export const InvisibleStructureTab: React.FC = () => {
         
         // Create unique file path with user ID and timestamp
         const fileExt = file.name.split('.').pop();
-        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+        const fileName = `invisible_structure/${user.id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
 
-        console.log(`Uploading file ${i + 1}/${totalFiles} to storage:`, fileName);
+        console.log(`Uploading file ${i + 1}/${totalFiles} to storage path:`, fileName);
 
         // Upload file to Supabase Storage
         const { data: uploadData, error: uploadError } = await supabase.storage
@@ -132,19 +170,36 @@ export const InvisibleStructureTab: React.FC = () => {
 
         console.log('Generated public URL:', publicUrl);
 
+        // Read file content for text-based files
+        let fileContent = '';
+        if (file.type === 'text/plain' || file.type === 'text/csv' || file.type === 'application/json') {
+          try {
+            fileContent = await file.text();
+            console.log('File content read successfully, length:', fileContent.length);
+          } catch (contentError) {
+            console.warn('Could not read file content:', contentError);
+          }
+        }
+
+        // Prepare data for database insert
+        const insertData = {
+          user_id: user.id,
+          tab_name: tabName,
+          data_type: 'file' as const,
+          file_name: file.name,
+          file_type: file.type,
+          file_size: file.size,
+          file_url: publicUrl,
+          file_content: fileContent || null,
+          status: 'active'
+        };
+
+        console.log('Inserting file data to database:', insertData);
+
         // Store file metadata in database (each file gets its own record)
         const { data, error } = await supabase
           .from('agent_training_data')
-          .insert({
-            user_id: user.id,
-            tab_name: tabName,
-            data_type: 'file',
-            file_name: file.name,
-            file_type: file.type,
-            file_size: file.size,
-            file_url: publicUrl,
-            status: 'active'
-          })
+          .insert(insertData)
           .select()
           .single();
 
@@ -156,7 +211,7 @@ export const InvisibleStructureTab: React.FC = () => {
         }
 
         if (data) {
-          console.log('File data saved to database:', data);
+          console.log('File data saved to database successfully:', data);
           uploadedFiles.push(data as TrainingDataItem);
         }
       }
@@ -178,6 +233,8 @@ export const InvisibleStructureTab: React.FC = () => {
         description: error instanceof Error ? error.message : "Erro ao enviar arquivo(s).",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -436,42 +493,58 @@ export const InvisibleStructureTab: React.FC = () => {
           <div className="space-y-4">
             <div>
               <Label htmlFor={`file-upload-${tabName}`} className="text-white">
-                Anexar Arquivo(s) (PDF, Imagem, Doc, CSV)
+                Anexar Arquivo(s) (PDF, Imagem, Doc, CSV, TXT, JSON)
               </Label>
               <p className="text-xs text-neutral-400 mt-1">
-                Você pode selecionar múltiplos arquivos segurando Ctrl (ou Cmd no Mac)
+                Você pode selecionar múltiplos arquivos segurando Ctrl (ou Cmd no Mac). Tipos suportados: PDF, JPG, PNG, GIF, WEBP, DOC, DOCX, CSV, TXT, JSON
               </p>
               <Input
                 id={`file-upload-${tabName}`}
                 type="file"
-                accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.csv"
+                accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx,.csv,.txt,.json"
                 onChange={handleFileUpload}
                 className="bg-neutral-800 border-neutral-700 text-white mt-2"
                 multiple
+                disabled={isLoading}
               />
+              {isLoading && (
+                <p className="text-xs text-blue-400 mt-2">⏳ Fazendo upload dos arquivos...</p>
+              )}
             </div>
             
             {files.length > 0 && (
               <div className="space-y-2">
                 <p className="text-sm text-neutral-400">Arquivos anexados:</p>
                 {files.map((file) => (
-                  <div key={file.id} className="flex items-center justify-between bg-neutral-800 p-3 rounded">
+                  <div key={file.id} className="flex items-center justify-between bg-neutral-800 p-3 rounded border border-neutral-700">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 mb-2">
                         <File className="w-4 h-4 text-blue-400" />
-                        <span className="text-sm text-white">{file.file_name}</span>
+                        <span className="text-sm font-medium text-white">{file.file_name}</span>
+                        {file.file_size && (
+                          <span className="text-xs text-neutral-500">
+                            ({(file.file_size / 1024).toFixed(1)} KB)
+                          </span>
+                        )}
                       </div>
-                      {file.file_url && (
-                        <div className="mt-2">
-                          <p className="text-xs text-neutral-400">Link do arquivo:</p>
+                      {file.file_url ? (
+                        <div className="flex items-center gap-2">
                           <a 
                             href={file.file_url} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="text-xs text-blue-400 hover:text-blue-300 break-all"
+                            className="inline-flex items-center gap-1 text-xs bg-blue-600/20 text-blue-400 px-2 py-1 rounded hover:bg-blue-600/30 transition-colors"
                           >
-                            {file.file_url}
+                            <ExternalLink className="w-3 h-3" />
+                            Visualizar arquivo
                           </a>
+                          <span className="text-xs text-neutral-500">
+                            Clique para abrir em nova aba
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-red-400 bg-red-400/10 px-2 py-1 rounded">
+                          ⚠️ URL do arquivo não disponível
                         </div>
                       )}
                     </div>
@@ -479,7 +552,7 @@ export const InvisibleStructureTab: React.FC = () => {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteFile(file.id)}
-                      className="text-red-400 hover:text-red-300 ml-2"
+                      className="text-red-400 hover:text-red-300 hover:bg-red-400/10 ml-2"
                     >
                       <X className="w-4 h-4" />
                     </Button>
