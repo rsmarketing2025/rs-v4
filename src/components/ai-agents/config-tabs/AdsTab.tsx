@@ -327,7 +327,7 @@ export const AdsTab: React.FC = () => {
 
   const triggerWebhook = async (data: any) => {
     try {
-      const webhookUrl = 'https://webhook-automatios-rsmtk.abbadigital.com.br/webhook/rag-rs-copy';
+      const webhookUrl = 'https://webhook-automatios-rsmtk.abbadigital.com.br/webhook/rag-rs-copy-anuncios';
       
       const response = await fetch(webhookUrl, {
         method: 'POST',
