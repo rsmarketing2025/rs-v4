@@ -411,19 +411,40 @@ export const ParadoxQuestionTab: React.FC = () => {
 
       // Save or update manual prompt
       if (manualPrompt.trim()) {
-        const { error } = await supabase
+        // Check if manual prompt already exists
+        const { data: existingPrompt } = await supabase
           .from('agent_training_data')
-          .upsert({
-            user_id: user.id,
-            tab_name: tabName,
-            data_type: 'manual_prompt',
-            manual_prompt: manualPrompt,
-            status: 'active'
-          }, {
-            onConflict: 'user_id,tab_name,data_type'
-          });
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('tab_name', tabName)
+          .eq('data_type', 'manual_prompt');
 
-        if (error) throw error;
+        if (existingPrompt && existingPrompt.length > 0) {
+          // Update existing record
+          const { error } = await supabase
+            .from('agent_training_data')
+            .update({
+              manual_prompt: manualPrompt,
+              status: 'active',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingPrompt[0].id);
+
+          if (error) throw error;
+        } else {
+          // Insert new record
+          const { error } = await supabase
+            .from('agent_training_data')
+            .insert({
+              user_id: user.id,
+              tab_name: tabName,
+              data_type: 'manual_prompt',
+              manual_prompt: manualPrompt,
+              status: 'active'
+            });
+
+          if (error) throw error;
+        }
       }
 
       // Reload all data from database to ensure consistency
