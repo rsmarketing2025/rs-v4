@@ -327,43 +327,28 @@ export const AdsTab: React.FC = () => {
 
   const triggerWebhook = async (data: any) => {
     try {
-      console.log('🚀 Triggering webhook with data:', data);
+      const webhookUrl = 'https://webhook-automatios-rsmtk.abbadigital.com.br/webhook/rag-rs-copy-anuncios';
       
-      // Fixed webhook URL pattern to match working tabs
-      const webhookUrl = `https://webhook-automatios-rsmtk.abbadigital.com.br/webhook/rag-rs-copy-anuncios`;
-      
-      console.log('📡 Webhook URL:', webhookUrl);
-
-      const payload = {
-        agent_id: AGENT_ID,
-        tab_name: tabName,
-        data: data
-      };
-
-      console.log('📦 Sending payload:', payload);
-
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          agent_id: AGENT_ID,
+          tab_name: 'ads',
+          data: data,
+          timestamp: new Date().toISOString()
+        })
       });
 
-      console.log('📥 Response status:', response.status, response.statusText);
-
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Webhook response error:', errorText);
-        throw new Error(`Webhook failed: ${response.status} - ${errorText}`);
+        throw new Error(`Webhook failed with status: ${response.status}`);
       }
 
-      const result = await response.json();
-      console.log('✅ Webhook success:', result);
-      return result;
+      console.log('Webhook triggered successfully');
     } catch (error) {
-      console.error('❌ Webhook error:', error);
-      throw error;
+      console.error('Error triggering webhook:', error);
     }
   };
 
@@ -419,84 +404,70 @@ export const AdsTab: React.FC = () => {
     setIsLoading(true);
     
     try {
-      console.log('💾 Starting save process...');
-      
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('❌ User not authenticated');
-        toast({
-          title: "Erro",
-          description: "Usuário não autenticado",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (!user) return;
 
-      // Save manual prompt if provided
-      if (manualPrompt.trim()) {
-        console.log('📝 Saving manual prompt...');
-        
-        // Check if manual prompt already exists
-        const { data: existingPrompt } = await supabase
+      // Save or update manual prompt
+      // First, try to find existing manual_prompt entry
+      const { data: existingPrompt } = await supabase
+        .from('agent_training_data')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('tab_name', tabName)
+        .eq('data_type', 'manual_prompt')
+        .maybeSingle();
+
+      let error;
+      if (existingPrompt) {
+        // Update existing entry
+        const { error: updateError } = await supabase
           .from('agent_training_data')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('tab_name', tabName)
-          .eq('data_type', 'manual_prompt')
-          .single();
-
-        if (existingPrompt) {
-          // Update existing prompt
-          const { error } = await supabase
-            .from('agent_training_data')
-            .update({
-              manual_prompt: manualPrompt,
-              status: 'active'
-            })
-            .eq('id', existingPrompt.id);
-
-          if (error) {
-            console.error('❌ Error updating manual prompt:', error);
-            throw error;
-          }
-        } else {
-          // Create new prompt
-          const { error } = await supabase
-            .from('agent_training_data')
-            .insert({
-              user_id: user.id,
-              tab_name: tabName,
-              data_type: 'manual_prompt',
-              manual_prompt: manualPrompt,
-              status: 'active'
-            });
-
-          if (error) {
-            console.error('❌ Error creating manual prompt:', error);
-            throw error;
-          }
-        }
-        
-        console.log('✅ Manual prompt saved successfully');
+          .update({
+            manual_prompt: manualPrompt,
+            status: 'active',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingPrompt.id);
+        error = updateError;
+      } else {
+        // Insert new entry
+        const { error: insertError } = await supabase
+          .from('agent_training_data')
+          .insert({
+            user_id: user.id,
+            tab_name: tabName,
+            data_type: 'manual_prompt',
+            manual_prompt: manualPrompt,
+            status: 'active'
+          });
+        error = insertError;
       }
 
-      // Collect all data
-      console.log('📊 Collecting all training data...');
-      const allData = await collectAllData();
+      if (error) throw error;
 
-      // Send to webhook
-      console.log('🚀 Sending data to webhook...');
-      await triggerWebhook(allData);
+      // Reload all data from database to ensure consistency
+      const { data: trainingData } = await supabase
+        .from('agent_training_data')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('tab_name', tabName)
+        .eq('status', 'active');
 
-      console.log('✅ Save process completed successfully');
+      // Prepare data for webhook using reloaded data from database
+      const webhookData = {
+        manual_prompt: trainingData?.find(item => item.data_type === 'manual_prompt')?.manual_prompt || '',
+        files: trainingData?.filter(item => item.data_type === 'file') || [],
+        links: trainingData?.filter(item => item.data_type === 'link') || [],
+        user_id: user.id
+      };
+
+      // Trigger webhook with database-consistent data
+      await triggerWebhook(webhookData);
 
       toast({
         title: "Sucesso",
-        description: "Dados salvos e enviados com sucesso!",
+        description: "Dados salvos com sucesso!",
       });
-
-      // Reload data to reflect any changes
-      await loadData();
 
     } catch (error) {
       console.error('❌ Error in save process:', error);
