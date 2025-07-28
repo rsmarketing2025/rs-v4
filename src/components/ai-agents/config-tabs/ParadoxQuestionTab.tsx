@@ -326,7 +326,7 @@ export const ParadoxQuestionTab: React.FC = () => {
     try {
       console.log('Triggering webhook with data:', data);
       
-      const webhookUrl = `https://webhook-automatios-rsmtk.abbadigital.com.br/webhook/rag-rs-copy-${tabName}`;
+      const webhookUrl = 'https://webhook-automatios-rsmtk.abbadigital.com.br/webhook/rag-rs-copy-pergunta-paradoxal';
       
       const response = await fetch(webhookUrl, {
         method: 'POST',
