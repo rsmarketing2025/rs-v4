@@ -49,7 +49,7 @@ export const BigIdeaTab: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
-  const tabName = "big_idea";
+  const tabName = "big-idea";
 
   useEffect(() => {
     loadData();
