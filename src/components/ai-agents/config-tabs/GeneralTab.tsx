@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,8 +23,43 @@ export const GeneralTab: React.FC = () => {
     tone: 'professional'
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    loadConfiguration();
+  }, []);
+
+  const loadConfiguration = async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('agent_configurations')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      
+      if (data) {
+        setConfig({
+          id: AGENT_ID,
+          name: data.agent_name || 'Copy Chief',
+          description: data.agent_description || 'Assistente especializado em copywriting e marketing',
+          language: data.default_language || 'pt-BR',
+          tone: data.voice_tone || 'professional'
+        });
+      }
+    } catch (error) {
+      console.error('Error loading configuration:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCopyId = async () => {
     try {
@@ -47,8 +82,8 @@ export const GeneralTab: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Prepare data for webhook
-      const webhookData = {
+      // Save to database first
+      const configData = {
         agent_name: config.name,
         agent_description: config.description,
         voice_tone: config.tone,
@@ -56,7 +91,32 @@ export const GeneralTab: React.FC = () => {
         user_id: user.id
       };
 
-      console.log('Enviando configurações para o webhook:', webhookData);
+      // Check if configuration already exists
+      const { data: existingConfig } = await supabase
+        .from('agent_configurations')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (existingConfig) {
+        // Update existing
+        const { error } = await supabase
+          .from('agent_configurations')
+          .update(configData)
+          .eq('user_id', user.id);
+        
+        if (error) throw error;
+      } else {
+        // Create new
+        const { error } = await supabase
+          .from('agent_configurations')
+          .insert(configData);
+        
+        if (error) throw error;
+      }
+
+      // Send to webhook
+      console.log('Enviando configurações para o webhook:', configData);
       
       const response = await fetch('https://webhook-automatios-rsmtk.abbadigital.com.br/webhook/rag-rs-copy-geral', {
         method: 'POST',
@@ -66,7 +126,7 @@ export const GeneralTab: React.FC = () => {
         body: JSON.stringify({
           agent_id: AGENT_ID,
           tab_name: 'general',
-          data: webhookData,
+          data: configData,
           timestamp: new Date().toISOString()
         })
       });
@@ -95,6 +155,19 @@ export const GeneralTab: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 bg-neutral-700 rounded w-1/4"></div>
+          <div className="h-10 bg-neutral-700 rounded"></div>
+          <div className="h-4 bg-neutral-700 rounded w-1/4"></div>
+          <div className="h-24 bg-neutral-700 rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
